@@ -5,7 +5,7 @@ routing_plan_version: "2.0.0"
 harness_contract_version: "1.0.0"
 generated_by: "route.py"
 change_identity:
-  type: "working-tree|commit|unversioned"
+  type: "content|clean|unversioned"
   value: ""
   changed_files: 0
 work_mode: "IMPLEMENTATION"

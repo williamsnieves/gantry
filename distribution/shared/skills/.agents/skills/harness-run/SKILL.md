@@ -25,15 +25,13 @@ Use the specialist agents and state directory of the runtime you are running in:
 2. Run `python3 .harness/bin/route.py vocabulary` and classify the change: one work mode, every scope that applies, and every risk trigger the change causes, each with evidence from the change.
 3. Run `python3 .harness/bin/route.py plan --runtime <runtime> --work-mode <MODE> --scope <SCOPE> --trigger "<DIMENSION>=<evidence>"`, repeating `--scope` and `--trigger` as needed. It writes `routing-plan.yaml` in the state directory and prints the gates. Never write or edit the plan by hand: rerun the command when the classification or the change itself changes. If it adds a trigger from the changed files, keep it; use `--dismiss "<DIMENSION>=<reason>"` only when it clearly does not apply.
 4. Run Validator first when required.
-5. Launch the matching specialist agent for every routed gate whose prerequisites are ready. Keep each specialist read-only, give all agents in a wave the same stable change identity, and pass only bounded authoritative context and evidence.
+5. Launch the matching specialist agent for every routed gate whose prerequisites are ready. Keep each specialist read-only, give all agents in a wave the same change, and pass only bounded authoritative context and evidence.
 6. Run independent read-heavy reviews in parallel where the runtime supports it.
-7. Preserve every specialist's original decision and gate-result envelope.
+7. Save each specialist's report unchanged as `artifacts/<agent>-report.md` in the state directory, then record its result: `python3 .harness/bin/route.py gate --runtime <runtime> --agent <agent> --decision <DECISION> --report <report file>`. Map the specialist's own decision to `PASS`, `PASS_WITH_CONDITIONS` (add one `--condition "<text>"` per condition), `CHANGES_REQUIRED` or `BLOCKED` without weakening it.
 8. When a specialist reports a new material trigger, rerun `route.py plan` with that trigger added, pass the finding on as a typed handoff, and launch any newly required gate.
-9. Do not run Reviewer until every REQUIRED routed gate is terminal.
-10. If remediation is required, return implementation to the parent/authorized worker; specialists remain reviewers.
-11. After remediation, rerun only materially invalidated gates plus required Validator checks.
-12. Run `detail-analyst`, then `reviewer`.
-13. Apply `.harness/core/pre-pr/FINAL-PRE-PR-GATE.md`.
-14. PR creation is allowed only for `PRE_PR_PASS` or `PRE_PR_PASS_WITH_CONDITIONS`.
+9. If remediation is required, return implementation to the parent/authorized worker; specialists remain reviewers.
+10. After any edit to the change, rerun `route.py plan`: every recorded result is now stale. Rerun the gates the edit materially invalidates, plus Validator. For a gate the edit cannot have affected, keep its result with `route.py gate --runtime <runtime> --agent <agent> --carry-forward "<why the edit does not affect it>"`.
+11. Run `detail-analyst` and then `reviewer` once every other REQUIRED gate has a recorded result, and record theirs the same way.
+12. Run `python3 .harness/bin/route.py ready --runtime <runtime>`. This is the Final Pre-PR Gate. Create a pull request only when it prints `PRE_PR_PASS` or `PRE_PR_PASS_WITH_CONDITIONS`, and put the conditions it lists in the pull request description. When it prints `PRE_PR_BLOCKED`, resolve each blocker it lists; do not edit the plan or the gate records by hand.
 
-If concurrency is unavailable, execute the same semantic DAG sequentially. Never reduce the gate set.
+If concurrency is unavailable, run the same gates sequentially. Never reduce the gate set.
