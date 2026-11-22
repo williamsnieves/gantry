@@ -1,8 +1,9 @@
 ---
 name: modeling-frontend-domain
-description: Portable engineering capability `modeling-frontend-domain`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Decides whether a frontend Domain model is justified and, when it is, models frontend-relevant entities, Value Objects, pure Domain Services, invariants, domain errors, deterministic transformations, and optional repository ports. Use for rich local interaction, offline behavior, client-side decision support, deterministic product rules, shared validation experience, or stateful client models. Preserve backend authority for server-enforced invariants and avoid duplicating backend logic merely for symmetry. Domain must remain independent of React, browser APIs, HTTP, routing, CSS, design systems, storage libraries, Application, and Infrastructure. Do not create ceremonial Domain layers for UI-only formatting, passive API bags, trivial transformations, or rules whose only authority belongs to the server.
+...
 ---
+
 # Modeling Frontend Domain
 
 ## Purpose
@@ -990,13 +991,3 @@ Use `assets/frontend-domain-modeling-record.md`.
 - [ ] No backend rule is duplicated merely for architectural symmetry.
 - [ ] No framework, testing library, or persistence implementation is introduced.
 - [ ] Final Domain decision is explicit.
-
-## References
-
-- Read `references/frontend-domain-justification-and-restraint.md` first.
-- Read `references/frontend-vs-backend-authority.md`.
-- Read `references/entities-value-objects-and-domain-services.md`.
-- Read `references/offline-editor-optimistic-and-local-models.md`.
-- Read `references/repository-ports-serialization-and-boundaries.md`.
-- Read `references/domain-testing-and-overmodeling-audit.md`.
-- Read `references/frontend-domain-modeling-audit.md` before completion.

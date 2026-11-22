@@ -1,8 +1,9 @@
 ---
 name: reviewing-frontend-performance
-description: Portable engineering capability `reviewing-frontend-performance`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Performs an evidence-driven frontend performance review. Use when a page, route, component, chart, list, or interaction is slow, heavy, janky, memory-hungry, or suspected of unnecessary work. Inspect Core Web Vitals, route loading, bundle size, rendering frequency, network waterfalls, duplicate requests, memory, long tasks, interaction latency, large collections, and expensive transformations. Recommend architectural fixes before micro-optimization; account for React Compiler or equivalent optimizers before adding manual memoization. Delegate true scaling/data-structure questions to analyzing-algorithmic-complexity, and do not diagnose performance from code smell alone without runtime/build/network evidence.
+...
 ---
+
 # Reviewing Frontend Performance
 
 ## Purpose
@@ -1595,14 +1596,3 @@ Use `assets/frontend-performance-review-record.md`.
 - [ ] RUM follow-up is recommended for significant production changes when available.
 - [ ] Roadmap evaluations are covered: unnecessary rerenders, large dependency, duplicated request, unvirtualized list, route bundle, expensive chart.
 - [ ] Final performance decision is explicit.
-
-## References
-
-- Read `references/evidence-core-web-vitals-interaction-latency-and-long-tasks.md` first.
-- Read `references/react-rendering-rerenders-compiler-and-memoization.md`.
-- Read `references/bundles-route-loading-dependencies-and-code-splitting.md`.
-- Read `references/network-waterfalls-duplicate-requests-and-cache-ownership.md`.
-- Read `references/large-lists-virtualization-memory-and-layout.md`.
-- Read `references/expensive-charts-and-algorithmic-complexity-handoffs.md`.
-- Read `references/before-after-verification-rum-and-performance-budgets.md`.
-- Read `references/frontend-performance-review-audit.md` before completion.

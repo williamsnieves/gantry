@@ -1,8 +1,9 @@
 ---
 name: modeling-data-flows
-description: Portable engineering capability `modeling-data-flows`. Use when the harness
-  or a specialist agent explicitly requires this named capability.
+description: Models how data moves across external entities, processes, data stores, systems, and trust boundaries, with explicit data classes, ownership, direction, third-party transfers, secrets, privacy/security relevance, residency constraints, and traceability. Use after accepted architecture/C4 and important runtime sequences exist, especially before STRIDE threat modeling, privacy review, or security validation. Produce a data-flow model and DFD views without inventing fields, schemas, protocols, encryption, retention, regions, controls, or provider behavior. Do not use DFDs as sequence diagrams, ERDs, process flows, state machines, or deployment diagrams.
+...
 ---
+
 # Modeling Data Flows
 
 ## Purpose
@@ -1141,14 +1142,3 @@ assets/data-flow-model.md
 - [ ] STRIDE handoff is explicit.
 - [ ] Privacy/domain/event/deployment handoffs are explicit.
 - [ ] Final readiness is explicit.
-
-## References
-
-- Read `references/dfd-purpose-scope-levels-and-elements.md` first.
-- Read `references/data-classification-purpose-ownership-and-granularity.md`.
-- Read `references/trust-boundaries-tenancy-third-party-and-residency.md`.
-- Read `references/privacy-retention-minimization-logging-and-ai-transfers.md`.
-- Read `references/secrets-authentication-authorization-and-integrity-flows.md`.
-- Read `references/dfd-vs-c4-sequence-erd-event-and-deployment.md`.
-- Read `references/stride-preparation-traceability-and-model-alignment.md`.
-- Read `references/data-flow-model-audit.md` before completion.

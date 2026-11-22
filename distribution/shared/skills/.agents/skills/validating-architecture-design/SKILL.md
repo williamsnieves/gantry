@@ -1,8 +1,9 @@
 ---
 name: validating-architecture-design
-description: Portable engineering capability `validating-architecture-design`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Validates whether a proposed or accepted software architecture coherently addresses its architecture drivers, quality attributes, constraints, trade-offs, ADRs, C4 structure, runtime sequences, state models, domain/data models, deployment topology, and architecture-level security threats. Use after the Architecture Package is substantially assembled and STRIDE threat modeling has been performed where required. Produce an architecture validation report that distinguishes evidence-backed support, open conditions, conflicts, unsupported claims, infeasible interactions, ownership gaps, missing failure paths, deployment mismatches, and unresolved security risks. Do not redesign the architecture silently, waive constraints, fabricate evidence, mark unknowns as passed, or treat document completeness as architecture validity.
+...
 ---
+
 # Validating Architecture Design
 
 ## Purpose
@@ -1408,14 +1409,3 @@ assets/architecture-validation-report.md
 - [ ] Missing optional models can be NOT_APPLICABLE with rationale.
 - [ ] Final acceptance recommendation/status is explicit.
 - [ ] OpenSpec/implementation handoff preserves architecture constraints and controls.
-
-## References
-
-- Read `references/validation-scope-profiles-evidence-and-package-inventory.md` first.
-- Read `references/drivers-quality-attributes-constraints-and-unsupported-claims.md`.
-- Read `references/adrs-tradeoffs-c4-and-cross-model-consistency.md`.
-- Read `references/sequence-state-data-dfd-event-and-deployment-feasibility.md`.
-- Read `references/security-threat-treatment-residual-risk-and-control-handoff.md`.
-- Read `references/findings-blockers-conditional-acceptance-and-rework.md`.
-- Read `references/traceability-claims-evidence-and-openspec-handoff.md`.
-- Read `references/architecture-validation-report-audit.md` before completion.

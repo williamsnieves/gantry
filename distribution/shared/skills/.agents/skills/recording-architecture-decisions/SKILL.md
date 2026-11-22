@@ -1,8 +1,9 @@
 ---
 name: recording-architecture-decisions
-description: Portable engineering capability `recording-architecture-decisions`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Records accepted or proposed architecture decisions as durable Architecture Decision Records (ADRs) with stable identity, status, context, drivers, decision, alternatives considered, accepted trade-offs, consequences, risks, revisit triggers, and references. Use after architecture trade-off analysis has produced a recommendation or after an authoritative architecture decision has been made. Preserve uncertainty and decision authority, link each ADR to the evidence that justified it, and maintain supersession/deprecation history. Do not invent acceptance, rewrite history, collapse several unrelated decisions into one ADR, or use ADRs as substitutes for architecture design documents, C4 diagrams, implementation specs, or project logs.
+...
 ---
+
 # Recording Architecture Decisions
 
 ## Purpose
@@ -801,13 +802,3 @@ assets/ADR-template.md
 - [ ] Detailed architecture models remain downstream.
 - [ ] Security/validation handoffs are flagged where relevant.
 - [ ] Final ADR readiness is explicit.
-
-## References
-
-- Read `references/adr-purpose-identity-status-and-scope.md` first.
-- Read `references/context-drivers-decision-alternatives-and-tradeoffs.md`.
-- Read `references/consequences-risks-revisit-triggers-and-reversal.md`.
-- Read `references/supersession-deprecation-rejection-and-history.md`.
-- Read `references/traceability-references-index-and-repository-conventions.md`.
-- Read `references/adr-boundary-vs-design-implementation-and-modeling.md`.
-- Read `references/architecture-decision-record-audit.md` before completion.

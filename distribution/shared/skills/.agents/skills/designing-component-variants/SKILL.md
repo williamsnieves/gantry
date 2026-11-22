@@ -1,8 +1,9 @@
 ---
 name: designing-component-variants
-description: Portable engineering capability `designing-component-variants`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Designs explicit, valid frontend component variant APIs before styling implementation. Use when a shared or feature component needs semantic visual/behavioral variants, sizes, compound variants, loading/disabled states, token mapping, or a decision about whether styling belongs in a shared primitive or a feature wrapper. Prevent contradictory boolean props, combinatorial variant explosions, raw color/spacing props that bypass design tokens, and feature-specific business styling leaking into shared primitives. Keep the result implementation-agnostic so it can be realized with CSS Modules, Tailwind, CSS-in-JS, or a design-system variant mechanism.
+...
 ---
+
 # Designing Component Variants
 
 ## Purpose
@@ -1439,13 +1440,3 @@ Use `assets/component-variant-design-record.md`.
 - [ ] Roadmap evaluations are covered: Button variants, size variants, compound variants, loading/disabled state, feature-specific styling leaking into shared primitive.
 - [ ] No new variant library/framework is introduced by this semantic design skill.
 - [ ] Final variant decision is explicit.
-
-## References
-
-- Read `references/semantic-variant-axes-and-boolean-prop-smells.md` first.
-- Read `references/shared-vs-feature-variant-ownership.md`.
-- Read `references/size-density-loading-and-disabled-states.md`.
-- Read `references/compound-variants-invalid-combinations-and-complexity.md`.
-- Read `references/tokens-accessibility-and-implementation-independence.md`.
-- Read `references/testing-variant-matrices-and-overmodeling.md`.
-- Read `references/component-variant-design-audit.md` before completion.

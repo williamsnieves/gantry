@@ -1,8 +1,9 @@
 ---
 name: implementing-tailwind-ui
-description: Portable engineering capability `implementing-tailwind-ui`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Implements frontend UI using the project's already-selected Tailwind conventions. Use to compose readable utility classes, consume semantic theme tokens, define explicit component variants, integrate project primitives, handle responsive/container behavior and dark/theme modes, resolve class conflicts, and decide when repeated class strings justify extraction into a component/variant abstraction. Avoid arbitrary values when an approved token exists, long duplicated class strings, conflicting utilities, undocumented theme overrides, utility strings that hide component semantics, and new class-merge/variant tooling without approval.
+...
 ---
+
 # Implementing Tailwind UI
 
 ## Purpose
@@ -1471,13 +1472,3 @@ Use `assets/tailwind-ui-implementation-record.md`.
 - [ ] Roadmap evaluations are covered: long class list, repeated button classes, responsive variant, arbitrary token, dark mode, class conflict.
 - [ ] No speculative Tailwind abstraction framework is introduced.
 - [ ] Final Tailwind implementation status is explicit.
-
-## References
-
-- Read `references/tailwind-profile-theme-and-project-primitives.md` first.
-- Read `references/long-class-lists-repetition-and-variants.md`.
-- Read `references/arbitrary-values-tokens-and-runtime-values.md`.
-- Read `references/responsive-layout-dark-mode-and-theme.md`.
-- Read `references/class-conflicts-merge-policies-and-dynamic-classes.md`.
-- Read `references/accessibility-testing-and-overmodeling.md`.
-- Read `references/tailwind-ui-audit.md` before completion.

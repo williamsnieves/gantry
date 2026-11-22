@@ -1,8 +1,9 @@
 ---
 name: designing-external-service-ports
-description: Portable engineering capability `designing-external-service-ports`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Designs provider-neutral Application ports for external collaboration such as payments, notifications, clocks, identity, storage, campaigns, feature policy, and remote data. Use when a Use Case needs an external capability but Application must remain independent from SDKs, HTTP clients, provider payloads, provider errors, retries, and transport details. Produces port responsibility, intention-revealing operations, primitive or Application-owned inputs and outputs, semantic result and failure taxonomy, idempotency and timing expectations, test doubles, and adapter obligations. Do not use to implement provider adapters, expose SDK types, model persistence, or create generic service wrappers.
+...
 ---
+
 # Designing External Service Ports
 
 ## Purpose
@@ -842,14 +843,3 @@ Use `assets/external-service-port-design-report.md`.
 - [ ] Future adapter mapping and resilience obligations are documented.
 - [ ] Port can survive provider replacement without changing Application intent.
 - [ ] No generic API client, unused operation, or provider-shaped contract was introduced.
-
-## References
-
-- Read `references/port-suitability-and-ownership.md` first.
-- Read `references/operation-input-output-design.md` for contract shape.
-- Read `references/success-and-failure-semantics.md` for result modeling.
-- Read `references/resilience-idempotency-and-async.md` when side effects or unreliable networks apply.
-- Read `references/security-privacy-and-tenancy.md` for outbound data constraints.
-- Read `references/test-doubles-and-use-case-testing.md` before completion.
-- Read `references/adapter-handoff.md` for Infrastructure obligations.
-- Read `references/refactoring-provider-coupling.md` only for existing integrations.

@@ -1,8 +1,9 @@
 ---
 name: syncing-openspec-specs
-description: Portable engineering capability `syncing-openspec-specs`. Use when the
-  harness or a specialist agent explicitly requires this named capability.
+description: Reconciles an active or completed OpenSpec change's delta specifications with the project's main specifications. Use when approved added, modified, removed, or renamed behavior must be reflected in the canonical spec set before or during archival. Do not use to create or edit the change, implement code, validate test quality, or archive the change itself.
+...
 ---
+
 # Syncing OpenSpec Specs
 
 ## Purpose

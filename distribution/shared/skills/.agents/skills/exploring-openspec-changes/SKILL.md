@@ -1,8 +1,9 @@
 ---
 name: exploring-openspec-changes
-description: Portable engineering capability `exploring-openspec-changes`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Investigates an unclear or risky software change before an OpenSpec change is created. Use when the problem, scope, current behavior, affected capabilities, or solution trade-offs require codebase and specification discovery. Do not use to create OpenSpec artifacts, edit an active change, or implement code.
+...
 ---
+
 # Exploring OpenSpec Changes
 
 ## Purpose

@@ -1,8 +1,9 @@
 ---
 name: managing-frontend-design-tokens
-description: Portable engineering capability `managing-frontend-design-tokens`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Governs and evolves frontend design tokens across palette/base values, semantic tokens, component mappings, themes, vendor integrations, deprecations, and local one-off values. Use when repeated visual decisions need semantic tokens; dark/light themes require stable meaning; danger/success/warning colors need product semantics; spacing/size scales need coherent reuse; a vendor design system must map into project tokens; deprecated tokens need migration; or a proposed value may be too local to globalize. Keep palette from leaking into feature semantics, avoid token proliferation and aliases without ownership, preserve accessibility/contrast, and migrate consumers deliberately instead of changing token meaning silently.
+...
 ---
+
 # Managing Frontend Design Tokens
 
 ## Purpose
@@ -1395,14 +1396,3 @@ Use `assets/frontend-design-token-governance-record.md`.
 - [ ] Roadmap evaluations are covered: dark mode, danger color, spacing scale, vendor token mapping, deprecated token, local one-off value.
 - [ ] No new token toolchain/framework is introduced without approval.
 - [ ] Final token-governance decision is explicit.
-
-## References
-
-- Read `references/token-hierarchy-and-semantic-meaning.md` first.
-- Read `references/themes-dark-mode-contrast-and-accessibility.md`.
-- Read `references/spacing-size-typography-radius-shadow-and-layer-scales.md`.
-- Read `references/vendor-token-mapping-and-shared-ui-boundaries.md`.
-- Read `references/deprecation-migration-versioning-and-aliases.md`.
-- Read `references/local-values-token-proliferation-and-governance.md`.
-- Read `references/testing-tooling-and-token-graph-integrity.md`.
-- Read `references/frontend-design-token-governance-audit.md` before completion.

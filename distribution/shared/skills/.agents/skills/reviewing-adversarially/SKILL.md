@@ -1,8 +1,9 @@
 ---
 name: reviewing-adversarially
-description: Portable engineering capability `reviewing-adversarially`. Use when the
-  harness or a specialist agent explicitly requires this named capability.
+description: Performs an adversarial review of a specific software change, implementation, design, or pull request by attempting to falsify its assumptions, invariants, security boundaries, error handling, and operational behavior. Use after implementation and mechanical validation when a focused challenge review is needed. Do not use for broad codebase audits, routine lint/test execution, implementation, or unsupported nitpicking.
+...
 ---
+
 # Reviewing Adversarially
 
 ## Purpose

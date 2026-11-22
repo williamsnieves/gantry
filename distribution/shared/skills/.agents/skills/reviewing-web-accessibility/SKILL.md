@@ -1,8 +1,9 @@
 ---
 name: reviewing-web-accessibility
-description: Portable engineering capability `reviewing-web-accessibility`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Performs a structured, framework-agnostic accessibility review of an implemented web interface. Use when a page, component, flow, form, dialog, menu, dashboard, or responsive layout already exists and needs evidence-based review against the accepted accessibility target, typically WCAG 2.2 AA. Inspect keyboard navigation, focus management, semantic structure, accessible names, contrast, zoom/reflow, motion, target size, status/error communication, and assistive-technology behavior; then produce severity-ranked findings with user impact, reproduction, recommended fix, and verification plan. Do not claim conformance from automated scans alone, treat tooling warnings as violations without validation, or redesign the entire product when a bounded remediation is sufficient.
+...
 ---
+
 # Reviewing Web Accessibility
 
 ## Purpose
@@ -1397,14 +1398,3 @@ Use `assets/web-accessibility-review-record.md`.
 - [ ] Roadmap evaluations are covered: focus trap, color-only error, missing label, reduced motion, mobile target size, screen-reader status.
 - [ ] Final review decision is explicit.
 - [ ] A pass is not described as formal WCAG certification.
-
-## References
-
-- Read `references/review-scope-evidence-and-severity.md` first.
-- Read `references/keyboard-focus-semantics-and-labels.md`.
-- Read `references/contrast-zoom-reflow-motion-and-target-size.md`.
-- Read `references/errors-live-regions-and-screen-reader-status.md`.
-- Read `references/complex-widgets-and-shared-primitive-regressions.md`.
-- Read `references/automated-tools-manual-review-and-false-positives.md`.
-- Read `references/remediation-verification-and-regression-prevention.md`.
-- Read `references/web-accessibility-review-audit.md` before completion.

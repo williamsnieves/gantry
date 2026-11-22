@@ -1,8 +1,9 @@
 ---
 name: modeling-deployment-architecture
-description: Portable engineering capability `modeling-deployment-architecture`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Models runtime topology and infrastructure placement for an accepted software architecture, including regions/zones, compute, gateways/load balancers, databases, queues, object stores, caches, external providers, network/trust boundaries, observability, secrets, and failover when those elements are actually decided or required. Use after C4, sequence, DFD, domain-data, and event-flow models provide logical/runtime inputs and before architecture validation. Produce deployment architecture models that map logical containers to runtime nodes and make availability, scaling, networking, trust, data placement, observability, and recovery assumptions explicit. Do not invent cloud vendors, regions, clusters, replicas, caches, queues, managed services, failover strategies, secret stores, or HA claims that are not supported by accepted decisions/evidence.
+...
 ---
+
 # Modeling Deployment Architecture
 
 ## Purpose
@@ -1259,14 +1260,3 @@ assets/deployment-architecture-model.md
 - [ ] Region/zone/compute/ingress/data/messaging/observability/secret/failover/recovery gaps are explicit.
 - [ ] Architecture-validation handoff is complete.
 - [ ] Final readiness is explicit.
-
-## References
-
-- Read `references/deployment-scope-logical-mapping-regions-zones-and-compute.md` first.
-- Read `references/ingress-network-trust-and-external-provider-connectivity.md`.
-- Read `references/data-stores-queues-object-stores-caches-and-placement.md`.
-- Read `references/observability-secrets-and-administrative-access.md`.
-- Read `references/failover-recovery-spofs-blast-radius-and-scaling.md`.
-- Read `references/deployment-vs-c4-sequence-dfd-event-and-domain-models.md`.
-- Read `references/alignment-constraints-security-and-feasibility-audits.md`.
-- Read `references/deployment-architecture-model-audit.md` before completion.

@@ -1,8 +1,9 @@
 ---
 name: modeling-domain-entities
-description: Portable engineering capability `modeling-domain-entities`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Creates or evolves backend Domain Entities with stable identity, explicit lifecycle, protected invariants, valid construction, intent-revealing behavior, encapsulated collections, identity-based equality, and persistence-independent serialization. Use when a vertical backend slice requires an Entity or when an existing Entity is anemic, partially valid, mutable through setters, or leaking infrastructure concerns. Do not use for Value Objects, Domain Services, DTOs, persistence models, ORM entities, generic data containers, or code generation without accepted domain behavior.
+...
 ---
+
 # Modeling Domain Entities
 
 ## Purpose
@@ -615,13 +616,3 @@ Use `assets/domain-entity-modeling-report.md`.
 - [ ] Focused public-behavior tests designed or implemented.
 - [ ] Existing callers and migration needs identified.
 - [ ] No ORM, DTO, HTTP, provider, or speculative behavior leaked into the Entity.
-
-## References
-
-- Read `references/entity-suitability-and-identity.md` first.
-- Read `references/lifecycle-and-invariants.md` to model states and rules.
-- Read `references/construction-and-reconstitution.md` for valid creation.
-- Read `references/rich-behavior-and-collections.md` for Entity operations.
-- Read `references/serialization-errors-and-events.md` when those concerns apply.
-- Read `references/entity-testing.md` before completion.
-- Read `references/evolving-anemic-entities.md` only for existing or brownfield models.

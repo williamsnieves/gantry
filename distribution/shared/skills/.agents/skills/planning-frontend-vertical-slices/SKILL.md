@@ -1,8 +1,9 @@
 ---
 name: planning-frontend-vertical-slices
-description: Portable engineering capability `planning-frontend-vertical-slices`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Converts one ready frontend change into the smallest user-visible, end-to-end vertical slices. Use after applying the frontend standard and classifying the architecture profile. Build a behavior inventory, assign capability ownership, map each slice across only the justified Domain, Application, adapter, server-state, hook, component, styling, accessibility, and test boundaries, order dependencies safely, and define completion evidence. Preserve screaming architecture and existing project conventions. Do not plan by technical layer alone, create speculative shared abstractions, invent requirements, create ceremonial folders, duplicate every test at every level, or implement code.
+...
 ---
+
 # Planning Frontend Vertical Slices
 
 ## Purpose
@@ -804,12 +805,3 @@ Use `assets/frontend-vertical-slice-plan.md`.
 - [ ] No requirements or UI states were invented.
 - [ ] Every slice has completion evidence and a readiness status.
 - [ ] No implementation code was produced.
-
-## References
-
-- Read `references/behavior-inventory-and-slice-quality.md` first.
-- Read `references/profile-aware-slice-mapping.md` for Profile A/B/C plans.
-- Read `references/state-data-and-mapping-boundaries.md` for state and adapters.
-- Read `references/accessibility-and-ui-state-checkpoints.md` for interaction coverage.
-- Read `references/test-matrix-sequencing-and-completion.md` before finalizing.
-- Read `references/frontend-vertical-slice-audit.md` before completion.

@@ -1,8 +1,9 @@
 ---
 name: integrating-frontend-server-state
-description: Portable engineering capability `integrating-frontend-server-state`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Integrates the project's already-selected server-state strategy such as React Query, SWR, RTK Query, Apollo, Relay, or framework data loaders. Use to design query identities, caching, deduplication, invalidation, mutations, optimistic updates and rollback, dependent queries, prefetch, hydration, retry/error boundaries, and adapter integration while preserving Application/Domain/Infrastructure boundaries. Do not choose a new server-state library, rebuild its cache/status machine inside custom hooks, leak query-library types into Application or Domain, make query keys encode UI accidents, or bypass accepted repositories/Use Cases when the selected architecture requires them.
+...
 ---
+
 # Integrating Frontend Server State
 
 ## Purpose
@@ -1599,13 +1600,3 @@ Use `assets/frontend-server-state-integration-record.md`.
 - [ ] Roadmap evaluations are covered: duplicate requests, stale invalidation, optimistic rollback, dependent queries, route prefetch, adapter integration.
 - [ ] No new server-state library, cache persistence layer, query abstraction framework, or architecture policy is introduced without approval.
 - [ ] Final integration status is explicit.
-
-## References
-
-- Read `references/profile-and-architecture-preservation.md` first.
-- Read `references/query-identity-cache-freshness-and-deduplication.md`.
-- Read `references/invalidation-mutations-and-optimistic-updates.md`.
-- Read `references/dependent-queries-prefetch-ssr-and-hydration.md`.
-- Read `references/retries-errors-cancellation-and-security-scope.md`.
-- Read `references/adapter-integration-testing-and-overmodeling.md`.
-- Read `references/frontend-server-state-integration-audit.md` before completion.

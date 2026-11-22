@@ -1,8 +1,9 @@
 ---
 name: designing-react-custom-hooks
-description: Portable engineering capability `designing-react-custom-hooks`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Designs reusable React custom-hook contracts, dependency injection, state transitions, async behavior, cancellation, race protection, and stable return APIs for one frontend slice. Use when deciding whether behavior belongs in a hook, choosing multiple useState calls versus grouped state or useReducer, exposing commands instead of raw setters, placing Effects inside reusable hooks, preventing stale responses, and integrating approved server-state libraries without rebuilding them. Do not implement code, turn hooks into a second Application layer, import concrete adapters or global factories, add memoization mechanically, introduce state libraries, or invent behavior.
+...
 ---
+
 # Designing React Custom Hooks
 
 ## Purpose
@@ -934,12 +935,3 @@ Use `assets/react-custom-hook-design-record.md`.
 - [ ] Memoization is evidence-driven or semantically required.
 - [ ] Test boundary proves hook behavior without retesting library internals.
 - [ ] No implementation code or new library selection was produced.
-
-## References
-
-- Read `references/hook-responsibility-and-dependency-injection.md` first.
-- Read `references/state-models-transitions-and-reducers.md` for state design.
-- Read `references/async-cancellation-races-and-stale-responses.md` for concurrency.
-- Read `references/effects-server-state-and-composition.md` for integrations.
-- Read `references/hook-api-stability-memoization-and-testing.md` before finalizing.
-- Read `references/react-custom-hook-design-audit.md` before completion.

@@ -1,8 +1,9 @@
 ---
 name: testing-external-service-adapters
-description: Portable engineering capability `testing-external-service-adapters`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Designs and implements tests for provider-specific Infrastructure adapters behind accepted Application ports. Use when request/response mapping, semantic failure translation, authentication, timeout, retries, rate limits, idempotency, ambiguous outcomes, asynchronous states, tenant account selection, redaction, or SDK/client lifecycle must be verified. Prefer real provider sandboxes when available; otherwise use a documented official emulator, protocol-compatible fake server, or contract fixtures and report residual uncertainty honestly. Do not expose real credentials, leak vendor types inward, claim mock-only tests prove provider behavior, or classify sandbox/network failures as product failures.
+...
 ---
+
 # Testing External Service Adapters
 
 ## Purpose
@@ -871,13 +872,3 @@ Use `assets/external-service-adapter-testing-record.md`.
 - [ ] Exact commands and actual evidence are recorded.
 - [ ] Mock-only tests are not represented as provider integration proof.
 - [ ] No provider/SDK/credential detail leaks through the Application port.
-
-## References
-
-- Read `references/evidence-levels-and-sandbox-selection.md` first.
-- Read `references/credentials-security-and-test-data.md` for safe environments.
-- Read `references/mapping-and-failure-translation.md` for contract tests.
-- Read `references/retries-timeouts-idempotency-and-rate-limits.md` for resilience.
-- Read `references/async-reconciliation-and-eventual-consistency.md` for pending operations.
-- Read `references/failure-classification-cleanup-and-ci.md` for operational evidence.
-- Read `references/external-adapter-test-audit.md` before completion.

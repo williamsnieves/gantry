@@ -1,8 +1,9 @@
 ---
 name: modeling-use-cases
-description: Portable engineering capability `modeling-use-cases`. Use when the harness
-  or a specialist agent explicitly requires this named capability.
+description: Models actors, system capabilities, and structured use-case behavior from functional requirements, product goals, and journeys. Use after functional requirements exist and before detailed process-flow, sequence, state-machine, architecture, or implementation design. Produce a use-case catalog, written use-case records, actor/capability mappings, and use-case diagrams when they add clarity. Capture goal, preconditions, trigger, main flow, alternative flows, failure flows, postconditions, business rules, privilege boundaries, and external actors while preserving traceability to functional requirements. Do not turn use cases into UI click scripts, API sequences, architecture diagrams, or exhaustive UML ceremony; avoid abusing include/extend and do not invent actors or behavior.
+...
 ---
+
 # Modeling Use Cases
 
 ## Purpose
@@ -1014,13 +1015,3 @@ assets/use-case-catalog.md
 - [ ] State-machine candidates are identified.
 - [ ] Sequence candidates are identified.
 - [ ] Final readiness is explicit.
-
-## References
-
-- Read `references/use-case-boundary-actors-goals-and-granularity.md` first.
-- Read `references/preconditions-triggers-main-alternative-failure-and-postconditions.md`.
-- Read `references/privilege-boundaries-multiple-actors-and-external-actors.md`.
-- Read `references/include-extend-generalization-and-diagram-discipline.md`.
-- Read `references/traceability-coverage-business-rules-and-nfr-links.md`.
-- Read `references/brownfield-and-modeling-handoffs.md`.
-- Read `references/use-case-model-audit.md` before completion.

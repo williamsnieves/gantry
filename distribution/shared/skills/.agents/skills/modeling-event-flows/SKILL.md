@@ -1,8 +1,9 @@
 ---
 name: modeling-event-flows
-description: Portable engineering capability `modeling-event-flows`. Use when the
-  harness or a specialist agent explicitly requires this named capability.
+description: Models event-driven and asynchronous interactions using explicit producers, events, consumers, ownership, event purpose, delivery semantics, ordering, retries, deduplication, dead-letter behavior, schema/versioning, and failure handling. Use after accepted architecture, sequence models, state machines, domain data, and DFDs establish that asynchronous/event interactions are actually part of the design. Produce event-flow models without inventing brokers, topics, exactly-once guarantees, retry counts, dead-letter queues, event schemas, partition keys, ordering guarantees, replay policies, or event-sourcing architecture. Do not use event-flow models as sequence diagrams, state machines, DFDs, C4 diagrams, or physical messaging-infrastructure specifications.
+...
 ---
+
 # Modeling Event Flows
 
 ## Purpose
@@ -1227,14 +1228,3 @@ assets/event-flow-model.md
 - [ ] Sequence/state/DFD/deployment responsibilities remain separate.
 - [ ] Deployment and validation handoffs are explicit.
 - [ ] Final readiness is explicit.
-
-## References
-
-- Read `references/event-flow-purpose-producer-event-consumer-and-ownership.md` first.
-- Read `references/delivery-ordering-retries-deduplication-and-dead-letter.md`.
-- Read `references/schema-versioning-compatibility-and-breaking-changes.md`.
-- Read `references/event-identity-correlation-idempotency-and-replay.md`.
-- Read `references/state-domain-dfd-sequence-and-c4-alignment.md`.
-- Read `references/event-sourcing-cqrs-broker-and-infrastructure-boundaries.md`.
-- Read `references/fanout-fanin-choreography-backpressure-and-failure-risks.md`.
-- Read `references/event-flow-model-audit.md` before completion.

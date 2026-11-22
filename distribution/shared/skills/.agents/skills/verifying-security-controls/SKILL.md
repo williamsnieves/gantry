@@ -1,8 +1,9 @@
 ---
 name: verifying-security-controls
-description: Portable engineering capability `verifying-security-controls`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Verifies implemented application-security controls against an accepted control baseline, with OWASP ASVS 5.0.0 as the default application-security verification standard when selected by the project. Use after threat modeling or security review to determine which controls are applicable, gather implementation and test/configuration/runtime evidence, classify each requirement as PASS, FAIL, NOT_APPLICABLE, or NOT_VERIFIED, track compensating controls and residual risk, and prevent unsupported conformance claims. Require exact requirement identifiers and wording from the project's approved ASVS source/version before claiming coverage. Do not invent requirement IDs, treat planned controls as implemented, infer PASS from code intent alone, or claim application-wide ASVS conformance from a partial feature review.
+...
 ---
+
 # Verifying Security Controls
 
 ## Purpose
@@ -1332,14 +1333,3 @@ Use `assets/security-control-verification-record.md`.
 - [ ] Verification coverage is not presented as “percent secure.”
 - [ ] Partial feature review does not claim application-wide ASVS conformance.
 - [ ] Final verification status and claim boundary are explicit.
-
-## References
-
-- Read `references/asvs-baseline-scope-profile-and-applicability.md` first.
-- Read `references/evidence-quality-pass-fail-na-and-not-verified.md`.
-- Read `references/authentication-authorization-validation-and-browser-controls.md`.
-- Read `references/secrets-crypto-files-webhooks-resource-limits-and-logging.md`.
-- Read `references/configuration-infrastructure-third-party-and-supply-chain-evidence.md`.
-- Read `references/compensating-controls-risk-acceptance-and-residual-risk.md`.
-- Read `references/conformance-claims-coverage-metrics-and-evidence-freshness.md`.
-- Read `references/security-control-verification-audit.md` before completion.

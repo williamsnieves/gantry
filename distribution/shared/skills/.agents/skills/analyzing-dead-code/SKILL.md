@@ -1,8 +1,9 @@
 ---
 name: analyzing-dead-code
-description: Portable engineering capability `analyzing-dead-code`. Use when the harness
-  or a specialist agent explicitly requires this named capability.
+description: Identifies and evaluates potentially unused code, exports, dependencies, files, feature paths, and compatibility layers using static reachability, runtime conventions, configuration, tests, and project evidence. Use when removal candidates must be proven and prioritized safely. Do not use to delete code automatically, perform a broad code audit, or treat static-tool output as conclusive.
+...
 ---
+
 # Analyzing Dead Code
 
 ## Purpose

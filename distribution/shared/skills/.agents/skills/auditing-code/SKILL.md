@@ -1,8 +1,9 @@
 ---
 name: auditing-code
-description: Portable engineering capability `auditing-code`. Use when the harness
-  or a specialist agent explicitly requires this named capability.
+description: Performs a systematic, evidence-based audit of a codebase, subsystem, or change across correctness, security, type safety, performance, maintainability, dependencies, and dead-code risk. Use for pre-release audits, technical-debt assessments, legacy-system reviews, or focused quality investigations. Do not use for routine mechanical validation, implementation, or speculative style commentary.
+...
 ---
+
 # Auditing Code
 
 ## Purpose

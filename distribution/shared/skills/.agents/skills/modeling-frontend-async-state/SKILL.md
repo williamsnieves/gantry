@@ -1,8 +1,9 @@
 ---
 name: modeling-frontend-async-state
-description: Portable engineering capability `modeling-frontend-async-state`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Models frontend optional and asynchronous state around valid UI states. Use when a React feature must represent idle, loading, success, error, refreshing, stale, partial-data, optimistic, retry, or cancellation semantics without impossible boolean combinations. Decide when undefined/null/Maybe<T> is enough, when a discriminated union is justified, and when the project's selected server-state library should remain the state owner instead of copying remote state into local React state. Do not rebuild React Query/SWR/Apollo/Relay/RTK Query/framework status machines inside custom hooks, add refreshing/stale/optimistic states without product behavior, or collapse cancellation and meaningful failures into one generic error.
+...
 ---
+
 # Modeling Frontend Async State
 
 ## Purpose
@@ -1639,13 +1640,3 @@ Use `assets/frontend-async-state-modeling-record.md`.
 - [ ] Tests target observable transitions and applicable roadmap cases.
 - [ ] No new state-machine/server-state library is introduced without approval.
 - [ ] Final async-state decision is explicit.
-
-## References
-
-- Read `references/async-state-ownership-and-representation.md` first.
-- Read `references/maybe-unions-and-impossible-states.md`.
-- Read `references/refresh-stale-retry-and-cancellation.md`.
-- Read `references/optimistic-partial-and-concurrent-state.md`.
-- Read `references/server-state-integration-without-duplication.md`.
-- Read `references/transitions-testing-and-overmodeling.md`.
-- Read `references/frontend-async-state-modeling-audit.md` before completion.

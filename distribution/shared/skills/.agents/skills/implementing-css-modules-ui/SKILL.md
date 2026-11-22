@@ -1,8 +1,9 @@
 ---
 name: implementing-css-modules-ui
-description: Portable engineering capability `implementing-css-modules-ui`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Implements frontend UI using the project's selected CSS Modules profile. Use to create scoped component styles, consume semantic design tokens, compose variants, support responsive and theme behavior, keep specificity low, handle genuine runtime values with CSS variables or inline styles, and identify when a concern belongs in global tokens/themes rather than a component module. Avoid global leakage, brittle deep selectors, repeated hardcoded visual decisions, `!important` escalation, framework/library internals styling, and CSS Modules abstractions that duplicate the project's variant/design-system strategy.
+...
 ---
+
 # Implementing CSS Modules UI
 
 ## Purpose
@@ -1329,13 +1330,3 @@ Use `assets/css-modules-ui-implementation-record.md`.
 - [ ] Roadmap evaluations are covered: component module, global token need, dynamic runtime value, variant composition, deep selector smell.
 - [ ] No speculative global utility/token/style framework is introduced.
 - [ ] Final CSS Modules implementation status is explicit.
-
-## References
-
-- Read `references/css-modules-scope-and-global-boundaries.md` first.
-- Read `references/tokens-themes-and-global-style-ownership.md`.
-- Read `references/variants-composition-and-runtime-values.md`.
-- Read `references/responsive-layout-selectors-and-specificity.md`.
-- Read `references/accessibility-testing-and-visual-evidence.md`.
-- Read `references/css-modules-overmodeling-and-migration-smells.md`.
-- Read `references/css-modules-ui-audit.md` before completion.

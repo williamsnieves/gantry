@@ -1,8 +1,9 @@
 ---
 name: designing-application-dtos
-description: Portable engineering capability `designing-application-dtos`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Designs stable backend Application Request and Response DTOs composed only of primitives and plain nested data, with explicit mapping to and from Domain types. Use when a Use Case boundary must accept transport-neutral input, expose a stable result contract, flatten or select Domain data, or prevent Entities, Value Objects, ORM rows, provider types, and HTTP objects from leaking across Application boundaries. Do not use to design HTTP schemas directly, implement controllers, create Domain models, return Entities, or invent contract fields not required by accepted consumers.
+...
 ---
+
 # Designing Application DTOs
 
 ## Purpose
@@ -754,13 +755,3 @@ Use `assets/application-dto-design-report.md`.
 - [ ] Mapping and contract tests are planned.
 - [ ] Compatibility impact is explicit.
 - [ ] No speculative fields, automatic Entity mirroring, or universal mapper introduced.
-
-## References
-
-- Read `references/dto-suitability-and-boundaries.md` first.
-- Read `references/request-dto-design.md` for input contracts.
-- Read `references/response-dto-design.md` for output contracts.
-- Read `references/mapping-and-validation-ownership.md` for conversion rules.
-- Read `references/optionality-enums-dates-and-money.md` for field semantics.
-- Read `references/compatibility-security-and-testing.md` before completion.
-- Read `references/refactoring-leaky-dtos.md` only for existing DTO migrations.

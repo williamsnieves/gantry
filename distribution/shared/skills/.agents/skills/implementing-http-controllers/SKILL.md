@@ -1,8 +1,9 @@
 ---
 name: implementing-http-controllers
-description: Portable engineering capability `implementing-http-controllers`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Implements thin backend REST controllers that validate transport shape, extract authenticated context, build Application Request DTOs, invoke one Use Case intention, map Application Response DTOs to stable HTTP responses, and translate semantic errors safely. Use when accepted Application Use Cases and DTOs must be exposed through HTTP. Do not use to implement business rules, call repositories or provider adapters directly, expose Domain objects, leak technical errors, or invent REST contracts.
+...
 ---
+
 # Implementing HTTP Controllers
 
 ## Purpose
@@ -631,12 +632,3 @@ Use `assets/http-controller-implementation-record.md`.
 - [ ] Controller, contract, and critical HTTP integration tests pass.
 - [ ] OpenAPI/schema source matches runtime behavior when applicable.
 - [ ] No speculative routes, fields, statuses, or framework leakage into Application were introduced.
-
-## References
-
-- Read `references/controller-readiness-and-rest-contract.md` first.
-- Read `references/transport-validation-and-request-mapping.md` for input handling.
-- Read `references/auth-context-and-security.md` for trusted context.
-- Read `references/response-and-error-mapping.md` for output contracts.
-- Read `references/http-controller-testing.md` before completion.
-- Read `references/refactoring-thick-controllers.md` only for existing controllers.

@@ -1,8 +1,9 @@
 ---
 name: designing-accessible-web-interfaces
-description: Portable engineering capability `designing-accessible-web-interfaces`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Designs accessible web interfaces independently of framework using WCAG 2.2 and the Perceivable, Operable, Understandable, and Robust principles. Use before implementing or changing pages, components, forms, navigation, dialogs, menus, comboboxes, dynamic status, authentication, drag interactions, media, or other web UI. Define semantic HTML, accessible names and relationships, keyboard and pointer behavior, focus management, status communication, contrast, reflow, motion, target size, timing, error prevention, assistive-technology compatibility, conformance target, and verification evidence. Add React, Vue, Angular, Web Components, or native-web adaptations only after the framework-neutral contract is defined. Do not claim WCAG conformance from automated scans alone, replace native semantics with unnecessary ARIA, invent legal requirements, assume every AAA criterion, implement code, or accept inaccessible custom widgets without an equivalent accessible path.
+...
 ---
+
 # Designing Accessible Web Interfaces
 
 ## Purpose
@@ -799,15 +800,3 @@ Use `assets/accessible-web-interface-design-record.md`.
 - [ ] Automated tests are not presented as proof of conformance.
 - [ ] Exceptions include user impact, equivalent path, owner, and remediation.
 - [ ] No legal requirement, implementation code, or unsupported conformance claim was invented.
-
-## References
-
-- Read `references/wcag-22-principles-and-conformance.md` first.
-- Read `references/perceivable-content-and-visual-design.md`.
-- Read `references/operable-keyboard-focus-input-and-motion.md`.
-- Read `references/understandable-content-forms-errors-and-authentication.md`.
-- Read `references/robust-semantics-aria-status-and-dynamic-content.md`.
-- Read `references/complex-widgets-and-interaction-patterns.md`.
-- Read `references/framework-adaptation-and-design-system-integration.md`.
-- Read `references/accessibility-verification-and-conformance-evidence.md`.
-- Read `references/accessible-web-interface-design-audit.md` before completion.

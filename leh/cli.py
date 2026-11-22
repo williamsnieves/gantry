@@ -28,6 +28,17 @@ ALIASES = {
 SCOPES = ("fullstack", "backend", "frontend", "architecture", "infrastructure", "mixed")
 PROFILES = ("lean", "standard", "strict")
 
+# Skills live once in distribution/shared and are rendered per runtime at install
+# time. Runtimes whose agents load skills by explicit path get a compact
+# description so the catalogue does not compete for implicit discovery; runtimes
+# with native skill discovery keep the full one.
+ENTRYPOINT_SKILLS = ("harness-run", "harness-evaluate")
+COMPACT_DESCRIPTION = (
+    "Portable engineering capability `{name}`. Use when the harness or a "
+    "specialist agent explicitly requires this named capability."
+)
+NATIVE_SKILL_DIRS = {"claude": ".claude/skills"}
+
 def package_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
@@ -97,7 +108,28 @@ def save_state(project: Path, state: dict) -> None:
 def rel(project: Path, path: Path) -> str:
     return path.relative_to(project).as_posix()
 
-def managed_copy(src: Path, dst: Path, project: Path, state: dict, *, force: bool, dry_run: bool, label: str):
+def render_skill(text: str, name: str, *, compact: bool) -> str:
+    """Return SKILL.md text, swapping the frontmatter description when compact."""
+    if not compact or name in ENTRYPOINT_SKILLS:
+        return text
+    if not text.startswith("---\n") or "\n---\n" not in text[4:]:
+        raise SystemExit(f"Skill {name} has no frontmatter; cannot render it.")
+    frontmatter, body = text[4:].split("\n---\n", 1)
+    out, skipping, replaced = [], False, False
+    for line in frontmatter.split("\n"):
+        if line.startswith("description:"):
+            out.append("description: " + COMPACT_DESCRIPTION.format(name=name))
+            skipping, replaced = True, True
+            continue
+        if skipping and (line.startswith((" ", "\t")) or line == ""):
+            continue
+        skipping = False
+        out.append(line)
+    if not replaced:
+        raise SystemExit(f"Skill {name} has no description; cannot render it.")
+    return "---\n" + "\n".join(out) + "\n---\n" + body
+
+def managed_copy(src: Path, dst: Path, project: Path, state: dict, *, force: bool, dry_run: bool, label: str, content: str | None = None):
     key = rel(project, dst)
     managed = state["managed_files"].get(key)
 
@@ -121,7 +153,10 @@ def managed_copy(src: Path, dst: Path, project: Path, state: dict, *, force: boo
         return
 
     dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src, dst)
+    if content is None:
+        shutil.copy2(src, dst)
+    else:
+        dst.write_text(content, encoding="utf-8")
     state["managed_files"][key] = {
         "sha256": sha256(dst),
         "owner": label,
@@ -131,6 +166,18 @@ def managed_tree(src_root: Path, dst_root: Path, project: Path, state: dict, *, 
     for src in iter_files(src_root):
         target = dst_root / src.relative_to(src_root)
         managed_copy(src, target, project, state, force=force, dry_run=dry_run, label=label)
+
+def skills_root() -> Path:
+    return distribution_root() / "shared/skills/.agents/skills"
+
+def install_skills(dst_root: Path, project: Path, state: dict, *, compact: bool, force: bool, dry_run: bool, label: str):
+    src_root = skills_root()
+    for src in iter_files(src_root):
+        relative = src.relative_to(src_root)
+        content = None
+        if len(relative.parts) == 2 and relative.name == "SKILL.md":
+            content = render_skill(src.read_text(encoding="utf-8"), relative.parts[0], compact=compact)
+        managed_copy(src, dst_root / relative, project, state, force=force, dry_run=dry_run, label=label, content=content)
 
 def merge_agents_block(project: Path, *, dry_run: bool):
     block = (template_root() / "AGENTS.block.md").read_text(encoding="utf-8").strip()
@@ -210,11 +257,9 @@ def install_shared(project: Path, state: dict, *, force: bool, dry_run: bool):
         project, state,
         force=force, dry_run=dry_run, label="shared-core",
     )
-    managed_tree(
-        droot / "shared/skills/.agents",
-        project / ".agents",
-        project, state,
-        force=force, dry_run=dry_run, label="shared-skills",
+    install_skills(
+        project / ".agents/skills", project, state,
+        compact=True, force=force, dry_run=dry_run, label="shared-skills",
     )
     merge_agents_block(project, dry_run=dry_run)
     if not dry_run:
@@ -226,6 +271,11 @@ def install_runtime(runtime: str, project: Path, state: dict, *, force: bool, dr
         overlay, project, project, state,
         force=force, dry_run=dry_run, label=f"runtime:{runtime}"
     )
+    if runtime in NATIVE_SKILL_DIRS:
+        install_skills(
+            project / NATIVE_SKILL_DIRS[runtime], project, state,
+            compact=False, force=force, dry_run=dry_run, label=f"runtime:{runtime}",
+        )
     if not dry_run and runtime not in state["runtimes"]:
         state["runtimes"].append(runtime)
 

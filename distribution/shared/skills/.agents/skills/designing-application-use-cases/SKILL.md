@@ -1,8 +1,9 @@
 ---
 name: designing-application-use-cases
-description: Portable engineering capability `designing-application-use-cases`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Designs backend Application Use Cases around one user or system intention, with a stable execute boundary, primitive request input, explicit DTO or void output, inward-owned ports, thin orchestration, and Domain behavior delegated to Entities, Value Objects, and Domain Services. Use when an accepted vertical slice needs Application coordination across repositories or external services. Do not use for controllers, infrastructure adapters, generic service classes, multi-intention workflows, direct Use Case chaining, or unresolved business behavior.
+...
 ---
+
 # Designing Application Use Cases
 
 ## Purpose
@@ -695,13 +696,3 @@ Use `assets/application-use-case-design-report.md`.
 - [ ] Tests use Domain objects, InMemory repositories, and controlled port fakes.
 - [ ] No concrete adapter, ORM, HTTP, provider, or environment dependency leaks into Application.
 - [ ] No unrelated intention or speculative dependency was added.
-
-## References
-
-- Read `references/use-case-suitability-and-intention.md` first.
-- Read `references/execute-boundary-and-inputs.md` for Request design.
-- Read `references/orchestration-domain-and-ports.md` for responsibility boundaries.
-- Read `references/errors-transactions-and-idempotency.md` when those concerns apply.
-- Read `references/output-and-mapping.md` for Response design.
-- Read `references/use-case-testing.md` before completion.
-- Read `references/refactoring-application-services.md` only for existing service migrations.

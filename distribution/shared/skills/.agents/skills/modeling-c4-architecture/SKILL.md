@@ -1,8 +1,9 @@
 ---
 name: modeling-c4-architecture
-description: Portable engineering capability `modeling-c4-architecture`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Models the static structure of an accepted or sufficiently stable system architecture using C4 abstraction levels. Use after architecture decisions exist and before or alongside sequence, data-flow, domain-data, event-flow, deployment, threat-modeling, and architecture-validation work. Produce L1 System Context and L2 Container views by default; add L3 Component views only where complexity, ownership, security, or maintenance needs justify them; avoid L4 Code unless there is a strong long-term maintenance reason. Preserve architectural boundaries, responsibilities, technologies when actually decided, people/external systems, relationships, and traceability to ADRs/drivers. Do not use C4 to model runtime message order, workflow branching, state transitions, ERDs, trust-data flows, or deployment topology.
+...
 ---
+
 # Modeling C4 Architecture
 
 ## Purpose
@@ -986,14 +987,3 @@ assets/c4-architecture-model.md
 - [ ] ADR conflicts are surfaced.
 - [ ] Undecided structure remains explicit.
 - [ ] Final readiness is explicit.
-
-## References
-
-- Read `references/c4-purpose-levels-and-level-selection.md` first.
-- Read `references/system-context-people-external-systems-and-boundaries.md`.
-- Read `references/container-model-responsibilities-data-stores-and-technologies.md`.
-- Read `references/component-model-l3-and-code-level-l4-discipline.md`.
-- Read `references/relationships-identities-naming-and-consistency.md`.
-- Read `references/c4-vs-sequence-dfd-domain-event-and-deployment-models.md`.
-- Read `references/brownfield-current-target-and-adr-traceability.md`.
-- Read `references/c4-architecture-model-audit.md` before completion.

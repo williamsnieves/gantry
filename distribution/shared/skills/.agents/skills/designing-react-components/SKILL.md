@@ -1,8 +1,9 @@
 ---
 name: designing-react-components
-description: Portable engineering capability `designing-react-components`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Designs React component boundaries, typed props, rendering states, presentational/container roles, composition, and semantic accessible markup for one frontend slice. Use when a component or screen mixes concerns, calls data dependencies directly, has contradictory async booleans, suffers prop drilling, needs reusable versus feature-local classification, or requires a render-prop/children composition decision. Keep rendering and interaction wiring in components while moving substantial business rules, repository access, concrete adapters, and hidden side effects outward. Do not implement code, split by line count alone, create container wrappers mechanically, introduce global state or new libraries, promote one-off UI to shared, or invent interaction behavior.
+...
 ---
+
 # Designing React Components
 
 ## Purpose
@@ -888,12 +889,3 @@ Use `assets/react-component-design-record.md`.
 - [ ] Test boundary covers observable behavior at the right level.
 - [ ] No repository/fetch/concrete-adapter access or substantial business rule remains in presentation.
 - [ ] No implementation code or new library selection was produced.
-
-## References
-
-- Read `references/component-responsibility-and-boundaries.md` first.
-- Read `references/typed-props-events-and-state-models.md` for component contracts.
-- Read `references/container-composition-context-and-reuse.md` for ownership.
-- Read `references/semantic-html-and-accessibility-contracts.md` for interactions.
-- Read `references/rendering-states-errors-and-server-client-boundaries.md` for state branches.
-- Read `references/react-component-design-audit.md` before completion.

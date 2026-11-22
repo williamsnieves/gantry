@@ -1,8 +1,9 @@
 ---
 name: modeling-domain-value-objects
-description: Portable engineering capability `modeling-domain-value-objects`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Creates or evolves immutable backend Domain Value Objects that are defined by attributes rather than identity, validate their own constraints through factories, compare by semantic value, expose side-effect-free operations that return new instances, and serialize to primitives. Use when primitive obsession, invalid scalar/composite states, unsafe arithmetic, or repeated domain validation should become an explicit Value Object. Do not use for Entities, DTOs, ORM models, mutable data containers, provider-specific types, or unresolved identifier-policy decisions.
+...
 ---
+
 # Modeling Domain Value Objects
 
 ## Purpose
@@ -565,13 +566,3 @@ Use `assets/domain-value-object-modeling-report.md`.
 - [ ] Focused tests cover construction, equality, immutability, operations, and serialization.
 - [ ] No DTO, ORM, provider, or framework concerns leaked into Domain.
 - [ ] No generic abstraction or business constraint invented.
-
-## References
-
-- Read `references/value-object-suitability.md` first.
-- Read `references/construction-validation-and-normalization.md` for factories and constraints.
-- Read `references/immutability-equality-and-operations.md` for behavior.
-- Read `references/money-date-range-and-identifiers.md` when those types apply.
-- Read `references/serialization-and-errors.md` for boundary semantics.
-- Read `references/value-object-testing.md` before completion.
-- Read `references/evolving-primitive-obsession.md` only for existing code migrations.

@@ -1,8 +1,9 @@
 ---
 name: reviewing-application-security
-description: Portable engineering capability `reviewing-application-security`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Reviews implemented application code and configuration for concrete security weaknesses across frontend, backend, APIs, integrations, jobs, and shared libraries. Use OWASP Top 10:2025 to classify broad application-security risk and MITRE CWE, prioritizing the current CWE Top 25:2025 when applicable, to identify concrete weakness/root-cause categories. Base findings on evidence and exploitability, not checklist matching; consolidate duplicate symptoms into root-cause findings; connect architecture threats from STRIDE when available; and hand verifiable control requirements to verifying-security-controls. Do not treat OWASP Top 10 as exhaustive, do not invent CWE mappings without a concrete weakness, do not use CWE/SANS rank as severity, and do not claim a control is effective without verification evidence.
+...
 ---
+
 # Reviewing Application Security
 
 ## Purpose
@@ -1276,14 +1277,3 @@ Use `assets/application-security-review-record.md`.
 - [ ] ASVS conformance is not claimed here.
 - [ ] Residual risk and owner are explicit.
 - [ ] Final review status is explicit.
-
-## References
-
-- Read `references/security-taxonomy-owasp-cwe-stride-asvs.md` first.
-- Read `references/owasp-top-10-2025-review-map.md`.
-- Read `references/cwe-top-25-2025-and-precise-weakness-mapping.md`.
-- Read `references/access-control-authentication-and-multitenancy.md`.
-- Read `references/injection-xss-ssrf-files-deserialization-and-redirects.md`.
-- Read `references/secrets-crypto-supply-chain-errors-logging-and-resource-exhaustion.md`.
-- Read `references/security-evidence-scanners-severity-remediation-and-verification.md`.
-- Read `references/application-security-review-audit.md` before completion.

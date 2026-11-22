@@ -1,8 +1,9 @@
 ---
 name: composing-frontend-dependencies
-description: Portable engineering capability `composing-frontend-dependencies`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Implements or designs the frontend composition root that selects concrete adapters, constructs stable Use Cases, controls shared, per-user, per-request, route, and component lifecycles, and injects dependencies at application, route, screen, container, or package boundaries. Use after ports and adapters exist and React components/hooks must receive semantic dependencies without importing concrete Infrastructure. Reuse deliberate shared clients, prevent accidental singleton user state, respect framework server/client boundaries, support deterministic test injection, and follow the repository's accepted explicit Factory or DI-container policy. Do not create a Service Locator, let Domain/Application import composition, hide environment or user context, construct expensive clients per render, cache mutable Use Cases globally, or introduce a DI library without an accepted decision.
+...
 ---
+
 # Composing Frontend Dependencies
 
 ## Purpose
@@ -989,12 +990,3 @@ Use `assets/frontend-dependency-composition-record.md`.
 - [ ] Composition tests verify selection, identity, isolation, boundaries, and cleanup.
 - [ ] Domain/Application do not import composition.
 - [ ] No hidden global mutable user state remains.
-
-## References
-
-- Read `references/composition-root-and-dependency-graph.md` first.
-- Read `references/lifecycle-caching-and-user-isolation.md` for scope decisions.
-- Read `references/react-binding-props-providers-and-hook-factories.md` for UI binding.
-- Read `references/server-client-ssr-and-framework-boundaries.md` for runtime separation.
-- Read `references/factory-di-container-testing-and-disposal.md` for policy and tests.
-- Read `references/frontend-composition-audit.md` before completion.

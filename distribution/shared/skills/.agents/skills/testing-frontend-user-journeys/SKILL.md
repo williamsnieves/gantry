@@ -1,8 +1,9 @@
 ---
 name: testing-frontend-user-journeys
-description: Portable engineering capability `testing-frontend-user-journeys`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Designs and implements resilient frontend end-to-end tests for critical user journeys. Use when confidence is required across real application boundaries such as authentication, routing, browser behavior, deployment configuration, backend integration, revenue/entitlement paths, or one representative recovery flow. Keep the suite intentionally small, isolate test data and environment, use user-observable locators and assertions, prefer deterministic setup APIs/fixtures over UI setup ceremony, preserve rich failure diagnostics, and prove only risks that lower-level tests cannot cover reliably. Do not turn every validation branch, provider error, component state, theme, or business rule into E2E coverage.
+...
 ---
+
 # Testing Frontend User Journeys
 
 ## Purpose
@@ -1520,14 +1521,3 @@ Use `assets/frontend-user-journey-testing-record.md`.
 - [ ] Flaky tests have owner/classification rather than permanent silent skips.
 - [ ] Regression tests are added at the lowest defective boundary first.
 - [ ] Final E2E status is explicit.
-
-## References
-
-- Read `references/selecting-critical-e2e-journeys.md` first.
-- Read `references/environment-data-isolation-seeding-and-cleanup.md`.
-- Read `references/authentication-sessions-flags-time-and-test-identities.md`.
-- Read `references/resilient-locators-waits-assertions-and-page-objects.md`.
-- Read `references/critical-failure-recovery-and-external-provider-flows.md`.
-- Read `references/diagnostics-traces-ci-flake-and-quarantine.md`.
-- Read `references/browser-matrix-accessibility-mobile-and-deployment-risk.md`.
-- Read `references/frontend-user-journey-testing-audit.md` before completion.

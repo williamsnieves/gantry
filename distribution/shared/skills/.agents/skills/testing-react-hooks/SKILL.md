@@ -1,8 +1,9 @@
 ---
 name: testing-react-hooks
-description: Portable engineering capability `testing-react-hooks`. Use when the harness
-  or a specialist agent explicitly requires this named capability.
+description: Implements focused tests for React custom hooks whose reusable or complex behavior deserves an independent contract. Use to verify observable state transitions, semantic commands, async success and failure, retry, cancellation, stale-response protection, optimistic updates, cleanup, dependency injection, and feature-semantic wrappers around approved server-state libraries. Reuse the repository-approved hook-testing harness and realistic dependencies. Do not test internal setter calls, reducer action sequences, Effect counts, refs, memoization, callback identity unless semantically required, server-state-library internals, concrete adapters, or behavior better proven at component, adapter, or E2E boundaries.
+...
 ---
+
 # Testing React Hooks
 
 ## Purpose
@@ -994,13 +995,3 @@ Use `assets/react-hook-test-implementation-record.md`.
 - [ ] Behavior outside hook scope is escalated to the correct boundary.
 - [ ] Focused hook tests pass.
 - [ ] No new test library or unrelated architecture change was introduced.
-
-## References
-
-- Read `references/hook-contract-and-observable-state.md` first.
-- Read `references/async-retry-cancellation-races-and-stale-responses.md`.
-- Read `references/optimistic-updates-cleanup-and-subscriptions.md`.
-- Read `references/dependency-injection-and-boundary-selection.md`.
-- Read `references/server-state-wrappers-and-test-isolation.md`.
-- Read `references/anti-brittleness-regressions-and-escalation.md`.
-- Read `references/react-hook-test-audit.md` before completion.

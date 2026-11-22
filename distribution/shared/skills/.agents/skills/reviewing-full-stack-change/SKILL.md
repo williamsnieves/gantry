@@ -1,8 +1,9 @@
 ---
 name: reviewing-full-stack-change
-description: Portable engineering capability `reviewing-full-stack-change`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Performs the final cross-stack review of an implemented change by validating the accepted specification, backend implementation, frontend implementation, shared API/contracts, adversarial failure modes, overlooked details, and required documentation updates. Use after backend and frontend implementation evidence exists and before merge/release when the change spans both stacks. Aggregate specialist evidence rather than duplicating backend/frontend/security/performance/testing rules; detect contract drift, ownership mismatches, incompatible error/authorization semantics, rollout hazards, and acceptance-criteria gaps that can remain invisible when each stack is reviewed in isolation. Do not implement fixes, rerun every specialist review mechanically, invent requirements, or declare the change ready when specification, contract, validation, or blocking evidence is missing.
+...
 ---
+
 # Reviewing Full-Stack Change
 
 ## Purpose
@@ -983,14 +984,3 @@ Before `FULL_STACK_CHANGE_ACCEPTABLE`:
 - [ ] Required documentation is updated through `updating-documentation`.
 - [ ] No unresolved blocking specification/contract/finding remains.
 - [ ] Final full-stack readiness status is explicit.
-
-## References
-
-- Read `references/specification-backend-and-frontend-evidence-gates.md` first.
-- Read `references/api-contract-producer-consumer-compatibility.md`.
-- Read `references/errors-authorization-idempotency-and-provider-flow.md`.
-- Read `references/acceptance-criteria-and-critical-journey-traceability.md`.
-- Read `references/cross-stack-adversarial-failure-modes.md`.
-- Read `references/detail-propagation-mocks-configuration-and-docs.md`.
-- Read `references/finding-aggregation-severity-and-readiness.md`.
-- Read `references/full-stack-change-review-audit.md` before completion.

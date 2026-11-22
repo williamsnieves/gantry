@@ -1,8 +1,9 @@
 ---
 name: reviewing-frontend-security
-description: Portable engineering capability `reviewing-frontend-security`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Reviews implemented frontend/browser code for security risks specific to the client trust boundary. Use for XSS and unsafe HTML sinks, token/session storage, browser-visible secrets and environment variables, redirect/navigation handling, file upload and browser file processing, third-party scripts, browser storage, postMessage/iframe boundaries, URL/referrer leakage, CSP-related risks, and client-side authorization assumptions. Treat all frontend data and shipped configuration as observable by the user, and distinguish UX permission checks from authoritative server-side security. Reuse reviewing-application-security for OWASP/CWE classification, threat-modeling-with-stride for architectural threat discovery, and verifying-security-controls for ASVS/control evidence. Do not duplicate generic application-security taxonomies, claim frontend route guards are authorization, or flag dangerous-looking APIs without tracing source, sink, sanitization, context, and exploitability.
+...
 ---
+
 # Reviewing Frontend Security
 
 ## Purpose
@@ -1635,14 +1636,3 @@ Use `assets/frontend-security-review-record.md`.
 - [ ] Findings identify required backend/infra remediation when frontend cannot provide authority.
 - [ ] Roadmap evaluations are covered: dangerouslySetInnerHTML, localStorage token, secret environment variable, redirect handling, file upload, third-party script.
 - [ ] Final frontend-security status is explicit.
-
-## References
-
-- Read `references/browser-trust-model-secrets-and-sensitive-data.md` first.
-- Read `references/xss-unsafe-html-dom-sinks-and-csp.md`.
-- Read `references/tokens-sessions-browser-storage-and-auth-boundaries.md`.
-- Read `references/redirects-urls-postmessage-iframes-and-cross-origin-boundaries.md`.
-- Read `references/files-uploads-previews-and-browser-resource-handling.md`.
-- Read `references/third-party-scripts-dependencies-and-runtime-supply-chain.md`.
-- Read `references/frontend-authorization-vs-server-authority.md`.
-- Read `references/frontend-security-review-audit.md` before completion.

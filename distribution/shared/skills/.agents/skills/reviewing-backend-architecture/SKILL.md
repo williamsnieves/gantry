@@ -1,8 +1,9 @@
 ---
 name: reviewing-backend-architecture
-description: Portable engineering capability `reviewing-backend-architecture`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Reviews backend architectural decisions for a change, module, or migration against the definitive backend standard. Use when evaluating module and layer ownership, new ports and adapters, boundary placement, composition, transaction ownership, migration seams, architectural drift, accidental complexity, or brownfield evolution. Go beyond static import validation by assessing whether the chosen architecture is necessary, coherent, reversible, testable, and proportionate to the behavior. Do not redesign the whole repository, report personal preferences, duplicate code review findings, or treat unavailable evidence as proof.
+...
 ---
+
 # Reviewing Backend Architecture
 
 ## Purpose
@@ -708,11 +709,3 @@ Use `assets/backend-architecture-review-report.md`.
 - [ ] Unresolved choices were raised as decisions rather than guessed.
 - [ ] Final decision reflects evidence and blocking questions.
 - [ ] No code was modified during the review.
-
-## References
-
-- Read `references/ownership-boundaries-and-proportionality.md` first.
-- Read `references/ports-adapters-use-cases-and-domain.md` for core choices.
-- Read `references/transactions-idempotency-events-and-operability.md` for systemic risks.
-- Read `references/migration-reversibility-and-drift.md` for brownfield evolution.
-- Read `references/architecture-findings-and-decisions.md` before reporting.

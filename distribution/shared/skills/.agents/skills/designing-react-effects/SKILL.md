@@ -1,8 +1,9 @@
 ---
 name: designing-react-effects
-description: Portable engineering capability `designing-react-effects`. Use when the
-  harness or a specialist agent explicitly requires this named capability.
+description: Decides whether a React Effect is necessary and designs its ownership, dependencies, cleanup, race handling, and external-system synchronization. Use for fetch-on-mount questions, subscriptions, timers, analytics, debounced actions, browser APIs, third-party widgets, prop-to-state synchronization, stale closures, and exhaustive-deps warnings. Prefer render-time derivation, event handlers, approved server-state libraries, and external-store APIs when they fit. Do not implement code, silence dependency warnings, use Effects for pure derivation or event commands, rebuild server-state fetching, omit cleanup, or add memoization merely to satisfy the linter.
+...
 ---
+
 # Designing React Effects
 
 ## Purpose
@@ -829,12 +830,3 @@ Use `assets/react-effect-design-record.md`.
 - [ ] Memoization or refs are used only with semantic justification.
 - [ ] Tests verify observable synchronization and cleanup.
 - [ ] No implementation code or new library selection was produced.
-
-## References
-
-- Read `references/effect-necessity-and-alternatives.md` first.
-- Read `references/dependencies-stale-closures-and-identity.md` for dependency design.
-- Read `references/setup-cleanup-strict-mode-and-ssr.md` for lifecycle.
-- Read `references/fetch-subscriptions-analytics-and-debounce.md` for common cases.
-- Read `references/third-party-widgets-dom-and-storage.md` for imperative systems.
-- Read `references/react-effect-design-audit.md` before completion.

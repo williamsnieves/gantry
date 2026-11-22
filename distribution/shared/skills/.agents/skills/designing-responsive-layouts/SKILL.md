@@ -1,8 +1,9 @@
 ---
 name: designing-responsive-layouts
-description: Portable engineering capability `designing-responsive-layouts`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Designs frontend responsive layouts by choosing Flexbox, Grid, container queries, and viewport queries intentionally. Use when layouts must support small screens, reflow, zoom, translation expansion, overflow prevention, responsive dashboards, toolbars, cards, mobile tables, and container-dependent components. Preserve essential actions, use logical properties where internationalization matters, justify fixed dimensions, and select breakpoints from behavior rather than device folklore. Do not default to Flexbox for every layout, use arbitrary breakpoints without evidence, hide overflow to mask structural defects, or solve component-context responsiveness with viewport queries when container queries are the better fit.
+...
 ---
+
 # Designing Responsive Layouts
 
 ## Purpose
@@ -1375,13 +1376,3 @@ Use `assets/responsive-layout-design-record.md`.
 - [ ] Roadmap evaluations are covered: dashboard grid, toolbar, card, mobile table, translated CTA, overflow regression.
 - [ ] No speculative layout framework or breakpoint system is introduced.
 - [ ] Final responsive-layout decision is explicit.
-
-## References
-
-- Read `references/layout-primitive-and-container-vs-viewport.md` first.
-- Read `references/breakpoints-content-priority-and-reflow.md`.
-- Read `references/dashboard-toolbar-card-and-table-patterns.md`.
-- Read `references/translation-zoom-rtl-and-fixed-dimension-audit.md`.
-- Read `references/overflow-root-causes-and-structural-fixes.md`.
-- Read `references/testing-browser-evidence-and-overmodeling.md`.
-- Read `references/responsive-layout-design-audit.md` before completion.

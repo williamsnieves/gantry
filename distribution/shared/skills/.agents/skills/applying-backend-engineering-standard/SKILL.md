@@ -1,8 +1,9 @@
 ---
 name: applying-backend-engineering-standard
-description: Portable engineering capability `applying-backend-engineering-standard`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Discovers repository-local backend constraints, classifies the affected backend modules and layers, selects only the applicable sections of the definitive backend and shared engineering standards, detects unresolved conflicts or deviations, and produces a backend rule applicability and validation plan before implementation. Use at the start of backend feature, bug-fix, refactor, migration, contract, reliability, security, or architecture work. Do not use to implement code, invent project policies, force every backend rule onto every change, or replace detailed implementation skills.
+...
 ---
+
 # Applying the Backend Engineering Standard
 
 ## Purpose
@@ -417,13 +418,3 @@ Use `assets/backend-rule-applicability-report.md`.
 - [ ] Validation and review obligations mapped.
 - [ ] Readiness decision justified.
 - [ ] No implementation or unapproved policy decision performed.
-
-## References
-
-- Read `references/intake-and-repository-discovery.md` first.
-- Read `references/backend-change-classification.md` to classify triggers.
-- Read `references/rule-selection-and-precedence.md` to select rules.
-- Read `references/backend-topology-and-boundaries.md` to map architecture.
-- Read `references/deviations-and-brownfield.md` for legacy repositories.
-- Read `references/skill-routing.md` to select next backend skills.
-- Read `references/backend-validation-planning.md` before reporting readiness.

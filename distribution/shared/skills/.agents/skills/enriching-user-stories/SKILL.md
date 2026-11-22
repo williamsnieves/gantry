@@ -1,8 +1,9 @@
 ---
 name: enriching-user-stories
-description: Portable engineering capability `enriching-user-stories`. Use when the
-  harness or a specialist agent explicitly requires this named capability.
+description: Analyzes and enriches incomplete software user stories, tickets, feature requests, or change descriptions with implementation-relevant context, acceptance criteria, constraints, risks, and open questions. Use before specification or planning when the input may be ambiguous or incomplete. Do not use to invent product decisions or implement the change.
+...
 ---
+
 # Enriching User Stories
 
 ## Purpose

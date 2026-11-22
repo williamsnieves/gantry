@@ -1,9 +1,9 @@
 ---
 name: harness-run
-description: Run the portable software-engineering harness for meaningful implementation, remediation, migration, review, release, or pre-PR work. Classify scope and risk, route only required specialist gates, delegate independent reviews to Codex subagents, preserve handoffs and dynamic triggers, perform targeted re-review, then integrate through Detail Analyst, Reviewer, and Final Pre-PR.
+description: Run the portable software-engineering harness for the current change. Use for meaningful implementation, remediation, migration, review, release, or pre-PR work. Classify the change, route only the required specialist gates, preserve dynamic triggers and typed handoffs, use safe parallel review when possible, run targeted remediation/re-review, then integrate through Detail Analyst, Reviewer, and the Final Pre-PR Gate.
 ---
 
-# Harness Run — Codex Adapter
+# Harness Run
 
 Portable source of truth:
 
@@ -13,14 +13,28 @@ Portable source of truth:
 .harness/agents/
 ```
 
-1. Establish change identity and accepted behavior.
-2. Apply portable classification, risk, and routing contracts.
-3. Write/update `.harness/runtime/codex/routing-plan.yaml`.
+## Runtime mapping
+
+Use the specialist agents and state directory of the runtime you are running in:
+
+| Runtime | Specialist agents | State directory |
+|---|---|---|
+| Claude Code | `.claude/agents/*.md` | `.harness/runtime/claude/` |
+| Codex | `.codex/agents/*.toml` | `.harness/runtime/codex/` |
+| Cursor | `.cursor/agents/*.md` | `.harness/runtime/cursor/` |
+| OpenCode | `.opencode/agents/*.md` | `.harness/runtime/opencode/` |
+| Oh My Pi | `.omp/agents/*.md` | `.harness/runtime/omp/` |
+
+## Execution
+
+1. Establish the current change identity and accepted behavior.
+2. Apply the portable change classification, risk-trigger, and routing contracts.
+3. Write/update `routing-plan.yaml` in the state directory, following `.harness/core/routing/templates/routing-plan.template.yaml`.
 4. Run Validator first when required.
-5. Spawn matching `.codex/agents/*.toml` specialists whose prerequisites are ready.
-6. Delegate independent read-heavy reviews in parallel where useful; all agents in a wave inspect the same stable change identity.
+5. Launch the matching specialist agent for every routed gate whose prerequisites are ready. Keep each specialist read-only, give all agents in a wave the same stable change identity, and pass only bounded authoritative context and evidence.
+6. Run independent read-heavy reviews in parallel where the runtime supports it.
 7. Preserve every specialist's original decision and gate-result envelope.
-8. Convert new material findings into dynamic routing triggers and typed handoffs.
+8. Convert new material findings into dynamic routing triggers and typed handoffs, and launch any newly required gate.
 9. Do not run Reviewer until every REQUIRED routed gate is terminal.
 10. If remediation is required, return implementation to the parent/authorized worker; specialists remain reviewers.
 11. After remediation, rerun only materially invalidated gates plus required Validator checks.

@@ -1,8 +1,9 @@
 ---
 name: wiring-backend-composition
-description: Portable engineering capability `wiring-backend-composition`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Creates or updates the explicit backend composition root that validates configuration, constructs shared Infrastructure dependencies, selects concrete adapters in one place, creates fresh transient Use Cases, exposes delivery-facing factories, and provides deterministic test reset behavior. Use when accepted Domain, Application, repository adapters, external-service adapters, and controllers must be wired together without a runtime DI container. Do not use to add a Service Locator, import factories into Domain or Application, scatter environment reads, hide lifecycle decisions, or construct new shared clients per request.
+...
 ---
+
 # Wiring Backend Composition
 
 ## Purpose
@@ -791,12 +792,3 @@ Use `assets/backend-composition-implementation-record.md`.
 - [ ] Adapter selection, lifecycle, config failure, reset, and boundary tests pass.
 - [ ] Secrets and configuration are not exposed.
 - [ ] No speculative adapter, fallback, lifecycle, or environment default was introduced.
-
-## References
-
-- Read `references/composition-readiness-and-graph.md` first.
-- Read `references/factory-lifecycle-and-adapter-selection.md` for `get*`/`create*` behavior.
-- Read `references/configuration-startup-and-shutdown.md` for operational lifecycle.
-- Read `references/test-reset-and-composition-testing.md` before completion.
-- Read `references/service-locator-and-boundary-guardrails.md` for anti-patterns.
-- Read `references/refactoring-existing-composition.md` only for brownfield composition.

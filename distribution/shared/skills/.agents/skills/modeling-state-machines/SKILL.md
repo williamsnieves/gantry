@@ -1,8 +1,9 @@
 ---
 name: modeling-state-machines
-description: Portable engineering capability `modeling-state-machines`. Use when the
-  harness or a specialist agent explicitly requires this named capability.
+description: Models lifecycle behavior for entities, workflows, and long-running processes using explicit states, events, guards, transitions, actions/effects, terminal states, and illegal-transition rules. Use after functional requirements/use cases/process flows exist when correctness depends on which transitions are valid from which states. Produce a state-machine catalog and diagram with traceability to requirements/business rules, including cancellation, rollback/reopen, concurrency, and failure transitions when supported. Do not use a state machine as a generic process flow, sequence diagram, architecture diagram, or implementation enum dump; do not invent states, transitions, retry policies, or concurrency semantics.
+...
 ---
+
 # Modeling State Machines
 
 ## Purpose
@@ -973,14 +974,3 @@ assets/state-machine-model.md
 - [ ] Missing state/event/guard/outcome/concurrency/ordering policies are explicit.
 - [ ] Data/sequence handoffs are identified.
 - [ ] Final readiness is explicit.
-
-## References
-
-- Read `references/state-machine-purpose-subject-states-events-and-transitions.md` first.
-- Read `references/guards-effects-illegal-transitions-and-invariants.md`.
-- Read `references/cancellation-rollback-reopen-failure-and-terminal-states.md`.
-- Read `references/concurrency-idempotency-ordering-and-race-semantics.md`.
-- Read `references/state-explosion-composite-parallel-and-provider-state.md`.
-- Read `references/reachability-determinism-completeness-and-diagram-discipline.md`.
-- Read `references/state-machine-vs-process-sequence-usecase-and-data-model.md`.
-- Read `references/state-machine-model-audit.md` before completion.

@@ -1,8 +1,9 @@
 ---
 name: designing-accessible-forms
-description: Portable engineering capability `designing-accessible-forms`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Designs accessible web form contracts before implementation. Use when a form needs explicit labels, descriptions, required/optional semantics, field groups, validation timing, accessible error association, error summaries, async validation, server-error handling, dynamic fields, date ranges, multi-step flows, and duplicate-submission prevention. Keep UI shape/interaction validation separate from Domain/backend business invariants, preserve keyboard and screen-reader behavior, and define focus/status behavior for failures and submission. Do not rely on placeholders as labels, communicate errors only by color, duplicate authoritative business rules across client and server, or move focus/announce status without a deliberate interaction contract.
+...
 ---
+
 # Designing Accessible Forms
 
 ## Purpose
@@ -1720,14 +1721,3 @@ Use `assets/accessible-form-design-record.md`.
 - [ ] Roadmap evaluations are covered: required field, async validation, server error, dynamic fields, date range, multi-step form.
 - [ ] No new form/validation framework is introduced without approval.
 - [ ] Final form-design decision is explicit.
-
-## References
-
-- Read `references/labels-descriptions-required-and-groups.md` first.
-- Read `references/validation-ownership-timing-and-error-association.md`.
-- Read `references/submission-error-summary-server-errors-and-status.md`.
-- Read `references/async-validation-and-race-safety.md`.
-- Read `references/dynamic-fields-dates-and-date-ranges.md`.
-- Read `references/multi-step-forms-focus-progress-and-cross-step-errors.md`.
-- Read `references/testing-localization-privacy-and-overmodeling.md`.
-- Read `references/accessible-form-design-audit.md` before completion.

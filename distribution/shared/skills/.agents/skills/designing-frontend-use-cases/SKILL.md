@@ -1,8 +1,9 @@
 ---
 name: designing-frontend-use-cases
-description: Portable engineering capability `designing-frontend-use-cases`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Designs frontend Application Use Cases around one user or system intention. Use when a frontend feature needs application-level orchestration across Domain behavior and ports. Define one primary operation, boundary-friendly input, Request DTOs when justified, Application DTO or explicit result output, failure semantics, cancellation, idempotency or duplicate-command behavior, and test seams. Keep Use Cases independent of React, JSX, browser globals, HTTP libraries, concrete adapters, component state, and presentation formatting. Do not chain Use Cases as implementation shortcuts, mirror endpoints mechanically, create Use Cases for trivial UI-only behavior, or move pure Domain rules into Application orchestration.
+...
 ---
+
 # Designing Frontend Use Cases
 
 ## Purpose
@@ -1331,13 +1332,3 @@ Use `assets/frontend-use-case-design-record.md`.
 - [ ] Tests can use InMemory repositories and explicit external-port doubles.
 - [ ] No new Domain rule, adapter, framework, library, or project policy is invented.
 - [ ] Final Use Case decision is explicit.
-
-## References
-
-- Read `references/use-case-intention-and-justification.md` first.
-- Read `references/input-request-dtos-and-boundary-types.md`.
-- Read `references/ports-domain-and-orchestration.md`.
-- Read `references/results-errors-cancellation-and-idempotency.md`.
-- Read `references/no-react-http-or-chained-use-cases.md`.
-- Read `references/use-case-testing-and-overmodeling.md`.
-- Read `references/frontend-use-case-design-audit.md` before completion.

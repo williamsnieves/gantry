@@ -1,8 +1,8 @@
 ---
 name: analyzing-algorithmic-complexity
-description: Portable engineering capability `analyzing-algorithmic-complexity`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: "Analyzes algorithmic and data-structure complexity across frontend and backend code. Use when input size can grow, nested/repeated scans, sorting, searching, grouping, graph/tree traversal, large collections, transformations, matching, ranking, scheduling, or memory growth may affect scalability. Evaluate time complexity, space complexity, best/average/worst-case behavior, amortized cost, actual expected input sizes, hidden multiplicative work, and data-structure trade-offs. Distinguish algorithmic CPU/memory bottlenecks from I/O, database, network, rendering, and serialization bottlenecks; recommend proportional changes only when evidence and scale justify them. Do not optimize solely because a path is O(n\xB2), ignore constants/input bounds, or use Big O as a substitute for profiling and system-level performance evidence."
 ---
+
 # Analyzing Algorithmic Complexity
 
 ## Purpose
@@ -1808,14 +1808,3 @@ Use `assets/algorithmic-complexity-analysis-record.md`.
 - [ ] Correctness/regression tests protect algorithm rewrites.
 - [ ] No optimization is recommended solely because notation looks theoretically worse.
 - [ ] Final complexity decision is explicit.
-
-## References
-
-- Read `references/big-o-input-variables-and-realistic-bounds.md` first.
-- Read `references/data-structures-lookups-sorting-grouping-and-top-k.md`.
-- Read `references/space-amortized-recursion-graphs-and-dynamic-programming.md`.
-- Read `references/hidden-work-copying-serialization-regex-and-frequency.md`.
-- Read `references/io-database-network-rendering-and-system-bottlenecks.md`.
-- Read `references/benchmarking-profiling-and-before-after-evidence.md`.
-- Read `references/frontend-backend-and-performance-agent-composition.md`.
-- Read `references/algorithmic-complexity-analysis-audit.md` before completion.

@@ -1,8 +1,9 @@
 ---
 name: preparing-full-stack-change
-description: Portable engineering capability `preparing-full-stack-change`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Prepares a full-stack change before implementation by enriching an incomplete request, exploring the existing OpenSpec/specification context, creating or editing the change specification, identifying backend and frontend vertical slices, stabilizing API/contracts and ownership, ordering work by dependencies, and producing bounded handoffs to stack-specific implementation skills. Use when a feature or change spans frontend and backend or when one stack depends on an unresolved contract from the other. Do not implement the feature itself, duplicate backend/frontend specialist rules, let each stack invent incompatible contracts independently, or proceed while critical specification/contract decisions remain unresolved.
+...
 ---
+
 # Preparing Full-Stack Change
 
 ## Purpose
@@ -1049,14 +1050,3 @@ Use `assets/full-stack-change-preparation-record.md`.
 - [ ] Cross-stack verification expectations are defined.
 - [ ] Orchestrator does not duplicate specialist rules.
 - [ ] Final preparation status is explicit.
-
-## References
-
-- Read `references/request-enrichment-and-openspec-preparation.md` first.
-- Read `references/backend-frontend-slice-decomposition.md`.
-- Read `references/api-contracts-errors-authorization-and-idempotency.md`.
-- Read `references/compatibility-deployment-sequencing-and-migrations.md`.
-- Read `references/dependency-graph-parallelism-and-contract-mocks.md`.
-- Read `references/full-stack-handoffs-decisions-and-conflicts.md`.
-- Read `references/acceptance-criteria-risk-and-verification-traceability.md`.
-- Read `references/full-stack-change-preparation-audit.md` before completion.

@@ -1,8 +1,9 @@
 ---
 name: designing-domain-services
-description: Portable engineering capability `designing-domain-services`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Designs pure backend Domain Services for business behavior that spans multiple Entities or Value Objects and does not naturally belong to a single Domain object. Use when accepted domain logic requires coordination or calculation across Domain objects without repositories, provider calls, transactions, frameworks, or application orchestration. Produces service responsibility, inputs, outputs, invariants, operation semantics, error behavior, tests, and boundary checks. Do not use for Use Cases, Infrastructure services, repositories, provider adapters, mutable state holders, generic utility classes, or behavior that belongs inside an Entity or Value Object.
+...
 ---
+
 # Designing Domain Services
 
 ## Purpose
@@ -555,12 +556,3 @@ Use `assets/domain-service-design-report.md`.
 - [ ] Input collections and Domain objects are not mutated unexpectedly.
 - [ ] Focused tests cover behavior, boundaries, determinism, and invariants.
 - [ ] No generic service, helper, or speculative abstraction introduced.
-
-## References
-
-- Read `references/domain-service-suitability.md` first.
-- Read `references/purity-inputs-and-outputs.md` for dependencies and contracts.
-- Read `references/cross-object-invariants.md` for business rules.
-- Read `references/time-rates-and-policy-context.md` when external context affects decisions.
-- Read `references/domain-service-testing.md` before completion.
-- Read `references/refactoring-impure-services.md` only for existing services.

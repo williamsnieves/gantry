@@ -1,8 +1,9 @@
 ---
 name: designing-domain-repositories
-description: Portable engineering capability `designing-domain-repositories`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Designs domain-oriented repository ports and deterministic InMemory implementations from actual Use Case needs. Use when Application requires persistence access to Entities or aggregate roots and the Domain contract must remain independent from databases, ORM models, DTOs, tables, query builders, or provider terminology. Produces repository responsibility, intention-revealing operations, Domain input/output types, absence and failure semantics, consistency expectations, InMemory behavior, test cases, ownership, and adapter handoff. Do not use to implement real persistence adapters, create generic CRUD interfaces, expose storage models, or invent queries without a consuming behavior.
+...
 ---
+
 # Designing Domain Repositories
 
 ## Purpose
@@ -667,13 +668,3 @@ Use `assets/domain-repository-design-report.md`.
 - [ ] Focused and contract tests planned.
 - [ ] Real adapter obligations are handed off explicitly.
 - [ ] No generic CRUD, query DSL, or unused operation introduced.
-
-## References
-
-- Read `references/repository-suitability-and-ownership.md` first.
-- Read `references/operation-and-signature-design.md` for contract shape.
-- Read `references/absence-save-errors-and-transactions.md` for semantics.
-- Read `references/inmemory-repository-design.md` for test implementation.
-- Read `references/query-ordering-pagination-and-concurrency.md` when those concerns apply.
-- Read `references/repository-contract-testing.md` before completion.
-- Read `references/evolving-crud-repositories.md` only for existing repositories.

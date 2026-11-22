@@ -1,8 +1,8 @@
 ---
 name: planning-frontend-test-strategy
-description: Portable engineering capability `planning-frontend-test-strategy`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: 'Plans frontend test coverage by mapping each accepted behavior and risk to the lowest reliable test boundary: Domain, Application Use Case, adapter, hook, component, accessibility, visual, route integration, contract, or E2E. Use after vertical slices, component/hook/effect designs, adapters, composition, styling, and accessibility decisions are known. Define test matrices, risk coverage, test-double policy, realistic environments, regression ownership, CI placement, and evidence gaps. Prefer pure and deterministic tests, InMemory repositories for Use Cases, faithful adapter boundaries, semantic component tests, and a small set of critical E2E journeys. Do not implement tests, duplicate every scenario at every level, mock Domain behavior, replace InMemory ports with repository mocks, mock fetch internals when MSW or a faithful boundary is available, test private implementation details, or use all-E2E as the default strategy.'
 ---
+
 # Planning Frontend Test Strategy
 
 ## Purpose
@@ -943,13 +943,3 @@ Use `assets/frontend-test-strategy-record.md`.
 - [ ] Regression ownership and maintenance policy are defined.
 - [ ] Blocked evidence and residual risk are honest.
 - [ ] No test implementation, new library, or all-E2E strategy was produced.
-
-## References
-
-- Read `references/test-boundaries-and-lowest-useful-level.md` first.
-- Read `references/test-doubles-inmemory-mocks-and-realistic-boundaries.md`.
-- Read `references/domain-use-case-adapter-hook-and-component-coverage.md`.
-- Read `references/accessibility-visual-route-and-e2e-coverage.md`.
-- Read `references/environments-determinism-flakiness-and-ci.md`.
-- Read `references/regression-ownership-and-maintenance.md`.
-- Read `references/frontend-test-strategy-audit.md` before completion.

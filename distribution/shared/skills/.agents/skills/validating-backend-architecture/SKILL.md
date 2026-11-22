@@ -1,8 +1,9 @@
 ---
 name: validating-backend-architecture
-description: Portable engineering capability `validating-backend-architecture`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Validates backend modular hexagonal architecture through evidence-oriented static inspection and executable checks. Use when a backend change, module, or repository must be audited for inward dependency direction, module ownership, public contracts, concrete-adapter leakage, controller/repository coupling, Use Case chaining, DTO/Domain separation, composition-root isolation, test-boundary violations, or architecture drift. Prefer repository-native import graph, path, AST, lint, and architecture tests. Do not rewrite code automatically, invent architecture rules, report personal style as architecture, or mark unavailable checks as passing.
+...
 ---
+
 # Validating Backend Architecture
 
 ## Purpose
@@ -1030,13 +1031,3 @@ Use `assets/backend-architecture-validation-report.md`.
 - [ ] Blocked, unavailable, skipped, and inconclusive checks are not marked passed.
 - [ ] No personal-style preference or unsupported rule was reported as architecture.
 - [ ] Final decision reflects executed evidence and residual uncertainty.
-
-## References
-
-- Read `references/dependency-direction-and-layers.md` first.
-- Read `references/module-and-public-contract-boundaries.md` for cross-capability checks.
-- Read `references/ports-adapters-controllers-and-use-cases.md` for core leakage patterns.
-- Read `references/dto-domain-error-and-composition-boundaries.md` for public contracts.
-- Read `references/architecture-automation-and-evidence.md` for executable checks.
-- Read `references/brownfield-baselines-and-exceptions.md` when known violations exist.
-- Read `references/backend-architecture-audit-checklist.md` before completion.

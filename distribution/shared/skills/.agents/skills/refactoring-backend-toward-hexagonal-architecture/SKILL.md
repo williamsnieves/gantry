@@ -1,8 +1,9 @@
 ---
 name: refactoring-backend-toward-hexagonal-architecture
-description: Portable engineering capability `refactoring-backend-toward-hexagonal-architecture`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Refactors one existing backend behavior incrementally toward modular hexagonal architecture while preserving accepted behavior and public contracts. Use after brownfield profiling has identified a safe migration seam and target state. Protect the current behavior with characterization tests, move business decisions inward, introduce only the required repository or external-service ports, isolate concrete adapters, redirect one caller, validate the new path, and remove obsolete code only when safe. Do not perform a big-bang rewrite, invent a Domain model, change public or data contracts silently, create forwarding abstractions with no boundary value, or migrate several unrelated behaviors at once.
+...
 ---
+
 # Refactoring Backend Toward Hexagonal Architecture
 
 ## Purpose
@@ -816,12 +817,3 @@ Use `assets/backend-hexagonal-refactoring-record.md`.
 - [ ] Legacy code was removed only when all removal conditions were met.
 - [ ] Unrelated repository cleanup was excluded.
 - [ ] Final decision and next migration slice are explicit.
-
-## References
-
-- Read `references/characterization-and-safe-seams.md` first.
-- Read `references/moving-responsibilities-inward.md` for ownership changes.
-- Read `references/ports-adapters-and-compatibility.md` for boundaries.
-- Read `references/caller-redirection-rollout-and-rollback.md` before switching traffic.
-- Read `references/validation-removal-and-drift.md` before deleting legacy code.
-- Read `references/transactions-data-and-external-effects.md` when state or providers are involved.

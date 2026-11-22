@@ -1,8 +1,9 @@
 ---
 name: editing-openspec-changes
-description: Portable engineering capability `editing-openspec-changes`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Revises an active OpenSpec change when new information, implementation feedback, scope refinement, or corrected decisions require updates to its planning artifacts. Use when the same underlying intent remains valid. Do not use when the intent fundamentally changes, a new independent scope emerges, the change only needs specification synchronization, or implementation is the primary task.
+...
 ---
+
 # Editing OpenSpec Changes
 
 ## Purpose

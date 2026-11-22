@@ -1,8 +1,9 @@
 ---
 name: testing-application-use-cases
-description: Portable engineering capability `testing-application-use-cases`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Designs and implements focused tests for backend Application Use Cases using real Domain objects, contract-faithful InMemory repositories, and explicit stubs or spies for external-service ports. Use when orchestration, primitive-to-Domain conversion, authorization, missing state, Domain delegation, persistence outcomes, response DTOs, idempotency, transactions, or external side-effect failures must be verified. Prefer observable state and result verification over incidental interaction assertions. Do not use repository mocks as a substitute for InMemory implementations, mock Entities or Value Objects, call real databases or providers, or test HTTP and Infrastructure details.
+...
 ---
+
 # Testing Application Use Cases
 
 ## Purpose
@@ -754,12 +755,3 @@ Use `assets/application-use-case-testing-record.md`.
 - [ ] Interaction assertions are limited to semantically relevant behavior.
 - [ ] Focused and neighboring test commands were actually executed.
 - [ ] No speculative cases or Infrastructure behavior were tested at the Application level.
-
-## References
-
-- Read `references/use-case-test-boundary.md` first.
-- Read `references/inmemory-repositories.md` for state-oriented repository testing.
-- Read `references/external-port-doubles.md` for stubs, spies, and fakes.
-- Read `references/outcomes-state-and-interactions.md` for assertion strategy.
-- Read `references/failures-idempotency-and-side-effects.md` for negative paths.
-- Read `references/use-case-test-audit.md` before completion.
