@@ -35,3 +35,6 @@ credentials.json
 .idea/
 .vscode/
 *.swp
+
+# Evaluation run output
+evals/results/

@@ -1,0 +1,5 @@
+scenario: test-only-remediation
+request: |
+  The last QA review of the incident search found no test covering the
+  stale-response race (a slow response for an earlier query overwriting a newer
+  one). This adds the missing regression test. Production code is unchanged.

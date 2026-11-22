@@ -1,0 +1,4 @@
+scenario: tiny-multitenant-auth
+request: |
+  Support staff asked to be able to change the severity of an incident while
+  helping a customer. It is a one-line change in the severity use case.

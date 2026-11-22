@@ -1,0 +1,6 @@
+scenario: fullstack-medium
+request: |
+  Users can now filter the incident list by severity. The list endpoint accepts
+  an optional `severity` query parameter and the web client gained a severity
+  filter control that passes it through. Existing callers that send no filter
+  keep getting the full list.
