@@ -19,7 +19,7 @@ Totals: 4 of 6 passed, no required gate was missed in any scored plan, $5.40, 39
 
 ## What the failures show
 
-**schema-migration.** The agent wrote `evidence: Incident gains required \`priority: number\`.` as an unquoted YAML value, which does not parse. The routing decision could not be read at all. A plan that is hand-written YAML can break on any colon in free text.
+**schema-migration.** The agent wrote ``evidence: Incident gains required `priority: number`.`` as an unquoted YAML value, which does not parse. The routing decision could not be read at all. A plan that is hand-written YAML can break on any colon in free text.
 
 **fullstack-medium.** The agent required Security because the change adds a query parameter to an endpoint and rewrites the `where` clause of a tenant-scoped query. `RISK-TRIGGER-MODEL.md` lists "multi-tenancy" and "public entry point" as Security triggers, so the agent followed the contract. The scenario oracle says Security is not triggered for a medium full-stack feature with an API change. The contract and its own oracle disagree; this is not clearly an agent error.
 
