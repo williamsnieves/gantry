@@ -367,6 +367,7 @@ def cmd_doctor(args):
     # Core invariants.
     required = [
         ".harness/core/routing/ROUTING-POLICY.md",
+        ".harness/bin/route.py",
         ".harness/core/pre-pr/FINAL-PRE-PR-GATE.md",
         ".harness/agents/reviewer/AGENT.md",
         ".harness/evals/end-to-end/E2E-ORACLE.md",
