@@ -16,8 +16,11 @@ except Exception:
     yaml = None
 
 VERSION = "1.0.0"
-START = "<!-- LOOP-ENGINEERING-HARNESS:START -->"
-END = "<!-- LOOP-ENGINEERING-HARNESS:END -->"
+START = "<!-- GANTRY:START -->"
+END = "<!-- GANTRY:END -->"
+# Markers written by installs made before the rename. They are still recognised
+# so an existing block is replaced or removed instead of duplicated.
+LEGACY_MARKERS = (("<!-- LOOP-ENGINEERING-HARNESS:START -->", "<!-- LOOP-ENGINEERING-HARNESS:END -->"),)
 RUNTIMES = ("claude", "codex", "cursor", "opencode", "omp")
 ALIASES = {
     "claude-code": "claude",
@@ -179,14 +182,21 @@ def install_skills(dst_root: Path, project: Path, state: dict, *, compact: bool,
             content = render_skill(src.read_text(encoding="utf-8"), relative.parts[0], compact=compact)
         managed_copy(src, dst_root / relative, project, state, force=force, dry_run=dry_run, label=label, content=content)
 
+def find_block_markers(text: str) -> tuple[str, str] | None:
+    for start, end in ((START, END), *LEGACY_MARKERS):
+        if start in text and end in text:
+            return start, end
+    return None
+
 def merge_agents_block(project: Path, *, dry_run: bool):
     block = (template_root() / "AGENTS.block.md").read_text(encoding="utf-8").strip()
     path = project / "AGENTS.md"
     old = path.read_text(encoding="utf-8") if path.exists() else ""
 
-    if START in old and END in old:
-        pattern = re.compile(re.escape(START) + r".*?" + re.escape(END), re.S)
-        new = pattern.sub(block, old)
+    markers = find_block_markers(old)
+    if markers:
+        pattern = re.compile(re.escape(markers[0]) + r".*?" + re.escape(markers[1]), re.S)
+        new = pattern.sub(lambda _: block, old)
     else:
         new = old.rstrip() + ("\n\n" if old.strip() else "") + block + "\n"
 
@@ -201,9 +211,10 @@ def remove_agents_block(project: Path, *, dry_run: bool):
     if not path.exists():
         return
     old = path.read_text(encoding="utf-8")
-    if START not in old or END not in old:
+    markers = find_block_markers(old)
+    if not markers:
         return
-    pattern = re.compile(r"\n?" + re.escape(START) + r".*?" + re.escape(END) + r"\n?", re.S)
+    pattern = re.compile(r"\n?" + re.escape(markers[0]) + r".*?" + re.escape(markers[1]) + r"\n?", re.S)
     new = pattern.sub("\n", old).strip()
     if new:
         new += "\n"
@@ -377,8 +388,12 @@ def cmd_doctor(args):
             if not (project / key).exists():
                 errors.append(f"{runtime}: missing {key}")
 
-    if START not in ((project / "AGENTS.md").read_text(encoding="utf-8") if (project / "AGENTS.md").exists() else ""):
-        warnings.append("Managed AGENTS.md harness block is missing.")
+    agents_md = (project / "AGENTS.md").read_text(encoding="utf-8") if (project / "AGENTS.md").exists() else ""
+    if START not in agents_md:
+        if find_block_markers(agents_md):
+            warnings.append("AGENTS.md still has the pre-rename harness block; run `gantry install` to update it.")
+        else:
+            warnings.append("Managed AGENTS.md harness block is missing.")
 
     if errors:
         print("DOCTOR: FAIL")
@@ -476,7 +491,7 @@ def cmd_uninstall(args):
     print("Remaining runtimes:", ", ".join(remaining) or "none")
 
 def build_parser():
-    p = argparse.ArgumentParser(prog="leh", description="Loop Engineering Harness installer")
+    p = argparse.ArgumentParser(prog="gantry", description="Gantry harness installer")
     p.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
     sub = p.add_subparsers(dest="command", required=True)
 

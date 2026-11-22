@@ -1,6 +1,6 @@
 # Runtime Quickstart
 
-After `leh install`, open the repository in the runtime.
+After `gantry install`, open the repository in the runtime.
 
 | Runtime | Start |
 |---|---|

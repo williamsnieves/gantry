@@ -3,17 +3,17 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "loop-engineering-harness"
+name = "gantry-harness"
 version = "1.0.0"
 description = "Portable multi-runtime software engineering harness installer"
 requires-python = ">=3.10"
 dependencies = ["PyYAML>=6.0"]
 
 [project.scripts]
-leh = "leh.cli:main"
+gantry = "gantry.cli:main"
 
 [tool.setuptools]
-packages = ["leh"]
+packages = ["gantry"]
 
 [tool.setuptools.package-data]
 "*" = ["../distribution/**/*", "../templates/**/*"]

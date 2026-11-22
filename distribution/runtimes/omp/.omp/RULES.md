@@ -1,6 +1,6 @@
 # Portable Harness Runtime Invariants
 
-This repository uses the portable Loop Engineering Harness.
+This repository uses the portable Gantry harness.
 
 Authoritative contracts:
 

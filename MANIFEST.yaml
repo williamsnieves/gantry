@@ -1,6 +1,6 @@
-name: loop-engineering-harness
+name: gantry-harness
 version: 1.0.0
-cli: leh
+cli: gantry
 supported_runtimes:
 - claude
 - codex

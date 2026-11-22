@@ -1,6 +1,6 @@
 # Complete Pre-PR Flow
 
-Portable execution policy for the Loop Engineering Harness.
+Portable execution policy for the Gantry harness.
 
 This package completes roadmap stage:
 

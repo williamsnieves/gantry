@@ -1,5 +1,5 @@
 ---
-description: Portable Loop Engineering Harness runtime invariants
+description: Portable Gantry harness runtime invariants
 globs:
 alwaysApply: true
 ---

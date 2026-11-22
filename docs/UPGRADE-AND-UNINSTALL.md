@@ -10,7 +10,7 @@ The CLI stores:
 
 with every harness-owned file and its SHA-256.
 
-This lets `leh` distinguish:
+This lets `gantry` distinguish:
 
 ```text
 safe managed upgrade
@@ -29,7 +29,7 @@ If a managed file was locally edited, the installer refuses to overwrite it unle
 Example:
 
 ```bash
-./leh.sh uninstall --runtime cursor --project .
+./gantry.sh uninstall --runtime cursor --project .
 ```
 
 This removes only files owned by the Cursor runtime overlay.
@@ -39,7 +39,7 @@ Shared core and skills remain for other runtimes.
 ## Full uninstall
 
 ```bash
-./leh.sh uninstall   --runtime all   --purge-shared   --project .
+./gantry.sh uninstall   --runtime all   --purge-shared   --project .
 ```
 
 Locally modified managed files are preserved unless `--force` is supplied.

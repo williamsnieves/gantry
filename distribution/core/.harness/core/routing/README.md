@@ -1,6 +1,6 @@
 # Harness Routing and Handoffs
 
-Portable routing layer for the Loop Engineering Harness.
+Portable routing layer for the Gantry harness.
 
 This package answers two questions:
 

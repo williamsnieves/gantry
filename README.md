@@ -1,29 +1,29 @@
-# Loop Engineering Harness v1
+# Gantry
 
 Universal distribution of the portable software-engineering harness.
 
 ## One CLI
 
 ```bash
-./leh.sh install --runtime cursor --project /path/to/repo
+./gantry.sh install --runtime cursor --project /path/to/repo
 ```
 
 or:
 
 ```bash
-./leh.sh install --runtime claude,codex,cursor,opencode,omp --project .
+./gantry.sh install --runtime claude,codex,cursor,opencode,omp --project .
 ```
 
 or simply:
 
 ```bash
-./leh.sh install --runtime all --project .
+./gantry.sh install --runtime all --project .
 ```
 
 On Windows PowerShell:
 
 ```powershell
-.\leh.ps1 install --runtime all --project .
+.\gantry.ps1 install --runtime all --project .
 ```
 
 ## What the installer handles automatically
@@ -68,11 +68,11 @@ Claude receives its native `.claude/skills/` copy for maximum compatibility.
 ## Typical setup
 
 ```bash
-./leh.sh plan   --runtime cursor,codex   --scope fullstack   --profile standard   --project ~/code/my-app
+./gantry.sh plan   --runtime cursor,codex   --scope fullstack   --profile standard   --project ~/code/my-app
 
-./leh.sh install   --runtime cursor,codex   --scope fullstack   --profile standard   --project ~/code/my-app
+./gantry.sh install   --runtime cursor,codex   --scope fullstack   --profile standard   --project ~/code/my-app
 
-./leh.sh doctor --project ~/code/my-app
+./gantry.sh doctor --project ~/code/my-app
 ```
 
 Then:
@@ -127,18 +127,18 @@ The installer:
 ## CLI
 
 ```text
-leh install
-leh init
-leh plan
-leh status
-leh doctor
-leh uninstall
+gantry install
+gantry init
+gantry plan
+gantry status
+gantry doctor
+gantry uninstall
 ```
 
 ## Architecture
 
 ```text
-                   Loop Engineering Harness
+                            Gantry
                               │
                  shared portable installation
                     .harness/
