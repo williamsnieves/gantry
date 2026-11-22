@@ -1,7 +1,7 @@
-<!-- LOOP-ENGINEERING-HARNESS:START -->
-# Loop Engineering Harness
+<!-- GANTRY:START -->
+# Gantry
 
-This repository uses the portable Loop Engineering Harness.
+This repository uses the portable Gantry harness.
 
 Authoritative portable contracts:
 
@@ -41,4 +41,4 @@ Project harness configuration:
 ```text
 .harness/harness.config.yaml
 ```
-<!-- LOOP-ENGINEERING-HARNESS:END -->
+<!-- GANTRY:END -->

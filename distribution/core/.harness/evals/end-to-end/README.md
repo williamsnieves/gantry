@@ -1,6 +1,6 @@
 # Harness End-to-End Evaluation
 
-End-to-end evaluation package for the portable Loop Engineering Harness.
+End-to-end evaluation package for the portable Gantry harness.
 
 This package validates the complete system:
 

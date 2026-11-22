@@ -6,8 +6,8 @@
 
 ## Verified
 
-- `leh plan --runtime all` completes without modifying the target project.
-- `leh install --runtime all` installs all five runtime overlays.
+- `gantry plan --runtime all` completes without modifying the target project.
+- `gantry install --runtime all` installs all five runtime overlays.
 - Shared `.harness/` core is installed once.
 - Shared `.agents/skills/` catalogue is installed once.
 - Existing root `AGENTS.md` content is preserved and receives one managed harness block.
@@ -16,7 +16,7 @@
 - Existing `.omp/config.yml` is preserved.
 - Existing `opencode.json` is preserved.
 - Claude, Codex, Cursor, OpenCode, and OMP specialist adapters are installed.
-- `leh doctor` passes after installation.
+- `gantry doctor` passes after installation.
 - Runtime-specific uninstall removes only that runtime overlay.
 - Shared core/skills remain while other runtimes are installed.
 - Full uninstall with `--purge-shared` removes harness-managed shared files and preserves pre-existing project guidance.

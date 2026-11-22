@@ -3,31 +3,31 @@
 ## 1. Preview
 
 ```bash
-./leh.sh plan --runtime cursor --project /path/to/repo
+./gantry.sh plan --runtime cursor --project /path/to/repo
 ```
 
 ## 2. Install
 
 ```bash
-./leh.sh install   --runtime cursor   --scope fullstack   --profile standard   --project /path/to/repo
+./gantry.sh install   --runtime cursor   --scope fullstack   --profile standard   --project /path/to/repo
 ```
 
 Multiple runtimes:
 
 ```bash
-./leh.sh install --runtime claude,codex,cursor,opencode,omp --project /path/to/repo
+./gantry.sh install --runtime claude,codex,cursor,opencode,omp --project /path/to/repo
 ```
 
 All runtimes:
 
 ```bash
-./leh.sh install --runtime all --project /path/to/repo
+./gantry.sh install --runtime all --project /path/to/repo
 ```
 
 ## 3. Validate
 
 ```bash
-./leh.sh doctor --project /path/to/repo
+./gantry.sh doctor --project /path/to/repo
 ```
 
 ## 4. Use

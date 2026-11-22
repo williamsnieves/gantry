@@ -2,7 +2,7 @@ from pathlib import Path
 import tempfile, subprocess, sys, shutil, json, os
 
 ROOT = Path(__file__).resolve().parents[1]
-tmp = Path(tempfile.mkdtemp(prefix="leh-v1-test-"))
+tmp = Path(tempfile.mkdtemp(prefix="gantry-test-"))
 project = tmp / "repo"
 project.mkdir()
 
@@ -20,7 +20,7 @@ env["PYTHONPATH"] = str(ROOT)
 
 def run(*args, expect=0):
     p = subprocess.run(
-        [sys.executable, "-m", "leh", *args],
+        [sys.executable, "-m", "gantry", *args],
         cwd=ROOT, env=env, capture_output=True, text=True
     )
     if p.returncode != expect:
@@ -38,7 +38,7 @@ assert (project / ".codex/config.toml").read_text() == 'model = "existing"\n'
 assert (project / ".omp/config.yml").read_text() == "existing: true\n"
 assert (project / "opencode.json").read_text() == '{"existing":true}\n'
 assert "# Existing rules" in (project / "AGENTS.md").read_text()
-assert "<!-- LOOP-ENGINEERING-HARNESS:START -->" in (project / "AGENTS.md").read_text()
+assert "<!-- GANTRY:START -->" in (project / "AGENTS.md").read_text()
 
 # Shared installed once.
 assert (project / ".agents/skills/harness-run/SKILL.md").exists()
@@ -83,8 +83,26 @@ assert (project / ".codex/agents/reviewer.toml").exists()
 run("uninstall", "--runtime", "claude,codex,opencode,omp", "--purge-shared", "--project", str(project))
 assert not (project / ".codex/agents/reviewer.toml").exists()
 assert not (project / ".agents/skills/harness-run/SKILL.md").exists()
-assert "<!-- LOOP-ENGINEERING-HARNESS:START -->" not in (project / "AGENTS.md").read_text()
+assert "<!-- GANTRY:START -->" not in (project / "AGENTS.md").read_text()
 assert "# Existing rules" in (project / "AGENTS.md").read_text()
+
+# An AGENTS.md block written before the rename is replaced, not duplicated.
+legacy = (
+    "# Existing rules\n\n"
+    "<!-- LOOP-ENGINEERING-HARNESS:START -->\nold block\n<!-- LOOP-ENGINEERING-HARNESS:END -->\n\n"
+    "# Trailing section\n"
+)
+(project / "AGENTS.md").write_text(legacy, encoding="utf-8")
+run("install", "--runtime", "opencode", "--project", str(project))
+migrated = (project / "AGENTS.md").read_text()
+assert "LOOP-ENGINEERING-HARNESS" not in migrated and "old block" not in migrated
+assert migrated.count("<!-- GANTRY:START -->") == 1
+assert migrated.startswith("# Existing rules") and "# Trailing section" in migrated
+(project / "AGENTS.md").write_text(legacy, encoding="utf-8")
+run("uninstall", "--purge-shared", "--project", str(project))
+removed = (project / "AGENTS.md").read_text()
+assert "LOOP-ENGINEERING-HARNESS" not in removed and "old block" not in removed
+assert "# Existing rules" in removed and "# Trailing section" in removed
 
 shutil.rmtree(tmp)
 print("UNIVERSAL DISTRIBUTION SMOKE TEST: PASS")
