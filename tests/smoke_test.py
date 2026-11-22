@@ -52,7 +52,25 @@ assert (project / ".cursor/agents/reviewer.md").exists()
 assert (project / ".opencode/agents/reviewer.md").exists()
 assert (project / ".omp/agents/reviewer.md").exists()
 
+# Skills come from one source and are rendered per runtime.
+shared_skill = (project / ".agents/skills/auditing-code/SKILL.md").read_text()
+claude_skill = (project / ".claude/skills/auditing-code/SKILL.md").read_text()
+compact = "description: Portable engineering capability `auditing-code`."
+assert compact in shared_skill
+assert compact not in claude_skill
+assert shared_skill.split("\n---\n", 1)[1] == claude_skill.split("\n---\n", 1)[1]
+# Entry-point skills keep their full description and are runtime-neutral.
+shared_run = (project / ".agents/skills/harness-run/SKILL.md").read_text()
+assert shared_run == (project / ".claude/skills/harness-run/SKILL.md").read_text()
+assert "Portable engineering capability" not in shared_run
+assert "Codex Adapter" not in shared_run
+# Asset files are copied alongside the rendered SKILL.md.
+assert (project / ".agents/skills/auditing-code/README.md").exists()
+assert (project / ".claude/skills/auditing-code/README.md").exists()
+
 run("doctor", "--project", str(project))
+# Reinstalling over an unmodified install is idempotent.
+run("install", "--runtime", "all", "--scope", "fullstack", "--profile", "standard", "--project", str(project))
 run("status", "--project", str(project))
 
 # Remove one runtime; shared stays.

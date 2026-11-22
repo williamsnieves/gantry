@@ -1,8 +1,9 @@
 ---
 name: designing-software-system
-description: Portable engineering capability `designing-software-system`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Orchestrates the complete requirements-engineering and software-architecture workflow by selecting the smallest complete graph of specialized skills needed for the system's risk, complexity, lifecycle, data, eventing, deployment, and security profile. Use when taking a product/system idea from requirements through an accepted Architecture Package and handoff to OpenSpec or implementation planning. Route to requirements, behavioral modeling, architecture design/trade-off/ADR, structural/runtime/data/event/deployment modeling, STRIDE, and architecture validation only when applicable. Do not execute every skill mechanically, skip required gates, invent missing evidence, silently choose architecture, or replace specialized skills with a shallow all-in-one analysis.
+...
 ---
+
 # Designing Software System
 
 ## Purpose
@@ -1312,14 +1313,3 @@ BLOCKED
 - [ ] Node completion is evidence-based.
 - [ ] OpenSpec/implementation handoff preserves architecture intent.
 - [ ] Final system/package status is explicit.
-
-## References
-
-- Read `references/orchestration-scope-profiles-and-smallest-complete-graph.md` first.
-- Read `references/requirements-foundation-and-backtracking-gates.md`.
-- Read `references/behavioral-model-selection-usecase-process-state.md`.
-- Read `references/architecture-decision-model-selection-and-dependency-dag.md`.
-- Read `references/security-stride-validation-and-feedback-loop.md`.
-- Read `references/system-profiles-small-crud-payment-saas-event-brownfield-critical.md`.
-- Read `references/package-assembly-openspec-handoff-and-acceptance-gates.md`.
-- Read `references/software-system-orchestration-audit.md` before completion.

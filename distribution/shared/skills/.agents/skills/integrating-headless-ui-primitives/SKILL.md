@@ -1,8 +1,9 @@
 ---
 name: integrating-headless-ui-primitives
-description: Portable engineering capability `integrating-headless-ui-primitives`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Integrates accessible headless UI primitives such as Radix UI, Base UI, React Aria, Headless UI, or similar libraries into the project's shared UI and feature layers. Use to preserve keyboard interaction, focus management, ARIA semantics, disabled/invalid behavior, portals, dismissal, layering, and vendor state contracts while applying project tokens and variants. Decide when a vendor primitive should be wrapped in shared UI, when direct feature use is acceptable, and how to customize styling without breaking accessibility. Do not reimplement vendor behavior ad hoc, remove ARIA/focus logic, target undocumented internal DOM, mix business rules into shared primitives, or create wrappers that only rename vendor props without project-level value.
+...
 ---
+
 # Integrating Headless UI Primitives
 
 ## Purpose
@@ -1343,14 +1344,3 @@ Use `assets/headless-ui-primitive-integration-record.md`.
 - [ ] Roadmap evaluations are covered: Dialog, Select/Combobox, Tooltip, Menu, Tabs, vendor accessibility override, portal layering.
 - [ ] No new primitive library, portal system, positioning engine, or wrapper framework is introduced without approval.
 - [ ] Final primitive integration status is explicit.
-
-## References
-
-- Read `references/wrapper-boundary-and-shared-ui-ownership.md` first.
-- Read `references/dialog-focus-dismissal-and-modal-behavior.md`.
-- Read `references/combobox-select-menu-tooltip-and-tabs.md`.
-- Read `references/vendor-accessibility-contract-and-overrides.md`.
-- Read `references/portals-layering-nested-overlays-and-ssr.md`.
-- Read `references/styling-tokens-variants-and-vendor-state.md`.
-- Read `references/testing-browser-evidence-and-overmodeling.md`.
-- Read `references/headless-ui-primitive-integration-audit.md` before completion.

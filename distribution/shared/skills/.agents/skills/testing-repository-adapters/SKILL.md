@@ -1,8 +1,9 @@
 ---
 name: testing-repository-adapters
-description: Portable engineering capability `testing-repository-adapters`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Designs and implements integration tests for backend repository adapters using isolated real persistence. Use when persistence mappings, Domain reconstitution, migrations, constraints, transactions, ordering, pagination, deletion, concurrency, invalid stored data, technical failure translation, cleanup, or shared repository contract parity must be proven. Prefer Testcontainers, ephemeral databases, isolated schemas, or faithful emulators. Do not use mocks or InMemory repositories as proof of real persistence behavior, do not leak ORM/database types into assertions, and do not claim blocked infrastructure tests passed.
+...
 ---
+
 # Testing Repository Adapters
 
 ## Purpose
@@ -738,13 +739,3 @@ Use `assets/repository-adapter-testing-record.md`.
 - [ ] Exact commands and failures are recorded honestly.
 - [ ] Mocks or InMemory tests are not presented as real persistence proof.
 - [ ] No ORM/database type leaks into inward contracts.
-
-## References
-
-- Read `references/real-persistence-and-isolation.md` first.
-- Read `references/migrations-and-test-bootstrap.md` for schema setup.
-- Read `references/round-trips-mapping-and-invalid-data.md` for Domain mapping.
-- Read `references/constraints-transactions-and-concurrency.md` for authoritative writes.
-- Read `references/queries-pagination-and-deletion.md` for read semantics.
-- Read `references/failures-cleanup-and-flakiness.md` for operational reliability.
-- Read `references/repository-test-audit.md` before completion.

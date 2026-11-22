@@ -1,8 +1,9 @@
 ---
 name: testing-frontend-adapters
-description: Portable engineering capability `testing-frontend-adapters`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Tests frontend Infrastructure adapters against faithful external boundaries. Use for HTTP repositories, browser storage, IndexedDB, cache/offline adapters, and third-party/provider integrations. Verify request/response mapping, runtime payload validation, stable error semantics, cancellation, auth refresh behavior, offline/storage failures, IndexedDB serialization/migrations, and real provider sandbox compatibility where appropriate. Prefer MSW/test servers/emulators/real browser-like storage or documented sandboxes over mocking fetch internals or mocking the adapter itself. Do not test React/UI behavior, Domain rules, or Use Case orchestration here.
+...
 ---
+
 # Testing Frontend Adapters
 
 ## Purpose
@@ -1357,14 +1358,3 @@ Use `assets/frontend-adapter-testing-record.md`.
 - [ ] Test resources/handlers/connections are cleaned up.
 - [ ] Roadmap evaluations are covered: 404, malformed payload, auth refresh, offline state, IndexedDB mapping, provider sandbox.
 - [ ] Final adapter-test status is explicit.
-
-## References
-
-- Read `references/faithful-boundaries-msw-test-servers-and-contract-fixtures.md` first.
-- Read `references/http-errors-malformed-payloads-and-cancellation.md`.
-- Read `references/auth-refresh-and-http-client-integration-boundaries.md`.
-- Read `references/offline-storage-and-cache-semantics.md`.
-- Read `references/indexeddb-runtime-mapping-migrations-and-transactions.md`.
-- Read `references/provider-sandboxes-emulators-and-contract-drift.md`.
-- Read `references/shared-port-contract-tests-and-layering.md`.
-- Read `references/frontend-adapter-testing-audit.md` before completion.

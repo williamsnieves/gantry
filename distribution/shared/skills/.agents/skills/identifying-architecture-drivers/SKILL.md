@@ -1,8 +1,9 @@
 ---
 name: identifying-architecture-drivers
-description: Portable engineering capability `identifying-architecture-drivers`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Identifies the small set of architecture-significant requirements, quality scenarios, constraints, assumptions, risks, and dependencies that should materially shape system architecture. Use after functional requirements, non-functional requirements, and quality-attribute scenarios exist, and before candidate architecture design or trade-off analysis. Classify each input as ARCHITECTURE_DRIVER, IMPORTANT_REQUIREMENT, LOCAL_DESIGN_CONCERN, CONSTRAINT, ASSUMPTION, or NOT_ARCHITECTURE_SIGNIFICANT; preserve uncertainty and distinguish significance from business priority. Do not promote vague aspirations into drivers, choose architecture, prescribe tactics, or treat every requirement as architecture-significant.
+...
 ---
+
 # Identifying Architecture Drivers
 
 ## Purpose
@@ -980,14 +981,3 @@ can produce architecture candidates from actual evidence rather than technology 
 - [ ] Architecture tactics/technology choices are not selected.
 - [ ] Candidate architecture evaluation criteria are produced.
 - [ ] Final driver readiness is explicit.
-
-## References
-
-- Read `references/architecture-significance-classification-and-scope.md` first.
-- Read `references/quality-scale-availability-recovery-and-consistency-drivers.md`.
-- Read `references/security-privacy-geography-realtime-and-data-boundaries.md`.
-- Read `references/constraints-assumptions-dependencies-cost-and-organization.md`.
-- Read `references/brownfield-reversibility-risk-and-cross-cutting-impact.md`.
-- Read `references/driver-priority-tensions-conflicts-and-missing-evidence.md`.
-- Read `references/architecture-evaluation-criteria-and-design-handoff.md`.
-- Read `references/architecture-drivers-record-audit.md` before completion.

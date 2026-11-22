@@ -1,8 +1,9 @@
 ---
 name: testing-domain-models
-description: Portable engineering capability `testing-domain-models`. Use when the
-  harness or a specialist agent explicitly requires this named capability.
+description: Designs and implements pure unit tests for backend Entities, Value Objects, and Domain Services. Use when Domain behavior must be proven through public APIs, including valid and invalid construction, invariants, lifecycle transitions, collection encapsulation, equality, immutability, serialization, and pure calculations. Domain tests must not use databases, HTTP, filesystems, framework containers, infrastructure-controlled timers, external services, adapters, or mocks. Do not use for Application Use Cases, repository adapters, external-service adapters, HTTP endpoints, or implementation-detail assertions.
+...
 ---
+
 # Testing Domain Models
 
 ## Purpose
@@ -617,12 +618,3 @@ Use `assets/domain-testing-record.md`.
 - [ ] Focused and relevant neighboring tests were executed.
 - [ ] Failure or blocked evidence is classified honestly.
 - [ ] No low-value speculative tests or mock-based Domain design was introduced.
-
-## References
-
-- Read `references/domain-test-purity.md` first.
-- Read `references/entity-testing.md` for lifecycle and invariant cases.
-- Read `references/value-object-testing.md` for equality and immutability.
-- Read `references/domain-service-testing.md` for pure policies and calculations.
-- Read `references/test-data-and-assertions.md` for fixtures and behavior-focused assertions.
-- Read `references/domain-test-audit.md` before completion.

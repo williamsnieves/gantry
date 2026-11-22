@@ -1,8 +1,9 @@
 ---
 name: implementing-external-service-adapters
-description: Portable engineering capability `implementing-external-service-adapters`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Implements provider-specific Infrastructure adapters behind accepted Application ports. Use when an external-service port already exists and must be backed by an SDK, HTTP API, messaging service, cloud service, clock, identity provider, payment provider, or notification provider. Maps Application inputs to provider payloads, translates provider results and failures into semantic port outcomes, isolates credentials and SDK types, applies safe timeout, retry, idempotency, rate-limit, observability, and lifecycle policies, and adds sandbox, emulator, contract, or deterministic integration tests. Do not use to redesign the port, leak vendor types inward, hide ambiguous outcomes, invent fallback behavior, or claim mock-only tests prove the integration.
+...
 ---
+
 # Implementing External Service Adapters
 
 ## Purpose
@@ -629,13 +630,3 @@ Use `assets/external-service-adapter-implementation-record.md`.
 - [ ] Sandbox/emulator/contract evidence is recorded honestly.
 - [ ] No provider, SDK, HTTP, credential, or transport types leak inward.
 - [ ] No unapproved fallback or Application behavior was introduced.
-
-## References
-
-- Read `references/adapter-readiness-and-contract-mapping.md` first.
-- Read `references/provider-request-response-mapping.md` for boundary transformations.
-- Read `references/failure-timeout-retry-and-idempotency.md` for resilience.
-- Read `references/security-configuration-and-lifecycle.md` for operational concerns.
-- Read `references/async-webhooks-and-reconciliation.md` when provider completion is asynchronous.
-- Read `references/adapter-testing-strategy.md` before completion.
-- Read `references/refactoring-provider-coupling.md` only for existing integrations.

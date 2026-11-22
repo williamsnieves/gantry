@@ -1,8 +1,9 @@
 ---
 name: planning-backend-vertical-slices
-description: Portable engineering capability `planning-backend-vertical-slices`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Converts a ready backend change and its applicable rule set into a sequence of small vertical behaviors implemented from Domain outward through Application, adapters, HTTP, and tests. Use after backend rule applicability is known and before detailed modeling or coding. Produces behavior slices, layer responsibilities, required ports/adapters, inside-out order, test mapping, dependencies, and unresolved architecture questions. Do not use to implement code, invent business behavior, create unnecessary modules, or organize work primarily by technical layer.
+...
 ---
+
 # Planning Backend Vertical Slices
 
 ## Purpose
@@ -516,13 +517,3 @@ Use `assets/backend-vertical-slice-plan.md`.
 - [ ] Follow-up skills selected per slice.
 - [ ] Unresolved decisions surfaced.
 - [ ] No code, business rules, or unnecessary modules invented.
-
-## References
-
-- Read `references/readiness-and-behavior-inventory.md` first.
-- Read `references/slice-design-and-walking-skeleton.md` to form slices.
-- Read `references/inside-out-and-tdd-order.md` to sequence implementation.
-- Read `references/layer-port-adapter-mapping.md` for layer responsibilities.
-- Read `references/dependencies-migrations-and-rollout.md` when sequencing complex changes.
-- Read `references/bugfix-refactor-and-infrastructure-only.md` for non-feature work.
-- Read `references/slice-quality-and-readiness.md` before completion.

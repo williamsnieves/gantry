@@ -1,8 +1,9 @@
 ---
 name: eliciting-software-requirements
-description: Portable engineering capability `eliciting-software-requirements`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Turns an initial product, system, platform, integration, or architecture idea into a structured software-requirements discovery record. Use at the beginning of greenfield work or architecture-significant change when stakeholders, actors, goals, functional needs, non-functional expectations, constraints, assumptions, dependencies, risks, success conditions, or open questions are incomplete. Separate source-confirmed facts from stakeholder statements, analyst inferences, assumptions, candidate requirements, and unresolved decisions. Produce discovery evidence for a later PRD and architecture process. Do not design the architecture, choose technologies, invent product policy, write the final PRD, or prematurely convert every statement into an accepted requirement.
+...
 ---
+
 # Eliciting Software Requirements
 
 ## Purpose
@@ -1329,14 +1330,3 @@ BLOCKED
 - [ ] No final PRD is written by this skill.
 - [ ] PRD handoff is structured.
 - [ ] Discovery readiness status is explicit.
-
-## References
-
-- Read `references/discovery-scope-provenance-and-epistemic-status.md` first.
-- Read `references/stakeholders-actors-goals-and-user-journeys.md`.
-- Read `references/functional-and-non-functional-discovery.md`.
-- Read `references/constraints-assumptions-dependencies-and-risks.md`.
-- Read `references/open-questions-conflicts-and-success-conditions.md`.
-- Read `references/brownfield-data-operations-and-external-systems.md`.
-- Read `references/adaptive-elicitation-question-strategy.md`.
-- Read `references/software-requirements-elicitation-audit.md` before completion.

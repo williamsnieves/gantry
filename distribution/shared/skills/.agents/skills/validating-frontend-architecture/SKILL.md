@@ -1,8 +1,9 @@
 ---
 name: validating-frontend-architecture
-description: Portable engineering capability `validating-frontend-architecture`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Validates a frontend repository or change against its selected architecture profile and accepted boundaries. Use to inspect dependency direction, cross-feature internal imports, public surfaces, shared-folder misuse, circular dependencies, package boundaries, server/client separation, composition placement, and automated architecture enforcement. Produce evidence-backed pass/fail findings and remediation targets using the repository's existing tooling such as ESLint boundaries, dependency-cruiser, Nx module-boundary rules, Madge, TypeScript project references, package exports, or architecture tests. Do not redesign the whole architecture, invent new folder layers, enforce Profile B/C rules on Profile A, introduce new tooling without approval, or mix subjective style review with boundary validation.
+...
 ---
+
 # Validating Frontend Architecture
 
 ## Purpose
@@ -1030,13 +1031,3 @@ Use `assets/frontend-architecture-validation-record.md`.
 - [ ] Folder aesthetics are not confused with architecture violations.
 - [ ] No new architecture profile, tool, or repository-wide redesign is introduced.
 - [ ] Final validation status is explicit.
-
-## References
-
-- Read `references/profile-aware-dependency-direction.md` first.
-- Read `references/feature-boundaries-public-surfaces-and-shared-code.md`.
-- Read `references/composition-server-client-and-package-boundaries.md`.
-- Read `references/cycles-generated-test-and-dynamic-imports.md`.
-- Read `references/architecture-automation-and-ci-enforcement.md`.
-- Read `references/findings-severity-exceptions-and-remediation.md`.
-- Read `references/frontend-architecture-validation-audit.md` before completion.

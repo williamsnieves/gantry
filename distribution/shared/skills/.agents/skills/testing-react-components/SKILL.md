@@ -1,8 +1,9 @@
 ---
 name: testing-react-components
-description: Portable engineering capability `testing-react-components`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Implements user-centered React component tests for accepted frontend behavior. Use when component tests must verify accessible roles and names, visible content, loading/empty/error/success states, keyboard interaction, focus behavior, form submission, state preservation, status communication, and integration with injected feature dependencies. Prefer semantic queries and observable behavior. Reuse the repository-approved React test stack and realistic HTTP boundary when needed. Do not test private state, internal hook calls, setter calls, wrapper hierarchy, incidental DOM structure, CSS classes unless styling is the behavior, React internals, server-state-library internals, or every lower-level branch already covered elsewhere.
+...
 ---
+
 # Testing React Components
 
 ## Purpose
@@ -871,12 +872,3 @@ Use `assets/react-component-test-implementation-record.md`.
 - [ ] Real-browser or manual evidence is requested when component-environment fidelity is insufficient.
 - [ ] Focused tests pass.
 - [ ] No new testing library or unrelated refactor was introduced.
-
-## References
-
-- Read `references/user-centered-queries-and-assertions.md` first.
-- Read `references/component-states-interactions-keyboard-and-focus.md`.
-- Read `references/dependency-injection-http-and-server-state.md`.
-- Read `references/accessibility-async-and-browser-escalation.md`.
-- Read `references/isolation-regressions-and-anti-brittleness.md`.
-- Read `references/react-component-test-audit.md` before completion.

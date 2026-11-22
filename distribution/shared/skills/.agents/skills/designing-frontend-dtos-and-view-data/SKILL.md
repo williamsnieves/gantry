@@ -1,8 +1,9 @@
 ---
 name: designing-frontend-dtos-and-view-data
-description: Portable engineering capability `designing-frontend-dtos-and-view-data`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Designs frontend Application DTOs, explicit Application results, component props, and UI view data while preserving boundaries between transport responses, Domain models, Application contracts, and Presentation. Use to map provider-specific payloads into stable serializable frontend data, decide where date/number/text formatting belongs, design nested dashboard/application results, prevent React/provider leakage, and determine when discriminated results are preferable to nullable bags or technical errors. Do not put ReactNode, JSX, icons, colors, CSS classes, callbacks, browser objects, raw provider DTOs, snake_case transport contracts, or concrete SDK types into Application DTOs.
+...
 ---
+
 # Designing Frontend DTOs and View Data
 
 ## Purpose
@@ -1247,12 +1248,3 @@ Use `assets/frontend-dto-view-data-design-record.md`.
 - [ ] Boundary duplication versus mapping ceremony is consciously decided.
 - [ ] No generic DTO/mapper framework, library, or project policy is invented.
 - [ ] Final data-boundary decision is explicit.
-
-## References
-
-- Read `references/data-boundary-classification-and-dto-value.md` first.
-- Read `references/application-results-nullability-and-partial-data.md`.
-- Read `references/view-data-formatting-localization-and-component-props.md`.
-- Read `references/provider-domain-and-serialization-boundaries.md`.
-- Read `references/mapping-ownership-testing-and-overmodeling.md`.
-- Read `references/frontend-dto-view-data-design-audit.md` before completion.

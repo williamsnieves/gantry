@@ -1,8 +1,9 @@
 ---
 name: testing-frontend-domain-and-use-cases
-description: Portable engineering capability `testing-frontend-domain-and-use-cases`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Tests frontend Domain models and Application Use Cases at fast deterministic boundaries without React, browser, HTTP, or concrete Infrastructure. Use pure tests for Entities, Value Objects, and Domain Services; test Use Cases with real Domain objects and contract-faithful InMemory repositories; and use explicit stubs/spies only for true external-service ports such as analytics, clocks, ID generators, feature services, or other side-effect capabilities. Prefer observable results and repository state over incidental call assertions. Do not mock Domain objects, replace existing InMemory repositories with jest mocks, test React hooks/components here, or call real providers/adapters.
+...
 ---
+
 # Testing Frontend Domain and Use Cases
 
 ## Purpose
@@ -1168,13 +1169,3 @@ Use `assets/frontend-domain-use-case-testing-record.md`.
 - [ ] Regression tests live at the lowest boundary containing the defect.
 - [ ] Focused and neighboring Domain/Application tests pass.
 - [ ] Final testing status is explicit.
-
-## References
-
-- Read `references/domain-test-purity-and-public-behavior.md` first.
-- Read `references/use-case-tests-inmemory-repositories-and-state-verification.md`.
-- Read `references/external-port-doubles-and-interaction-restraint.md`.
-- Read `references/determinism-fixtures-builders-and-regressions.md`.
-- Read `references/frontend-boundaries-and-duplicate-test-avoidance.md`.
-- Read `references/inmemory-contract-fidelity-and-test-support.md`.
-- Read `references/frontend-domain-use-case-testing-audit.md` before completion.

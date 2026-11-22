@@ -1,8 +1,9 @@
 ---
 name: defining-non-functional-requirements
-description: Portable engineering capability `defining-non-functional-requirements`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Converts PRD quality expectations, operational needs, constraints, risks, and system-level concerns into an explicit catalog of measurable, owned, and testable non-functional requirements. Use after a PRD exists and before detailed quality-attribute scenarios, architecture-driver identification, architecture design, or validation. Formalize performance, availability, scalability, reliability, recoverability, security, privacy, observability, maintainability, interoperability, cost, accessibility, and usability requirements only to the precision supported by evidence. Preserve TBD values and targeted clarification questions instead of inventing latency, availability, RTO/RPO, scale, security, cost, or accessibility targets. Do not select architecture, technologies, topology, or implementation mechanisms.
+...
 ---
+
 # Defining Non-Functional Requirements
 
 ## Purpose
@@ -1099,14 +1100,3 @@ assets/non-functional-requirements-catalog.md
 - [ ] Quality-attribute scenario candidates are identified.
 - [ ] Architecture-driver candidates are identified without final classification.
 - [ ] Final catalog readiness is explicit.
-
-## References
-
-- Read `references/nfr-anatomy-measurability-authority-and-verification.md` first.
-- Read `references/performance-availability-scalability-and-reliability.md`.
-- Read `references/recoverability-security-privacy-and-residency.md`.
-- Read `references/observability-maintainability-interoperability-and-operability.md`.
-- Read `references/cost-accessibility-usability-and-compliance.md`.
-- Read `references/conflicts-tradeoffs-dependencies-and-brownfield-baselines.md`.
-- Read `references/traceability-quality-attribute-and-architecture-driver-handoffs.md`.
-- Read `references/non-functional-requirements-catalog-audit.md` before completion.

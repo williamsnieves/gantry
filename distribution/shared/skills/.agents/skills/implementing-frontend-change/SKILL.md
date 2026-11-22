@@ -1,8 +1,9 @@
 ---
 name: implementing-frontend-change
-description: Portable engineering capability `implementing-frontend-change`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Orchestrates the end-to-end implementation of a frontend change by selecting and sequencing focused frontend skills rather than duplicating their detailed rules. Use when a feature, bug fix, refactor, migration, or user story must move from engineering standard and architecture-profile selection through vertical-slice planning, domain/application decisions, adapters, hooks/components, styling, testing, accessibility, performance/security/privacy checks when relevant, architecture validation, and final review. Build an explicit execution plan, route each concern to the smallest appropriate skill, preserve handoff artifacts and decision traceability, and stop when required upstream evidence is missing. Do not reimplement specialist skill guidance, invoke every skill mechanically, or proceed to code before architecture/profile/scope decisions that materially affect the change.
+...
 ---
+
 # Implementing Frontend Change
 
 ## Purpose
@@ -1294,14 +1295,3 @@ Use `assets/frontend-change-orchestration-record.md`.
 - [ ] No unresolved blocking findings remain.
 - [ ] Orchestrator delegates detailed rules instead of duplicating specialist content.
 - [ ] Final frontend-change state is explicit.
-
-## References
-
-- Read `references/frontend-change-classification-risk-and-readiness.md` first.
-- Read `references/focused-skill-routing-registry.md`.
-- Read `references/orchestration-graph-dependencies-and-parallelism.md`.
-- Read `references/handoff-contracts-decision-ledger-and-conflicts.md`.
-- Read `references/testing-accessibility-risk-review-and-validation-routing.md`.
-- Read `references/brownfield-refactor-migration-and-scope-control.md`.
-- Read `references/acceptance-criteria-openspec-and-evidence-traceability.md`.
-- Read `references/frontend-change-orchestration-audit.md` before completion.

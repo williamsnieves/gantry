@@ -1,8 +1,9 @@
 ---
 name: analyzing-architecture-tradeoffs
-description: Portable engineering capability `analyzing-architecture-tradeoffs`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Compares candidate system architectures against accepted architecture drivers, quality-attribute scenarios, constraints, risks, assumptions, team/operational context, and migration realities. Use after `designing-system-architecture` has produced meaningful candidates and before recording ADRs. Evaluate each candidate qualitatively and quantitatively only where evidence supports it; expose benefits, liabilities, sensitivity to unknowns, irreversible commitments, operational complexity, failure behavior, and hard-constraint violations. Eliminate non-viable candidates, identify dominated options, and recommend a candidate only when evidence is strong enough. Do not invent scores, weights, SLOs, costs, or provider capabilities, and do not turn the comparison into popularity voting or technology preference.
+...
 ---
+
 # Analyzing Architecture Trade-offs
 
 ## Purpose
@@ -973,14 +974,3 @@ assets/architecture-tradeoff-analysis.md
 - [ ] Major conclusions are traceable.
 - [ ] ADR handoff is explicit.
 - [ ] Final status is explicit.
-
-## References
-
-- Read `references/tradeoff-analysis-scope-criteria-and-evidence.md` first.
-- Read `references/quality-attribute-tensions-and-candidate-comparison.md`.
-- Read `references/team-operations-migration-cost-and-lockin.md`.
-- Read `references/risk-assumptions-sensitivity-thresholds-and-reversibility.md`.
-- Read `references/dominance-pareto-weighting-and-fake-precision.md`.
-- Read `references/atam-inspired-sensitivity-tradeoff-risk-thinking.md`.
-- Read `references/recommendation-defer-reversal-triggers-and-adr-handoff.md`.
-- Read `references/architecture-tradeoff-analysis-audit.md` before completion.

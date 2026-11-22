@@ -1,8 +1,9 @@
 ---
 name: migrating-to-frontend-vertical-slices
-description: Portable engineering capability `migrating-to-frontend-vertical-slices`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Migrates an existing frontend codebase incrementally from flat or technical-layer-first structure toward business capability vertical slices while preserving user-visible behavior, public contracts, and repository conventions. Use for global components/hooks/services folders, mixed ownership, cross-feature internal imports, shared-hook ambiguity, circular dependencies, package extraction, or brownfield adoption of screaming architecture. Define current and target ownership, public feature surfaces, compatibility seams, dependency direction, incremental moves, characterization evidence, and exit criteria. Do not perform a big-bang rewrite, move files without fixing ownership/imports, promote feature-specific code to shared prematurely, create ceremonial layers, or extract packages before boundaries are stable.
+...
 ---
+
 # Migrating to Frontend Vertical Slices
 
 ## Purpose
@@ -1454,14 +1455,3 @@ Use `assets/frontend-vertical-slice-migration-record.md`.
 - [ ] `validating-frontend-architecture` is used after structural movement.
 - [ ] `refactoring-react-features` is handed off when internal responsibilities still need cleanup.
 - [ ] Final migration status is explicit.
-
-## References
-
-- Read `references/current-state-capability-and-ownership-mapping.md` first.
-- Read `references/public-feature-surfaces-cross-feature-contracts-and-barrels.md`.
-- Read `references/global-components-hooks-services-utils-and-types.md`.
-- Read `references/circular-dependencies-composition-and-shared-boundaries.md`.
-- Read `references/incremental-migration-characterization-and-compatibility-seams.md`.
-- Read `references/monorepo-package-extraction-readiness.md`.
-- Read `references/validation-debt-ledger-and-migration-completion.md`.
-- Read `references/frontend-vertical-slice-migration-audit.md` before completion.

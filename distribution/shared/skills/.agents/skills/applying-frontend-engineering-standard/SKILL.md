@@ -1,8 +1,9 @@
 ---
 name: applying-frontend-engineering-standard
-description: Portable engineering capability `applying-frontend-engineering-standard`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Applies the definitive frontend engineering standard to one accepted change before implementation. Use to discover repository-local frontend rules, identify the current architecture profile, classify affected capabilities, layers, UI systems, data boundaries, accessibility needs, and test boundaries, select the smallest valid implementation path, and surface conflicts or deviations. This skill prepares the work; it does not implement code, silently choose a new state/styling/data library, force hexagonal layers onto a simple feature, or invent missing product behavior.
+...
 ---
+
 # Applying Frontend Engineering Standard
 
 ## Purpose
@@ -841,12 +842,3 @@ Use `assets/frontend-standard-application-record.md`.
 - [ ] The selected implementation path is the smallest valid one.
 - [ ] No implementation code was produced.
 - [ ] Final decision and focused-skill routing are explicit.
-
-## References
-
-- Read `references/rule-precedence-and-repository-discovery.md` first.
-- Read `references/frontend-profile-indicators.md` for profile indication.
-- Read `references/layer-state-and-data-classification.md` for affected boundaries.
-- Read `references/ui-styling-and-accessibility-profile.md` for UI-system classification.
-- Read `references/test-and-validation-selection.md` before finalizing.
-- Read `references/frontend-standard-application-audit.md` before completion.

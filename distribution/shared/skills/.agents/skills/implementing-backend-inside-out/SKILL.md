@@ -1,8 +1,9 @@
 ---
 name: implementing-backend-inside-out
-description: Portable engineering capability `implementing-backend-inside-out`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Orchestrates implementation of one ready backend vertical behavior from Domain outward through Application, adapters, HTTP, testing, and architecture validation. Use after backend rule application and vertical-slice planning have produced a ready behavior. Route each layer to the focused modeling, implementation, TDD, testing, composition, and validation skills; preserve one behavior at a time; move outward only when the current inner contract is sufficiently proven; and stop when a material product, architecture, transaction, migration, security, or external-provider decision is missing. This skill coordinates work and evidence; it does not replace the focused skills or invent missing requirements.
+...
 ---
+
 # Implementing Backend Inside-Out
 
 ## Purpose
@@ -911,12 +912,3 @@ Use `assets/backend-inside-out-implementation-record.md`.
 - [ ] No missing product or architecture decision was guessed.
 - [ ] No unrelated module-wide rewrite or speculative behavior was introduced.
 - [ ] Final behavior-level decision is explicit.
-
-## References
-
-- Read `references/readiness-and-behavior-selection.md` first.
-- Read `references/layer-routing-and-gates.md` for focused-skill sequencing.
-- Read `references/tdd-case-propagation.md` for behavior traceability.
-- Read `references/transactions-idempotency-and-side-effects.md` for cross-layer semantics.
-- Read `references/validation-and-completion.md` before finalizing.
-- Read `references/brownfield-and-infrastructure-only.md` only when applicable.

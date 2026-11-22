@@ -1,8 +1,9 @@
 ---
 name: modeling-process-flows
-description: Portable engineering capability `modeling-process-flows`. Use when the
-  harness or a specialist agent explicitly requires this named capability.
+description: Models business workflows, decision trees, validation chains, approvals, retries, fallbacks, manual/automated handoffs, and operational procedures as clear process flows or flowcharts. Use after functional requirements/use cases exist when the key question is how process logic branches and proceeds, not how system participants interact over time or how an entity transitions between lifecycle states. Produce process-flow models with explicit start/end, actors/swimlanes when useful, activities, decisions, conditions, loops, failure/fallback paths, and traceability. Do not turn flowcharts into sequence diagrams, state machines, architecture diagrams, UI click scripts, or implementation internals; do not invent branch rules or retry policies.
+...
 ---
+
 # Modeling Process Flows
 
 ## Purpose
@@ -904,13 +905,3 @@ assets/process-flow-model.md
 - [ ] UI/architecture/implementation control-flow leakage is removed.
 - [ ] State-machine and sequence candidates are identified.
 - [ ] Final readiness is explicit.
-
-## References
-
-- Read `references/process-flow-purpose-scope-and-diagram-selection.md` first.
-- Read `references/activities-decisions-conditions-and-branch-completeness.md`.
-- Read `references/loops-retries-approvals-fallbacks-and-handoffs.md`.
-- Read `references/swimlanes-parallelism-subflows-and-diagram-discipline.md`.
-- Read `references/traceability-reachability-deadends-and-conflicts.md`.
-- Read `references/process-vs-usecase-state-sequence-and-architecture.md`.
-- Read `references/process-flow-model-audit.md` before completion.

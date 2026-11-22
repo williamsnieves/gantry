@@ -1,8 +1,9 @@
 ---
 name: designing-frontend-ports
-description: Portable engineering capability `designing-frontend-ports`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Designs frontend repository and external-service ports around what Domain/Application needs rather than how browser, provider, transport, storage, analytics, clipboard, files, notifications, geolocation, clock, cache, or sync implementations work. Use to define product-language contracts, port ownership, stable inputs/outputs, not-found semantics, failure categories, cancellation, cache-awareness, idempotency, subscriptions, and test doubles. Keep provider SDKs, fetch/HTTP, localStorage/IndexedDB APIs, navigator/window/document, analytics vendor events, browser File handles, and concrete cache libraries outside ports. Do not mirror provider APIs, expose generic getJson/request methods, make every browser capability a port, or create repository interfaces for endpoints with no meaningful application/domain contract.
+...
 ---
+
 # Designing Frontend Ports
 
 ## Purpose
@@ -1430,13 +1431,3 @@ Use `assets/frontend-port-design-record.md`.
 - [ ] Test-double strategy is defined without mock-driven API design.
 - [ ] No generic ServicePort, god capability port, endpoint mirror, provider SDK, or speculative abstraction is introduced.
 - [ ] Final port decision is explicit.
-
-## References
-
-- Read `references/port-ownership-and-product-language.md` first.
-- Read `references/repositories-storage-cache-and-sync.md`.
-- Read `references/browser-capabilities-analytics-time-and-files.md`.
-- Read `references/errors-not-found-cancellation-and-races.md`.
-- Read `references/subscriptions-lifecycle-security-and-privacy.md`.
-- Read `references/test-doubles-contract-tests-and-overmodeling.md`.
-- Read `references/frontend-port-design-audit.md` before completion.

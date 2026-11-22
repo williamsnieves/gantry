@@ -1,8 +1,9 @@
 ---
 name: extracting-domain-model-from-legacy-code
-description: Portable engineering capability `extracting-domain-model-from-legacy-code`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Discovers and proposes a Domain model from existing backend behavior before refactoring. Use when business invariants are hidden across controllers, services, ORM models, jobs, provider integrations, database constraints, tests, incidents, or documentation. Gather evidence, trace decisions and state transitions, separate Domain meaning from transport, persistence, provider, and compatibility details, identify candidate Entities, Value Objects, Domain Services, errors, and repository concepts, and produce a modeling proposal with confidence and unresolved questions. Do not refactor code, infer a Domain model from tables alone, treat technical fields as business concepts automatically, freeze accidental bugs as invariants, or invent missing product rules.
+...
 ---
+
 # Extracting Domain Model From Legacy Code
 
 ## Purpose
@@ -917,12 +918,3 @@ Use `assets/legacy-domain-model-extraction-record.md`.
 - [ ] Blocking product decisions are explicit.
 - [ ] No production code was refactored or generated.
 - [ ] Handoff to focused modeling/refactoring skills is clear.
-
-## References
-
-- Read `references/evidence-and-decision-mining.md` first.
-- Read `references/separating-domain-from-technical-concerns.md` for classification.
-- Read `references/entities-value-objects-and-services.md` for candidate selection.
-- Read `references/state-transitions-data-and-contradictions.md` for legacy state.
-- Read `references/modeling-proposal-and-handoff.md` before finalizing.
-- Read `references/domain-extraction-audit.md` before completion.

@@ -1,8 +1,9 @@
 ---
 name: reviewing-backend-code
-description: Portable engineering capability `reviewing-backend-code`. Use when the
-  harness or a specialist agent explicitly requires this named capability.
+description: Reviews backend changes against the definitive backend engineering standard using evidence-oriented code audit, adversarial challenge, and detailed inspection. Use for pull requests, diffs, branches, modules, or focused backend changes after implementation. Classify findings across correctness, architecture, security, maintainability, testing, compatibility, and operations; prioritize defects that can change behavior, corrupt data, leak boundaries, weaken tenant isolation, duplicate side effects, or leave required evidence missing. Compose auditing-code, reviewing-adversarially, and analyzing-details when available. Do not report personal style preferences, rewrite the change, invent requirements, or mark unavailable validation as passed.
+...
 ---
+
 # Reviewing Backend Code
 
 ## Purpose
@@ -816,12 +817,3 @@ Use `assets/backend-code-review-report.md`.
 - [ ] Missing product/architecture decisions are questions or blockers, not guessed.
 - [ ] Final decision matches the findings and available evidence.
 - [ ] No code was rewritten as part of the review.
-
-## References
-
-- Read `references/review-scope-and-evidence.md` first.
-- Read `references/correctness-and-layer-review.md` for code-path inspection.
-- Read `references/security-data-integrity-and-operations.md` for high-risk areas.
-- Read `references/testing-and-validation-review.md` for evidence quality.
-- Read `references/finding-quality-severity-and-decisions.md` before reporting.
-- Read `references/brownfield-and-compatibility-review.md` when reviewing legacy changes.

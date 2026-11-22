@@ -1,8 +1,8 @@
 ---
 name: practicing-backend-tdd
-description: Portable engineering capability `practicing-backend-tdd`. Use when the
-  harness or a specialist agent explicitly requires this named capability.
+description: "Drives one backend behavioral case through the project TDD cycle Reason \u2192 Red \u2192 Green \u2192 Refactor \u2192 Re-evaluate. Use while implementing Domain, Application, repository adapter, external-service adapter, controller, composition, or another backend behavior where a testable behavior exists. Keeps one behavioral case active, verifies Red fails for the intended reason, constrains Green to the minimum implementation, permits refactoring only while green, and records when to continue, move outward, or stop for a missing decision. Do not use to replace focused implementation/testing skills, batch several behaviors into one cycle, refactor while red, accept a test that already passes, or skip verification for configuration-only exceptions."
 ---
+
 # Practicing Backend TDD
 
 ## Purpose
@@ -628,12 +628,3 @@ BLOCKED
 - [ ] Configuration-only exception, when used, still includes validation.
 - [ ] Boundary limitations and residual uncertainty are reported honestly.
 - [ ] Progress record contains commands and evidence.
-
-## References
-
-- Read `references/reason-and-case-selection.md` first.
-- Read `references/red-quality.md` before accepting a failing test.
-- Read `references/green-and-refactor-discipline.md` before production changes.
-- Read `references/re-evaluation-and-layer-progression.md` before moving outward.
-- Read `references/test-levels-and-doubles.md` when selecting evidence.
-- Read `references/exceptions-blockers-and-flakiness.md` when normal TDD cannot proceed.

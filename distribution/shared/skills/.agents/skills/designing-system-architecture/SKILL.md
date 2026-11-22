@@ -1,8 +1,9 @@
 ---
 name: designing-system-architecture
-description: Portable engineering capability `designing-system-architecture`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Generates multiple candidate system architectures from accepted architecture drivers, quality-attribute scenarios, constraints, assumptions, use cases, process flows, state machines, risks, and dependencies. Use after architecture drivers are identified and before trade-off analysis or ADR creation. Define system boundaries, major responsibilities, decomposition options, data ownership, communication styles, failure boundaries, integration patterns, deployment shapes, consistency expectations, operational implications, and unresolved risks for each candidate. Do not select a winner by preference, trend, or technology familiarity; do not fabricate requirements, collapse alternatives too early, or perform detailed C4/sequence/ERD/deployment modeling yet.
+...
 ---
+
 # Designing System Architecture
 
 ## Purpose
@@ -809,14 +810,3 @@ can compare candidates systematically.
 - [ ] Missing evidence blocking architecture is explicit.
 - [ ] Handoff to trade-off analysis is complete.
 - [ ] Final readiness is explicit.
-
-## References
-
-- Read `references/architecture-scope-drivers-forces-and-candidate-generation.md` first.
-- Read `references/responsibility-boundaries-decomposition-and-ownership.md`.
-- Read `references/data-ownership-consistency-and-communication-styles.md`.
-- Read `references/failure-security-deployment-scaling-and-operational-model.md`.
-- Read `references/team-modifiability-cost-complexity-and-lockin.md`.
-- Read `references/brownfield-migration-and-evolution-candidates.md`.
-- Read `references/constraint-compliance-driver-coverage-and-candidate-differentiation.md`.
-- Read `references/candidate-system-architecture-audit.md` before completion.

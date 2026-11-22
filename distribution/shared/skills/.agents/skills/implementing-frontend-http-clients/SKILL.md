@@ -1,8 +1,9 @@
 ---
 name: implementing-frontend-http-clients
-description: Portable engineering capability `implementing-frontend-http-clients`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Implements or evolves the approved frontend HTTP abstraction inside Infrastructure. Use when the repository needs centralized handling for base URL, authentication, headers, decoding, abort signals, retry policy, correlation IDs, observability, file upload, streaming, and stable transport errors. Keep raw fetch/vendor-client usage isolated to the HTTP implementation or an intentionally isolated adapter. Preserve distinguishable network, authorization, malformed-payload, timeout, rate-limit, server, and cancellation semantics. Do not move repository/domain mapping, business rules, React state, provider-specific DTO semantics, or retry ownership from higher/lower layers into the HTTP client without accepted policy.
+...
 ---
+
 # Implementing Frontend HTTP Clients
 
 ## Purpose
@@ -1250,14 +1251,3 @@ Use `assets/frontend-http-client-implementation-record.md`.
 - [ ] Tests cover roadmap cases: token injection, abort, malformed JSON, 401, retry, upload, streaming.
 - [ ] No new HTTP library, retry library, validation library, or observability stack is introduced without approval.
 - [ ] Final implementation status is explicit.
-
-## References
-
-- Read `references/http-client-scope-and-request-contract.md` first.
-- Read `references/authentication-headers-and-runtime-lifecycle.md`.
-- Read `references/decoding-errors-and-status-mapping.md`.
-- Read `references/cancellation-retries-and-idempotency.md`.
-- Read `references/uploads-streaming-and-response-modes.md`.
-- Read `references/observability-security-and-privacy.md`.
-- Read `references/http-client-testing-and-migration.md`.
-- Read `references/frontend-http-client-audit.md` before completion.

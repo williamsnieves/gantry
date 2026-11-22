@@ -1,8 +1,9 @@
 ---
 name: threat-modeling-with-stride
-description: Portable engineering capability `threat-modeling-with-stride`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Performs architecture-level threat modeling using STRIDE before or during system design. Use when a frontend, backend, API, identity flow, infrastructure boundary, storage layer, asynchronous workflow, third-party integration, or full-stack feature needs systematic threat discovery. Identify assets, actors, entry points, trust boundaries, data flows, privileges, and abuse paths; then analyze Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, and Elevation of Privilege threats and derive concrete mitigations, residual risk, verification evidence, and ownership. Do not use STRIDE as a flat checklist detached from actual data flows, invent threats without a plausible path, or treat mitigations as implemented until evidence exists.
+...
 ---
+
 # Threat Modeling with STRIDE
 
 ## Purpose
@@ -992,14 +993,3 @@ Use `assets/stride-threat-model-record.md`.
 - [ ] Residual risk and owners are explicit.
 - [ ] Verification exists for every material mitigation.
 - [ ] Final threat-model status is explicit.
-
-## References
-
-- Read `references/stride-categories-and-threat-statements.md` first.
-- Read `references/assets-actors-trust-boundaries-and-data-flows.md`.
-- Read `references/authentication-authorization-multitenancy-and-privilege.md`.
-- Read `references/webhooks-files-third-parties-and-browser-boundaries.md`.
-- Read `references/infrastructure-iam-cicd-secrets-and-supply-chain.md`.
-- Read `references/dos-resource-exhaustion-and-algorithmic-complexity.md`.
-- Read `references/mitigations-residual-risk-and-verification.md`.
-- Read `references/stride-threat-model-audit.md` before completion.

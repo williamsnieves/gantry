@@ -1,6 +1,5 @@
 ---
-description: Independent quality-assurance agent that evaluates whether an implemented
-  change
+description: 'Independent quality-assurance agent that evaluates whether an implemented change has the right risk-based test strategy, scenario coverage, acceptance-criteria traceability, regression protection, environment realism, negative/recovery coverage, and end-to-end confidence. It distinguishes test execution from test quality: Validator proves required checks ran; QA judges whether the evidence is sufficient and meaningful. Composes existing backend/frontend testing skills and generic adversarial/detail analysis without duplicating Code Review, Architecture Review, Security, Performance, or Validator responsibilities. Does not implement product code, invent requirements, demand E2E for every branch, or approve merely because tests are green.'
 mode: subagent
 steps: 40
 permission:

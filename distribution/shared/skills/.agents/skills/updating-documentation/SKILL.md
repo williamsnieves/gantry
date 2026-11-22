@@ -1,8 +1,9 @@
 ---
 name: updating-documentation
-description: Portable engineering capability `updating-documentation`. Use when the
-  harness or a specialist agent explicitly requires this named capability.
+description: Updates project documentation after an approved software change by identifying affected documentation surfaces, grounding every edit in current code and specifications, removing stale guidance, and validating commands, examples, links, and terminology. Do not use to invent behavior or manually patch generated docs.
+...
 ---
+
 # Updating Documentation
 
 ## Purpose

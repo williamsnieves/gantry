@@ -1,8 +1,8 @@
 ---
 name: testing-backend-http-e2e
-description: Portable engineering capability `testing-backend-http-e2e`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: 'Designs and implements backend HTTP end-to-end tests against a composed application using real HTTP requests. Use when critical routes must prove request parsing, authentication context, controller mapping, Use Case orchestration, persistence side effects, response status/body/headers, idempotency, and representative failure paths. Keep the E2E suite selective and evidence-oriented: cover critical cross-layer behavior without duplicating every Domain, Use Case, repository, or provider-adapter case. Do not bypass HTTP by calling controllers directly, expose real provider credentials, depend on production data, or claim blocked environment checks passed.'
 ---
+
 # Testing Backend HTTP E2E
 
 ## Purpose
@@ -816,12 +816,3 @@ Use `assets/backend-http-e2e-testing-record.md`.
 - [ ] Exact commands and outcomes are recorded.
 - [ ] Production credentials, data, and endpoints are never used.
 - [ ] No technical provider/database details leak through the HTTP contract.
-
-## References
-
-- Read `references/e2e-scope-and-scenario-selection.md` first.
-- Read `references/test-composition-and-environment.md` for application setup.
-- Read `references/http-contract-auth-and-errors.md` for public assertions.
-- Read `references/side-effects-idempotency-and-async.md` for cross-layer outcomes.
-- Read `references/data-isolation-cleanup-and-ci.md` for reliable execution.
-- Read `references/failure-classification-and-duplication-audit.md` before completion.

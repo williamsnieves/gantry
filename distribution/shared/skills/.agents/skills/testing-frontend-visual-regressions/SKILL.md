@@ -1,8 +1,9 @@
 ---
 name: testing-frontend-visual-regressions
-description: Portable engineering capability `testing-frontend-visual-regressions`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Designs and maintains frontend visual-regression tests for UI whose appearance is itself part of the product contract. Use to select proportional screenshot scope, stabilize deterministic fixtures and rendering conditions, define meaningful viewport/container/theme matrices, test design-system primitives, complex responsive layouts, charts, document rendering, and other pixel-sensitive UI, and triage intentional versus accidental image changes. Prefer existing Playwright screenshot, Storybook/Chromatic, Percy, or custom image-diff infrastructure. Do not snapshot every component, use visual tests to replace semantic/behavior tests, approve baselines blindly, or hide nondeterminism behind excessive pixel tolerances.
+...
 ---
+
 # Testing Frontend Visual Regressions
 
 ## Purpose
@@ -1331,14 +1332,3 @@ Use `assets/frontend-visual-regression-testing-record.md`.
 - [ ] Roadmap responsibilities are covered: scope selection, stable fixtures/viewports, themes/responsive states, intentional-vs-accidental triage.
 - [ ] Standard priority surfaces are addressed where applicable: design-system primitives, responsive layouts, themes, charts, document rendering, pixel-sensitive UI.
 - [ ] Final visual-testing status is explicit.
-
-## References
-
-- Read `references/selecting-visual-regression-scope.md` first.
-- Read `references/stabilizing-fixtures-fonts-assets-animation-and-environment.md`.
-- Read `references/viewports-container-queries-themes-and-state-matrices.md`.
-- Read `references/charts-documents-and-pixel-sensitive-ui.md`.
-- Read `references/baselines-diff-thresholds-and-triage.md`.
-- Read `references/playwright-storybook-chromatic-percy-and-tool-selection.md`.
-- Read `references/privacy-ci-artifacts-flake-and-maintenance.md`.
-- Read `references/frontend-visual-regression-testing-audit.md` before completion.

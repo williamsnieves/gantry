@@ -1,8 +1,9 @@
 ---
 name: defining-functional-requirements
-description: Portable engineering capability `defining-functional-requirements`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Converts accepted or review-ready PRD goals, journeys, product decisions, and functional candidates into a stable catalog of explicit, atomic, traceable, and testable functional requirements. Use after a PRD exists and before detailed use-case modeling, process-flow modeling, architecture design, user-story decomposition, or OpenSpec specification. For each requirement, identify actor, trigger, preconditions, required system behavior, observable outcome, postconditions, important alternatives/failures, source, status, and priority when authoritative. Split ambiguous compound behavior, preserve unresolved decisions, and avoid implementation or architecture detail. Do not invent behavior, silently resolve product questions, encode NFRs as functional requirements, or use mandatory language without accepted authority.
+...
 ---
+
 # Defining Functional Requirements
 
 ## Purpose
@@ -1060,14 +1061,3 @@ final readiness
 - [ ] NFR content is cross-referenced instead of duplicated.
 - [ ] Use-case/process-flow/state-machine candidates are identified.
 - [ ] Catalog readiness is explicit.
-
-## References
-
-- Read `references/functional-requirement-anatomy-atomicity-and-modality.md` first.
-- Read `references/actors-triggers-preconditions-outcomes-and-postconditions.md`.
-- Read `references/conditional-alternative-failure-and-permission-behavior.md`.
-- Read `references/external-integrations-business-rules-state-and-data-effects.md`.
-- Read `references/ambiguity-testability-and-implementation-leakage.md`.
-- Read `references/traceability-coverage-duplicates-and-conflicts.md`.
-- Read `references/brownfield-and-downstream-modeling-handoffs.md`.
-- Read `references/functional-requirements-catalog-audit.md` before completion.

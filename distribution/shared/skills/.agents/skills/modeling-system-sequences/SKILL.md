@@ -1,8 +1,9 @@
 ---
 name: modeling-system-sequences
-description: Portable engineering capability `modeling-system-sequences`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Models time-ordered interactions across actors, UI/frontends, APIs, applications/services, data stores, queues, and external providers for architecturally important scenarios. Use after use cases/process flows/state machines and accepted architecture/C4 boundaries exist, when runtime interaction order matters. Include happy paths, important alternatives, failures, retries, timeouts, authorization, and concurrency/idempotency only when supported by requirements or architecture decisions. Produce sequence models with explicit participants, messages, conditions, responses, failure semantics, and traceability. Do not invent protocols, endpoints, retry policies, timeout values, idempotency behavior, or architectural participants; do not use sequence diagrams as process flows, state machines, DFDs, or deployment diagrams.
+...
 ---
+
 # Modeling System Sequences
 
 ## Purpose
@@ -975,14 +976,3 @@ assets/sequence-model.md
 - [ ] Architecture/state/process conflicts are surfaced.
 - [ ] Downstream DFD/event/deployment/validation handoffs are explicit.
 - [ ] Final readiness is explicit.
-
-## References
-
-- Read `references/sequence-purpose-scope-participants-and-abstraction.md` first.
-- Read `references/happy-path-alternatives-failures-and-degraded-mode.md`.
-- Read `references/retries-timeouts-authorization-and-tenant-scope.md`.
-- Read `references/concurrency-idempotency-duplicates-and-ordering.md`.
-- Read `references/storage-provider-callback-audit-and-interaction-order.md`.
-- Read `references/sequence-vs-process-state-c4-dfd-event-and-deployment.md`.
-- Read `references/traceability-alignment-and-sequence-audit.md`.
-- Read `references/sequence-model-audit.md` before completion.

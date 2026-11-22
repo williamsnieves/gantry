@@ -1,8 +1,8 @@
 ---
 name: defining-quality-attributes
-description: Portable engineering capability `defining-quality-attributes`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: "Converts accepted or review-ready non-functional requirements into architecture-relevant quality-attribute scenarios using the source \u2192 stimulus \u2192 environment \u2192 artifact \u2192 response \u2192 response measure structure. Use before identifying architecture drivers, comparing candidate architectures, or validating an architecture when qualities such as availability, performance, scalability, reliability, modifiability, maintainability, security, privacy, observability, recoverability, interoperability, testability, usability, accessibility, or cost efficiency need concrete scenarios. Preserve unsupported measures as TBD, distinguish quality attributes from constraints and implementation tactics, expose trade-off tensions, and produce scenarios that can later be used to evaluate architecture decisions. Do not choose architecture, invent targets, prescribe tactics, or treat every NFR as architecture-significant."
 ---
+
 # Defining Quality Attributes
 
 ## Purpose
@@ -1025,14 +1025,3 @@ assets/quality-attribute-scenarios.md
 - [ ] Architecture-driver candidates are flagged without final classification.
 - [ ] Trade-off and architecture-validation handoffs are explicit.
 - [ ] Final quality-attribute readiness is explicit.
-
-## References
-
-- Read `references/quality-attribute-scenario-anatomy-and-measure-discipline.md` first.
-- Read `references/availability-performance-scalability-reliability-and-recovery-scenarios.md`.
-- Read `references/security-privacy-observability-and-operability-scenarios.md`.
-- Read `references/modifiability-maintainability-interoperability-and-testability-scenarios.md`.
-- Read `references/usability-accessibility-and-cost-efficiency-scenarios.md`.
-- Read `references/tradeoffs-constraints-assumptions-and-dependency-feasibility.md`.
-- Read `references/architecture-driver-tradeoff-and-validation-handoffs.md`.
-- Read `references/quality-attribute-scenarios-audit.md` before completion.

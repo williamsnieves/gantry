@@ -1,8 +1,9 @@
 ---
 name: creating-product-requirement-documents
-description: Portable engineering capability `creating-product-requirement-documents`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Creates a structured Product Requirements Document (PRD) from accepted requirements-elicitation evidence while preserving source provenance, uncertainty, conflicts, non-goals, constraints, assumptions, risks, success conditions, and acceptance criteria. Use after `eliciting-software-requirements` or equivalent discovery has produced enough evidence for a product/system-level document. Organize product intent and required outcomes without silently resolving open questions, inventing business KPIs, converting preferences into hard constraints, or prescribing premature architecture/technology decisions. The PRD is the structured what/why/constraints artifact that feeds formal FR/NFR, quality-attribute, architecture, user-story, and OpenSpec workflows.
+...
 ---
+
 # Creating Product Requirement Documents
 
 ## Purpose
@@ -1142,14 +1143,3 @@ assets/product-requirements-document.md
 - [ ] Discovery provenance is preserved in a traceability appendix.
 - [ ] Final PRD readiness status is explicit.
 - [ ] Handoff to formal requirements/architecture is included.
-
-## References
-
-- Read `references/prd-structure-status-and-product-architecture-boundary.md` first.
-- Read `references/problem-goals-non-goals-and-product-outcomes.md`.
-- Read `references/actors-journeys-functional-and-nonfunctional-sections.md`.
-- Read `references/constraints-assumptions-dependencies-risks-and-open-questions.md`.
-- Read `references/success-metrics-acceptance-criteria-and-prioritization.md`.
-- Read `references/data-integrations-operations-and-brownfield-prds.md`.
-- Read `references/provenance-traceability-versioning-and-approval.md`.
-- Read `references/product-requirements-document-audit.md` before completion.

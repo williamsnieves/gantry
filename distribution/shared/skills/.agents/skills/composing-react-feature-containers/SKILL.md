@@ -1,8 +1,9 @@
 ---
 name: composing-react-feature-containers
-description: Portable engineering capability `composing-react-feature-containers`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Composes React feature containers at outer presentation/routing boundaries. Use to bind routes, Use Cases, approved server-state hooks, feature hooks, and presentational components; decide whether container and view remain together; preserve composition-root dependency creation; handle route containers, modal features, Next.js server/client splits, React Router loaders, and test containers; and avoid ceremonial wrappers. Containers may obtain dependencies, connect routing, bind feature behavior, and pass stable data/commands inward, but must not become a second Application layer, instantiate concrete infrastructure ad hoc, hide business rules, duplicate server-state ownership, or add wrappers with no composition value.
+...
 ---
+
 # Composing React Feature Containers
 
 ## Purpose
@@ -1235,13 +1236,3 @@ Use `assets/react-feature-container-composition-record.md`.
 - [ ] Roadmap evaluations are covered: route container, modal feature, tiny component, Next.js server/client split, React Router loader, test container.
 - [ ] No generic container framework, new DI system, or wrapper ceremony is introduced.
 - [ ] Final composition decision is explicit.
-
-## References
-
-- Read `references/container-justification-and-composition-boundary.md` first.
-- Read `references/route-modal-and-view-composition.md`.
-- Read `references/nextjs-server-client-and-framework-boundaries.md`.
-- Read `references/react-router-loaders-actions-and-prefetch.md`.
-- Read `references/test-containers-and-dependency-overrides.md`.
-- Read `references/ceremonial-containers-service-location-and-overmodeling.md`.
-- Read `references/react-feature-container-composition-audit.md` before completion.

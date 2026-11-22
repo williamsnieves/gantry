@@ -1,8 +1,9 @@
 ---
 name: writing-skills
-description: Portable engineering capability `writing-skills`. Use when the harness
-  or a specialist agent explicitly requires this named capability.
+description: Use when creating a new agent skill, revising an existing skill, investigating unreliable skill activation, reducing skill context usage, or verifying a skill before adoption.
+...
 ---
+
 # Writing Skills
 
 ## Purpose

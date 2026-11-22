@@ -1,8 +1,9 @@
 ---
 name: adapting-backend-rules-to-existing-code
-description: Portable engineering capability `adapting-backend-rules-to-existing-code`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Adapts the definitive backend engineering standard to an existing brownfield codebase without forcing an unrelated rewrite. Use when a backend change lands in legacy, layered, framework-centric, transaction-script, ORM-first, service-heavy, or partially hexagonal code. Profile the current architecture, define the target state, select change-local mandatory rules, identify safe migration seams, protect behavior with characterization evidence, prevent new or worsened drift, and record accepted temporary deviations in a debt ledger. Do not silently waive mandatory invariants, demand repository-wide conformance for a local change, or convert the task into a big-bang refactor.
+...
 ---
+
 # Adapting Backend Rules to Existing Code
 
 ## Purpose
@@ -850,12 +851,3 @@ Use `assets/backend-brownfield-adaptation-record.md`.
 - [ ] Migration, rollback, and observability are defined when applicable.
 - [ ] Focused tests and architecture validation provide actual evidence.
 - [ ] Final decision and next safe slice are explicit.
-
-## References
-
-- Read `references/current-and-target-state-mapping.md` first.
-- Read `references/change-local-rule-selection.md` for scope decisions.
-- Read `references/characterization-and-migration-seams.md` before moving behavior.
-- Read `references/compatibility-data-and-transactions.md` for risky migrations.
-- Read `references/deviations-and-debt-ledger.md` before accepting debt.
-- Read `references/brownfield-validation-and-completion.md` before finalizing.

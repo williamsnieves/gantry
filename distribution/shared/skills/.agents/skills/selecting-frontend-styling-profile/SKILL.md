@@ -1,8 +1,9 @@
 ---
 name: selecting-frontend-styling-profile
-description: Portable engineering capability `selecting-frontend-styling-profile`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Identifies and documents the approved frontend styling profile for a project, application, package, capability, or feature. Use when deciding whether UI should use CSS Modules, Tailwind, CSS-in-JS, vanilla CSS, a company design system, shadcn/ui, headless primitives, or a hybrid with explicit ownership boundaries. Determine token source, primitive ownership, variant strategy, theming, responsive approach, accessibility baseline, global-style limits, runtime-value exceptions, and migration policy. Preserve repository-local conventions and choose the smallest coherent strategy. Do not implement CSS, introduce or ban a styling system universally, mix competing systems without a documented boundary, promote feature UI to shared based only on appearance, wrap accessible primitives in ways that break behavior, or invent design tokens.
+...
 ---
+
 # Selecting Frontend Styling Profile
 
 ## Purpose
@@ -1044,12 +1045,3 @@ Use `assets/frontend-styling-profile-record.md`.
 - [ ] Migration and exception policies are explicit where applicable.
 - [ ] Required visual, accessibility, responsive, theme, package, and build evidence is identified.
 - [ ] No CSS implementation, new styling system, or universal ban was produced.
-
-## References
-
-- Read `references/profile-selection-and-hybrid-boundaries.md` first.
-- Read `references/tokens-variants-themes-and-runtime-values.md` for visual contracts.
-- Read `references/primitives-design-systems-and-headless-ownership.md` for UI ownership.
-- Read `references/responsive-global-css-specificity-and-accessibility.md` for discipline.
-- Read `references/migration-exceptions-and-validation.md` before finalizing.
-- Read `references/frontend-styling-profile-audit.md` before completion.

@@ -1,8 +1,9 @@
 ---
 name: classifying-frontend-architecture-profile
-description: Portable engineering capability `classifying-frontend-architecture-profile`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Selects the lightest frontend architecture profile that preserves the required boundaries for a feature, application, or package. Use when deciding between Profile A (simple feature/application), Profile B (modular frontend), and Profile C (large product/monorepo), especially when Domain/Application layers, ports, public package contracts, capability ownership, offline behavior, or independent evolution are uncertain. Base the decision on accepted behavior, repository reality, consumers, state complexity, authority, testability, and scaling triggers. Do not implement code, force hexagonal layers, treat folder count as architecture, create speculative packages or shared abstractions, or leave complex client-owned behavior in a flat feature without justification.
+...
 ---
+
 # Classifying Frontend Architecture Profile
 
 ## Purpose
@@ -860,12 +861,3 @@ Use `assets/frontend-architecture-profile-record.md`.
 - [ ] Deferred complexity and scaling triggers are concrete.
 - [ ] Migration conditions are change-local and proportionate.
 - [ ] No implementation or broad repository redesign was produced.
-
-## References
-
-- Read `references/profile-a-simple-feature.md` for Profile A.
-- Read `references/profile-b-modular-frontend.md` for Profile B.
-- Read `references/profile-c-package-scale.md` for Profile C.
-- Read `references/domain-application-and-port-justification.md` for layer decisions.
-- Read `references/overengineering-understructuring-and-triggers.md` before finalizing.
-- Read `references/frontend-profile-classification-audit.md` before completion.

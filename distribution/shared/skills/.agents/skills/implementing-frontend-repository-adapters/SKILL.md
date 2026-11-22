@@ -1,8 +1,9 @@
 ---
 name: implementing-frontend-repository-adapters
-description: Portable engineering capability `implementing-frontend-repository-adapters`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Implements frontend repository ports for remote APIs, browser storage, IndexedDB, cache-backed collections, BFFs, or offline persistence. Use when an accepted port and frontend slice require concrete Infrastructure code. Map transport/storage data inward and internal data outward, validate untrusted payloads when required, preserve not-found, cancellation, conflict, unavailable, and malformed-data semantics, support pagination and abort signals, and reuse the approved HTTP/storage abstraction. Do not leak raw responses, provider enums, snake_case, nullable transport quirks, browser handles, or technical exceptions inward; do not add business rules, invent retry policy, call React APIs, or introduce new libraries without an accepted decision.
+...
 ---
+
 # Implementing Frontend Repository Adapters
 
 ## Purpose
@@ -771,12 +772,3 @@ Use `assets/frontend-repository-adapter-implementation-record.md`.
 - [ ] Shared port contract tests are used when multiple implementations exist.
 - [ ] Dependency direction and composition are correct.
 - [ ] No new library or architecture policy was introduced silently.
-
-## References
-
-- Read `references/adapter-boundaries-and-mapping.md` first.
-- Read `references/http-errors-cancellation-and-pagination.md` for remote adapters.
-- Read `references/indexeddb-storage-cache-and-offline.md` for browser persistence.
-- Read `references/runtime-validation-dates-enums-and-nullability.md` for data safety.
-- Read `references/frontend-adapter-testing-and-contracts.md` before completion.
-- Read `references/frontend-repository-adapter-audit.md` before finalizing.

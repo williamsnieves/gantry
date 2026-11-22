@@ -1,8 +1,9 @@
 ---
 name: implementing-repository-adapters
-description: Portable engineering capability `implementing-repository-adapters`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Implements real Infrastructure persistence adapters behind existing repository ports. Use when a Domain/Application repository contract is already accepted and must be backed by SQL, document storage, ORM, filesystem, or another persistence technology. Maps persistence representations to Domain objects and back, reconstitutes valid aggregates, preserves contract semantics, translates technical failures, enforces real constraints, and adds isolated integration tests. Do not use to redesign repository ports, return persistence models, weaken Domain invariants, invent schema policy, or treat mocks as proof of persistence behavior.
+...
 ---
+
 # Implementing Repository Adapters
 
 ## Purpose
@@ -635,13 +636,3 @@ Use `assets/repository-adapter-implementation-record.md`.
 - [ ] Migration and cleanup behavior is reproducible.
 - [ ] No ORM, row, generated, or database types leak inward.
 - [ ] No repository port redesign or speculative operation was introduced.
-
-## References
-
-- Read `references/adapter-readiness-and-contract-mapping.md` first.
-- Read `references/persistence-domain-mapping.md` for mapping and reconstitution.
-- Read `references/save-errors-transactions-and-concurrency.md` for write semantics.
-- Read `references/query-pagination-and-deletion.md` when read/query behavior applies.
-- Read `references/integration-and-contract-testing.md` before completion.
-- Read `references/migrations-brownfield-and-invalid-data.md` when schema or legacy data is involved.
-- Read `references/security-observability-and-lifecycle.md` for operational concerns.

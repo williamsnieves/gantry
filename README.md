@@ -153,6 +153,16 @@ leh uninstall
 
 Runtime adapters execute the same routing, handoff, blocking, re-review and Final Pre-PR contracts.
 
+## Development
+
+```bash
+pip install "PyYAML>=6.0"
+python3 tests/check_distribution.py   # structural integrity of distribution/
+python3 tests/smoke_test.py           # install / doctor / uninstall round trip
+```
+
+Skills live once under `distribution/shared/skills/`. The installer renders them per runtime; do not add skill copies under `distribution/runtimes/`.
+
 ## Version
 
 ```text

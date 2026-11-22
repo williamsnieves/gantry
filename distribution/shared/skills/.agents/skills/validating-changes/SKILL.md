@@ -1,8 +1,9 @@
 ---
 name: validating-changes
-description: Portable engineering capability `validating-changes`. Use when the harness
-  or a specialist agent explicitly requires this named capability.
+description: Runs and reports the repository-native mechanical validation required for a software change, including formatting, linting, static analysis, type checks, tests, builds, and project-specific checks. Use before review, pull request creation, or completion claims. Do not use to judge test quality, review architecture, assess code style beyond tooling, or fix unrelated failures.
+...
 ---
+
 # Validating Changes
 
 ## Purpose

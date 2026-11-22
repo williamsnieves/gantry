@@ -1,8 +1,9 @@
 ---
 name: refactoring-react-features
-description: Portable engineering capability `refactoring-react-features`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Refactors existing React features to reduce mixed responsibilities, improve architectural boundaries, extract behavior/mapping/UI primitives safely, and preserve tests and user-visible behavior. Use when a component is oversized, a custom hook has become a god hook, components call fetch or concrete adapters directly, shared abstractions have overreached into business semantics, async state is duplicated between server-state and local React state, or a custom widget is inaccessible. Refactor by responsibility and ownership rather than line count; preserve behavior with characterization tests; prefer established component, hook, Effect, server-state, HTTP, accessibility, and architecture boundaries; and avoid speculative abstraction or broad rewrites.
+...
 ---
+
 # Refactoring React Features
 
 ## Purpose
@@ -1243,14 +1244,3 @@ Use `assets/react-feature-refactoring-record.md`.
 - [ ] `validating-frontend-architecture` runs after meaningful boundary changes.
 - [ ] Roadmap evaluations are covered: oversized component, god hook, direct fetch, shared abstraction overreach, duplicated async state, inaccessible custom widget.
 - [ ] Final refactor status is explicit.
-
-## References
-
-- Read `references/responsibility-inventory-and-behavior-preservation.md` first.
-- Read `references/oversized-components-and-semantic-extraction.md`.
-- Read `references/god-hooks-application-boundaries-and-effects.md`.
-- Read `references/direct-fetch-server-state-and-infrastructure-boundaries.md`.
-- Read `references/shared-abstraction-overreach-and-feature-reownership.md`.
-- Read `references/duplicated-async-state-and-single-owner-model.md`.
-- Read `references/inaccessible-custom-widgets-and-accessible-primitives.md`.
-- Read `references/react-feature-refactoring-audit.md` before completion.

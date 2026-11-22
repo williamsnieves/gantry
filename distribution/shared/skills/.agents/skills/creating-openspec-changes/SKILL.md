@@ -1,8 +1,9 @@
 ---
 name: creating-openspec-changes
-description: Portable engineering capability `creating-openspec-changes`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Creates and validates a new OpenSpec change from a clear request or completed exploration handoff. Use when intent, scope, affected capabilities, and material decisions are sufficiently ready to produce the planning artifacts required by the project's configured OpenSpec workflow. Do not use for exploration, editing an active change, implementation, synchronization, or archival.
+...
 ---
+
 # Creating OpenSpec Changes
 
 ## Purpose

@@ -1,8 +1,9 @@
 ---
 name: reviewing-frontend-privacy-and-analytics
-description: Portable engineering capability `reviewing-frontend-privacy-and-analytics`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Reviews frontend analytics, telemetry, consent handling, PII exposure, retention assumptions, event naming, debug logging, and third-party analytics/provider boundaries. Use when page tracking, form analytics, user identifiers, consent withdrawal, telemetry SDKs, session replay, error reporting, or client-side debug events may collect or transmit user data. Ensure analytics follows application privacy/consent policy and cannot bypass it through direct SDK calls. Keep provider access behind application/infrastructure boundaries and prefer data minimization. Do not invent legal requirements, infer consent policy, classify every identifier as forbidden PII, or duplicate general security findings handled by reviewing-frontend-security.
+...
 ---
+
 # Reviewing Frontend Privacy and Analytics
 
 ## Purpose
@@ -1261,14 +1262,3 @@ Use `assets/frontend-privacy-analytics-review-record.md`.
 - [ ] Tests cover consent denial/withdrawal and payload minimization at the lowest useful boundary.
 - [ ] Roadmap evaluations are covered: page tracking, form field capture, consent withdrawal, user identifier, debug logging, third-party SDK.
 - [ ] Final privacy/analytics status is explicit.
-
-## References
-
-- Read `references/analytics-policy-data-minimization-and-event-contracts.md` first.
-- Read `references/consent-gating-initialization-and-withdrawal.md`.
-- Read `references/page-tracking-urls-and-spa-routing.md`.
-- Read `references/forms-session-replay-and-autocapture.md`.
-- Read `references/user-identifiers-identity-reset-and-pseudonymization.md`.
-- Read `references/debug-logging-error-telemetry-and-sensitive-context.md`.
-- Read `references/third-party-sdks-provider-boundaries-and-retention.md`.
-- Read `references/frontend-privacy-analytics-review-audit.md` before completion.

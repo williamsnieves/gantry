@@ -1,8 +1,9 @@
 ---
 name: modeling-domain-data
-description: Portable engineering capability `modeling-domain-data`. Use when the
-  harness or a specialist agent explicitly requires this named capability.
+description: Models conceptual and logical domain data, including concepts/entities, relationships, cardinality, ownership, identifiers, invariants, tenant boundaries, and lifecycle, without prematurely equating domain entities with database tables. Use after requirements, use cases, state/process models, accepted architecture, and DFDs provide enough semantic evidence to define the information model. Produce a conceptual model first, a logical model when useful, and a physical schema only when explicitly required. Generate an ERD only when persistence relationships benefit from visualization. Do not invent fields, table names, SQL types, indexes, foreign keys, partitions, persistence technology, retention policy, or aggregate boundaries that are not supported by evidence.
+...
 ---
+
 # Modeling Domain Data
 
 ## Purpose
@@ -1057,14 +1058,3 @@ assets/domain-data-model.md
 - [ ] Brownfield current/target models are distinguished.
 - [ ] Migration/event/deployment/validation handoffs are explicit.
 - [ ] Final readiness is explicit.
-
-## References
-
-- Read `references/conceptual-logical-physical-layering.md` first.
-- Read `references/concepts-entities-values-and-identifiers.md`.
-- Read `references/relationships-cardinality-optionality-and-ownership.md`.
-- Read `references/invariants-tenancy-lifecycle-and-history.md`.
-- Read `references/erd-selection-levels-and-visual-discipline.md`.
-- Read `references/domain-data-vs-schema-dfd-event-and-api-models.md`.
-- Read `references/brownfield-current-target-migration-and-alignment.md`.
-- Read `references/domain-data-model-audit.md` before completion.

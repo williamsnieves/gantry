@@ -1,8 +1,9 @@
 ---
 name: validating-external-frontend-data
-description: Portable engineering capability `validating-external-frontend-data`.
-  Use when the harness or a specialist agent explicitly requires this named capability.
+description: Decides when frontend runtime validation is necessary and validates untrusted or structurally important external payloads before mapping them into Application or Domain. Use for APIs, BFF responses, browser storage, postMessage, third-party SDK payloads, feature flags, persisted drafts, imported files, or other external boundaries where TypeScript types alone are insufficient. Keep transport validation at the boundary that owns the external contract, report contract mismatches safely, preserve optionality/version semantics, and avoid leaking validation-library types inward. Reuse the repository-approved validator when one exists; do not introduce Zod, Valibot, io-ts, ArkType, or another library without approval.
+...
 ---
+
 # Validating External Frontend Data
 
 ## Purpose
@@ -1139,13 +1140,3 @@ Use `assets/external-frontend-data-validation-record.md`.
 - [ ] Tests cover valid, missing, wrong type, enum, unknown-field, version, and mismatch cases as applicable.
 - [ ] No raw external payload reaches Domain/Application without the accepted trust decision.
 - [ ] Final validation status is explicit.
-
-## References
-
-- Read `references/runtime-validation-decision-and-boundary.md` first.
-- Read `references/external-schema-strictness-optionality-and-enums.md`.
-- Read `references/versioned-persisted-postmessage-and-imported-data.md`.
-- Read `references/errors-observability-security-and-privacy.md`.
-- Read `references/library-policy-performance-and-overvalidation.md`.
-- Read `references/testing-contract-drift-and-migrations.md`.
-- Read `references/external-data-validation-audit.md` before completion.

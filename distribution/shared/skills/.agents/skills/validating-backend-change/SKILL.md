@@ -1,8 +1,9 @@
 ---
 name: validating-backend-change
-description: Portable engineering capability `validating-backend-change`. Use when
-  the harness or a specialist agent explicitly requires this named capability.
+description: Runs and reports the backend-specific validation matrix required by the changed layers, composing the generic validating-changes skill. Use before merge, release, or completion claims for backend changes. Determine affected Domain, Application, repository-adapter, external-adapter, HTTP, composition, migration, and architecture checks; verify acceptance coverage at the cheapest reliable test level; distinguish passed, failed, blocked, skipped, unavailable, and inconclusive evidence; and produce a strict completion decision. Do not judge code quality broadly, rewrite the change, invent repository commands, duplicate every test across layers, or report an unexecuted check as passed.
+...
 ---
+
 # Validating Backend Change
 
 ## Purpose
@@ -679,11 +680,3 @@ Use `assets/backend-change-validation-report.md`.
 - [ ] No unexecuted or blocked check is described as passed.
 - [ ] Test execution is not presented as code-review or test-quality proof.
 - [ ] Final validation and merge/release decisions match the strictest mandatory evidence.
-
-## References
-
-- Read `references/layer-to-validation-matrix.md` first.
-- Read `references/acceptance-coverage-traceability.md` before claiming coverage.
-- Read `references/status-and-failure-classification.md` when checks do not pass.
-- Read `references/database-provider-and-http-evidence.md` for integration environments.
-- Read `references/completion-and-merge-decisions.md` before finalizing.

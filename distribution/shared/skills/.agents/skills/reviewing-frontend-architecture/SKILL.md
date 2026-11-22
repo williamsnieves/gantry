@@ -1,8 +1,9 @@
 ---
 name: reviewing-frontend-architecture
-description: Portable engineering capability `reviewing-frontend-architecture`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Reviews a frontend change against the definitive frontend engineering standard after objective architecture validation. Use to identify mandatory architectural violations, state-management risks, accessibility gaps, styling inconsistencies, test-strategy weaknesses, performance concerns, security/privacy issues, and accepted deviations. Separate MUST/MUST NOT violations from SHOULD-level suggestions, cite rule evidence, explain user/engineering impact, and recommend the smallest remediation. Do not treat preferences as blockers, re-run architecture validation as the primary task, invent new project policies, force a heavier architecture profile, or recommend repository-wide rewrites for local issues.
+...
 ---
+
 # Reviewing Frontend Architecture
 
 ## Purpose
@@ -1228,10 +1229,4 @@ Use `assets/frontend-architecture-review-record.md`.
 
 ## References
 
-- Read `references/mandatory-vs-advisory-review-classification.md` first.
-- Read `references/architecture-state-effects-and-composition-review.md`.
-- Read `references/ui-accessibility-styling-and-error-review.md`.
-- Read `references/testing-performance-security-and-privacy-review.md`.
 - Read `references/react-compiler-and-manual-memoization-review.md` for modern React performance guidance.
-- Read `references/abstractions-brownfield-migrations-and-deviations.md`.
-- Read `references/frontend-architecture-review-audit.md` before completion.

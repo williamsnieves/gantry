@@ -1,13 +1,13 @@
 ---
 name: harness-evaluate
-description: Evaluate the Codex adapter against the portable end-to-end harness oracle, including routing, dynamic escalation, blockers, handoffs, re-review, Reviewer, final pre-PR semantics, and runtime efficiency.
+description: Evaluate the current runtime's harness adapter against the canonical portable end-to-end scenarios. Use when testing or qualifying an adapter, checking semantic drift, or comparing one runtime's execution with another.
 ---
 
-# Evaluate Codex Harness Adapter
+# Harness Evaluate
 
-Use `.harness/evals/end-to-end/` as the oracle.
+Use `.harness/evals/end-to-end/` as the semantic oracle.
 
-Compare semantic outcomes, not wording:
+For each canonical scenario compare semantic outcomes, not wording:
 
 ```text
 work mode
@@ -22,6 +22,15 @@ Reviewer decision
 Final Pre-PR decision
 ```
 
-Record separately: wall-clock time, subagent invocations, tokens, approvals, tool failures, and handoff retries.
+Record runtime-specific metrics separately:
+
+```text
+wall-clock time
+agent invocations
+tokens
+tool failures
+permission prompts
+handoff retries
+```
 
 Never trade away Required Gate Recall, Blocker Preservation, Re-Review Recall, Stale Gate Detection, or Final Decision Accuracy for speed.

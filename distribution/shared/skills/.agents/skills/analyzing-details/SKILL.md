@@ -1,8 +1,9 @@
 ---
 name: analyzing-details
-description: Portable engineering capability `analyzing-details`. Use when the harness
-  or a specialist agent explicitly requires this named capability.
+description: Performs a meticulous, traceable analysis of a specific software change, specification, design, task plan, or implementation to detect omissions, inconsistencies, incomplete propagation, boundary mistakes, and overlooked operational details. Use when the main direction is accepted but completeness must be challenged. Do not use for broad code audits, hostile exploit-oriented review, mechanical validation, or implementation.
+...
 ---
+
 # Analyzing Details
 
 ## Purpose

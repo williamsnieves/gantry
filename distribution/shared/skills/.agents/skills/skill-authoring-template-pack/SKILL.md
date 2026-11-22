@@ -1,8 +1,9 @@
 ---
 name: skill-authoring-template-pack
-description: Portable engineering capability `skill-authoring-template-pack`. Use
-  when the harness or a specialist agent explicitly requires this named capability.
+description: Performs [specific capability]. Use when [positive trigger conditions]. Do not use when [negative triggers or adjacent capability].
+...
 ---
+
 # Skill Title
 
 ## Purpose
