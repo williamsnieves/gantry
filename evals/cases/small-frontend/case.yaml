@@ -1,0 +1,5 @@
+scenario: small-frontend
+request: |
+  The new-incident form now trims the title before submitting and rejects titles
+  shorter than 3 characters with an inline error. Only the form component and its
+  test changed.

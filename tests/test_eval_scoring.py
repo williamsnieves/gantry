@@ -1,0 +1,113 @@
+"""Unit tests for evals/scoring.py. Run: python3 tests/test_eval_scoring.py"""
+import sys
+from pathlib import Path
+
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "evals"))
+import scoring  # noqa: E402
+
+SCENARIOS = ROOT / "distribution/core/.harness/evals/end-to-end/scenarios"
+CASES = ROOT / "evals/cases"
+
+
+def oracle(name):
+    return scoring.load_oracle(next(SCENARIOS.glob(f"*-{name}.yaml")))
+
+
+def plan(work_mode, states, **extra):
+    base = {key: [] for key in scoring.TEMPLATE_KEYS}
+    base.update(routing_plan_version="1.0.0", harness_contract_version="1.0.0",
+                change_identity={"type": "working-tree", "value": "x"}, work_mode=work_mode)
+    base["agents"] = [
+        {"agent": a, "applicability": states.get(a, "NOT_TRIGGERED"), "reason": "because"} for a in scoring.AGENTS
+    ]
+    base.update(extra)
+    return base
+
+
+SMALL_FRONTEND = {a: "REQUIRED" for a in ("validator", "frontend-code-review", "qa", "detail-analyst", "reviewer")}
+
+# Every case maps to an oracle that loads, and every oracle agent is known.
+case_ids = sorted(p.name for p in CASES.iterdir() if (p / "case.yaml").exists())
+assert len(case_ids) == 6, case_ids
+for case_id in case_ids:
+    case = yaml.safe_load((CASES / case_id / "case.yaml").read_text())
+    assert case["request"].strip()
+    loaded = oracle(case["scenario"])
+    assert loaded["routing"] and loaded["work_mode"] in scoring.WORK_MODES, case_id
+
+# architecture-only uses a different oracle shape and is still normalised.
+arch = oracle("architecture-only")["routing"]
+assert arch["validator"] == "NOT_APPLICABLE" and arch["backend-code-review"] == "NOT_APPLICABLE"
+assert arch["reviewer"] == "NOT_TRIGGERED"
+
+# A correct plan passes.
+good = scoring.score_plan(plan("IMPLEMENTATION", SMALL_FRONTEND, scopes=["FRONTEND"], risk_triggers=["BEHAVIORAL"]),
+                          oracle("small-frontend"))
+assert good["passed"] and good["schema_valid"] and good["required_recall"] == 1.0, good
+assert good["scopes"]["recall"] == 1.0 and good["state_agreement"] == 1.0
+
+# Triggers written as mappings (the shape agents actually produce) are read by dimension.
+mapped = scoring.score_plan(
+    plan("IMPLEMENTATION", SMALL_FRONTEND, scopes=["frontend"],
+         risk_triggers=[{"dimension": "BEHAVIORAL", "trigger": "changed validation"}, {"dimension": "SECURITY"}]),
+    oracle("small-frontend"))
+assert mapped["risk_triggers"] == {"shape": "mapping", "missing": [], "extra": ["SECURITY"], "recall": 1.0}, mapped["risk_triggers"]
+assert mapped["scopes"]["shape"] == "name" and mapped["scopes"]["recall"] == 1.0
+assert good["risk_triggers"]["shape"] == "name"
+
+# NOT_APPLICABLE and NOT_TRIGGERED are interchangeable for an inactive gate.
+swapped = scoring.score_plan(plan("IMPLEMENTATION", {**SMALL_FRONTEND, "security": "NOT_APPLICABLE"}),
+                             oracle("small-frontend"))
+assert swapped["passed"] and swapped["state_agreement"] == 1.0
+
+# Dropping a required gate is the safety failure.
+missed = scoring.score_plan(plan("IMPLEMENTATION", {**SMALL_FRONTEND, "qa": "NOT_TRIGGERED"}), oracle("small-frontend"))
+assert not missed["passed"] and missed["missed_required"] == ["qa"] and missed["required_recall"] == 0.8
+
+# Size must not suppress Security.
+tiny = {a: "REQUIRED" for a in ("validator", "backend-code-review", "qa", "detail-analyst", "reviewer")}
+no_security = scoring.score_plan(plan("IMPLEMENTATION", tiny), oracle("tiny-multitenant-auth"))
+assert no_security["missed_required"] == ["security"]
+# ...and a CONDITIONAL oracle entry accepts any state.
+with_security = {**tiny, "security": "REQUIRED"}
+for state in ("REQUIRED", "CONDITIONAL", "NOT_TRIGGERED"):
+    scored = scoring.score_plan(plan("IMPLEMENTATION", {**with_security, "backend-architecture-review": state}),
+                                oracle("tiny-multitenant-auth"))
+    assert scored["passed"], state
+
+# Activating a gate the oracle keeps off is over-routing.
+over = scoring.score_plan(plan("IMPLEMENTATION", {**SMALL_FRONTEND, "performance": "REQUIRED"}), oracle("small-frontend"))
+assert not over["passed"] and over["unnecessary"] == ["performance"] and over["required_recall"] == 1.0
+
+# Wrong work mode fails even with the right gates.
+wrong_mode = scoring.score_plan(plan("REVIEW_ONLY", SMALL_FRONTEND), oracle("small-frontend"))
+assert not wrong_mode["passed"] and not wrong_mode["work_mode"]["match"]
+
+# A plan in another shape (as seen in real runs) is unscorable, not silently passed.
+freeform = {"work_mode": "IMPLEMENTATION", "required_gates": ["validator", "qa"], "optional_gates": ["detail-analyst"]}
+unscorable = scoring.score_plan(freeform, oracle("small-frontend"))
+assert not unscorable["scorable"] and not unscorable["passed"] and not unscorable["schema_valid"]
+assert "missing key: agents" in unscorable["schema_problems"]
+
+# Schema problems are reported without blocking scoring.
+partial = plan("IMPLEMENTATION", SMALL_FRONTEND)
+del partial["notes"]
+partial["agents"] = [e for e in partial["agents"] if e["agent"] != "infrastructure"]
+partial["agents"][0]["reason"] = ""
+scored = scoring.score_plan(partial, oracle("small-frontend"))
+assert scored["passed"] and not scored["schema_valid"]
+assert {"missing key: notes", "agent 'infrastructure' is not classified", "agent 'validator' has no reason"} <= set(scored["schema_problems"])
+assert scored["agents"]["infrastructure"]["actual"] == scoring.OMITTED
+for junk in (None, [], "text"):
+    assert scoring.validate_plan(junk) == ["plan is not a YAML mapping"]
+
+# Consistency counts distinct routing decisions across trials.
+same = scoring.consistency([good, swapped])
+assert same == {"trials": 2, "distinct_decisions": 1, "agreement": 1.0}, same
+mixed = scoring.consistency([good, over, good, unscorable])
+assert mixed["distinct_decisions"] == 3 and mixed["agreement"] == 0.5, mixed
+
+print("EVAL SCORING TESTS: PASS")

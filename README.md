@@ -159,7 +159,10 @@ Runtime adapters execute the same routing, handoff, blocking, re-review and Fina
 pip install "PyYAML>=6.0"
 python3 tests/check_distribution.py   # structural integrity of distribution/
 python3 tests/smoke_test.py           # install / doctor / uninstall round trip
+python3 tests/test_eval_scoring.py    # scenario scorer
 ```
+
+`evals/` runs the routing scenarios against a real agent runtime; see [evals/README.md](evals/README.md).
 
 Skills live once under `distribution/shared/skills/`. The installer renders them per runtime; do not add skill copies under `distribution/runtimes/`.
 

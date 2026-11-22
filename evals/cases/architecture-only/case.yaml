@@ -1,0 +1,7 @@
+scenario: architecture-only
+request: |
+  We want to add outbound notifications (email and webhook) when an incident is
+  created or its severity changes, delivered reliably per tenant. Nothing is
+  implemented yet and no code should be written now: we need the system design
+  first (components, data, events, and the trust boundaries around tenant webhook
+  endpoints).

@@ -1,0 +1,6 @@
+scenario: schema-migration
+request: |
+  Incidents get a numeric `priority` column, backfilled from severity. The
+  production table already holds data and the API is deployed with rolling
+  restarts, so old and new API versions run against the database at the same
+  time during the rollout.
