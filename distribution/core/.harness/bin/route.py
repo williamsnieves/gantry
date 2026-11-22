@@ -87,9 +87,12 @@ TRIGGERS = {
         "the Architecture Review of the affected layer",
     ),
     "SECURITY": (
-        "authn or authz; multi-tenancy; privilege; public entry point; sensitive or personal data; secret; webhook; "
-        "file upload or download; user-generated HTML; redirect or callback; third-party script or provider; "
-        "IAM or network; analytics or privacy",
+        "the change alters how the system decides who may do what: authentication or authorization logic, "
+        "a tenant-isolation rule, a privilege or role; or it opens something new: a public entry point, a webhook, "
+        "file upload or download, a redirect or callback, a third-party script or provider, rendering of "
+        "user-generated HTML, IAM or network exposure; or it newly stores, logs or sends sensitive or personal "
+        "data or a secret. Not merely because the code runs behind authentication or reads tenant-scoped data: "
+        "a validated parameter added to an existing protected endpoint, with its access rules unchanged, is not a trigger",
         "Security",
     ),
     "DATA_INTEGRITY": (

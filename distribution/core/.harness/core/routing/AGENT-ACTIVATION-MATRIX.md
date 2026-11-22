@@ -155,6 +155,8 @@ browser security/privacy
 IAM/network
 ```
 
+A trigger is a change to one of these, not code that merely runs near them. See `RISK-TRIGGER-MODEL.md`.
+
 ### Infrastructure
 
 Triggers:
