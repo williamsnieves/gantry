@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+"""Pre-tool-use guard for agent runtimes that support command hooks.
+
+Reads the hook event as JSON on stdin and denies three things:
+
+1. Edits to the harness's own files, and to routing state that only
+   route.py may write.
+2. Edits to existing quality configuration (lint, types, tests, CI), so a
+   failing check is fixed in the code rather than by weakening the check.
+3. `gh pr create` before the Final Pre-PR Gate passes for the current change,
+   and commands that pass `--no-verify`.
+
+Rules 2 and 3 are off when the delivery profile is `lean`.
+
+A hook is a first barrier, not a boundary: a shell command can still write a
+file. `route.py ready` reports any quality configuration the change touched,
+however it was edited. If this script fails internally it allows the action
+and says so on stderr, so a bug here never blocks work.
+
+    python3 .harness/bin/hook.py <runtime>     # event JSON on stdin
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import route  # noqa: E402
+
+EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
+PR_CREATE = re.compile(r"(^|[\s;&|(])gh\s+pr\s+create\b")
+NO_VERIFY = re.compile(r"(^|\s)--no-verify\b")
+ASK_USER = "If the change is really needed, stop and ask the user to make it or to approve it; do not work around this."
+
+
+def profile(root: Path) -> str:
+    try:
+        text = (root / ".harness/harness.config.yaml").read_text(encoding="utf-8")
+    except OSError:
+        return "standard"
+    match = re.search(r"^\s*delivery_profile:\s*['\"]?(\w+)", text, re.M)
+    return match.group(1) if match else "standard"
+
+
+def managed_files(root: Path) -> set[str]:
+    try:
+        state = json.loads((root / ".harness/install-state.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return set()
+    return set(state.get("managed_files") or {})
+
+
+def relative(root: Path, raw: str) -> str | None:
+    path = Path(raw)
+    if not path.is_absolute():
+        path = root / path
+    try:
+        return path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return None  # outside the project
+
+
+def decide(event: dict, root: Path, runtime: str) -> str | None:
+    """Return the reason to deny the tool call, or None to allow it."""
+    tool = event.get("tool_name")
+    tool_input = event.get("tool_input") or {}
+    enforcing = profile(root) != "lean"
+
+    if tool in EDIT_TOOLS:
+        raw = tool_input.get("file_path") or tool_input.get("notebook_path")
+        path = relative(root, raw) if raw else None
+        if not path:
+            return None
+        protected = route.protection(path)
+        if protected is None and path in managed_files(root):
+            protected = ("harness", "it was installed by the harness")
+        if protected is None:
+            return None
+        kind, why = protected
+        if kind == "harness":
+            return f"Gantry: {path} cannot be edited by the agent because {why}. {ASK_USER}"
+        if enforcing and (root / path).exists():
+            return (
+                f"Gantry: {path} cannot be edited by the agent because {why}. "
+                f"If a check fails, fix the code it reports on. {ASK_USER}"
+            )
+        return None
+
+    if tool == "Bash" and enforcing:
+        command = str(tool_input.get("command") or "")
+        if NO_VERIFY.search(command):
+            return f"Gantry: --no-verify skips the project's commit and push checks. Run the command without it and fix what the checks report. {ASK_USER}"
+        if PR_CREATE.search(command):
+            status, blockers, _ = route.readiness(root, runtime)
+            if status == "PRE_PR_BLOCKED":
+                listed = "; ".join(blockers)
+                return (
+                    f"Gantry: a pull request can be created only after the Final Pre-PR Gate passes for the current change. "
+                    f"`python3 .harness/bin/route.py ready --runtime {runtime}` reports PRE_PR_BLOCKED: {listed}. "
+                    f"Resolve these with the harness-run skill, or ask the user to create the pull request themselves."
+                )
+    return None
+
+
+def main() -> int:
+    runtime = sys.argv[1] if len(sys.argv) > 1 else "claude"
+    try:
+        event = json.load(sys.stdin)
+        root = Path(os.environ.get("CLAUDE_PROJECT_DIR") or event.get("cwd") or ".")
+        reason = decide(event, root, runtime)
+    except Exception as error:  # fail open: a bug in the guard must not block work
+        print(f"gantry hook: internal error, allowing the action ({error!r})", file=sys.stderr)
+        return 0
+    if reason:
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": reason,
+            }
+        }))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

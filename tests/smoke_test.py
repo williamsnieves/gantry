@@ -29,7 +29,15 @@ def run(*args, expect=0):
         raise SystemExit(f"command failed: {args} -> {p.returncode}")
     return p
 
+(project / ".claude").mkdir()
+(project / ".claude/settings.json").write_text(json.dumps({
+    "permissions": {"allow": ["Bash(npm test:*)"]},
+    "hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": "echo mine"}]}],
+              "Stop": [{"hooks": [{"type": "command", "command": "echo stop"}]}]},
+}), encoding="utf-8")
+
 run("plan", "--runtime", "all", "--project", str(project))
+assert ".harness/bin/hook.py" not in (project / ".claude/settings.json").read_text()  # plan changes nothing
 run("install", "--runtime", "all", "--scope", "fullstack", "--profile", "standard", "--project", str(project))
 
 # Existing configs preserved.
@@ -68,10 +76,29 @@ assert "Codex Adapter" not in shared_run
 assert (project / ".agents/skills/auditing-code/README.md").exists()
 assert (project / ".claude/skills/auditing-code/README.md").exists()
 
+# Guard hooks are merged into existing Claude settings without disturbing them.
+def claude_settings():
+    return json.loads((project / ".claude/settings.json").read_text())
+
+def harness_hooks():
+    return [h["command"] for e in claude_settings()["hooks"]["PreToolUse"] for h in e["hooks"] if ".harness/bin/hook.py" in h["command"]]
+
+assert len(harness_hooks()) == 2
+assert claude_settings()["permissions"] == {"allow": ["Bash(npm test:*)"]}
+assert claude_settings()["hooks"]["Stop"] and claude_settings()["hooks"]["PreToolUse"][0]["hooks"][0]["command"] == "echo mine"
+assert (project / ".harness/bin/hook.py").exists() and (project / ".harness/bin/route.py").exists()
+
 run("doctor", "--project", str(project))
+# --no-hooks removes them again, and doctor then says gates are advisory.
+run("install", "--runtime", "claude", "--no-hooks", "--project", str(project))
+assert harness_hooks() == [] if "PreToolUse" in claude_settings()["hooks"] else True
+assert ".harness/bin/hook.py" not in (project / ".claude/settings.json").read_text()
+assert "gates are advisory only" in run("doctor", "--project", str(project)).stdout
 # Reinstalling over an unmodified install is idempotent.
 run("install", "--runtime", "all", "--scope", "fullstack", "--profile", "standard", "--project", str(project))
 run("status", "--project", str(project))
+
+assert len(harness_hooks()) == 2  # the reinstall registered them once, not twice
 
 # Remove one runtime; shared stays.
 run("uninstall", "--runtime", "cursor", "--project", str(project))
@@ -81,6 +108,12 @@ assert (project / ".codex/agents/reviewer.toml").exists()
 
 # Remove rest and shared.
 run("uninstall", "--runtime", "claude,codex,opencode,omp", "--purge-shared", "--project", str(project))
+assert ".harness/bin/hook.py" not in (project / ".claude/settings.json").read_text()
+assert claude_settings() == {
+    "permissions": {"allow": ["Bash(npm test:*)"]},
+    "hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": "echo mine"}]}],
+              "Stop": [{"hooks": [{"type": "command", "command": "echo stop"}]}]},
+}
 assert not (project / ".codex/agents/reviewer.toml").exists()
 assert not (project / ".agents/skills/harness-run/SKILL.md").exists()
 assert "<!-- GANTRY:START -->" not in (project / "AGENTS.md").read_text()

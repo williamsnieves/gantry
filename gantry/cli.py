@@ -42,6 +42,18 @@ COMPACT_DESCRIPTION = (
 )
 NATIVE_SKILL_DIRS = {"claude": ".claude/skills"}
 
+# Runtimes whose command hooks the harness can register. The guard denies agent
+# edits to harness files and quality configuration, and pull-request creation
+# before the Final Pre-PR Gate passes. See distribution/core/.harness/bin/hook.py.
+HOOK_MARKER = ".harness/bin/hook.py"
+HOOK_SETTINGS = {"claude": ".claude/settings.json"}
+HOOK_MATCHERS = ("Edit|Write|MultiEdit|NotebookEdit", "Bash")
+HOOK_DISCLOSURE = """Hooks registered in {path} (skip with --no-hooks):
+  - deny agent edits to harness files and to routing state written by route.py
+  - deny agent edits to existing lint, type, test and CI configuration (not in the lean profile)
+  - deny `gh pr create` until `route.py ready` passes, and commands using --no-verify (not in the lean profile)
+  They apply to the agent only; you can still make these changes yourself."""
+
 def package_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
@@ -188,6 +200,74 @@ def find_block_markers(text: str) -> tuple[str, str] | None:
             return start, end
     return None
 
+def hook_command(runtime: str) -> str:
+    return f'python3 "$CLAUDE_PROJECT_DIR/{HOOK_MARKER}" {runtime}'
+
+def without_harness_hooks(settings: dict) -> dict:
+    """Drop the harness's own PreToolUse entries, leaving everything else untouched."""
+    hooks = settings.get("hooks")
+    if not isinstance(hooks, dict) or not isinstance(hooks.get("PreToolUse"), list):
+        return settings
+    kept = []
+    for entry in hooks["PreToolUse"]:
+        commands = [h for h in (entry.get("hooks") or []) if HOOK_MARKER not in str(h.get("command", ""))] if isinstance(entry, dict) else None
+        if commands is None:
+            kept.append(entry)
+        elif commands:
+            kept.append({**entry, "hooks": commands})
+    if kept:
+        hooks["PreToolUse"] = kept
+    else:
+        del hooks["PreToolUse"]
+    if not hooks:
+        del settings["hooks"]
+    return settings
+
+def load_settings(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"Cannot register hooks: {path} is not valid JSON ({exc}). Fix it or install with --no-hooks.")
+    if not isinstance(data, dict):
+        raise SystemExit(f"Cannot register hooks: {path} is not a JSON object. Fix it or install with --no-hooks.")
+    return data
+
+def write_settings(path: Path, settings: dict, *, dry_run: bool, verb: str):
+    print(f"{'[DRY-RUN] ' if dry_run else ''}{verb} hooks: {path.name}")
+    if dry_run:
+        return
+    if settings:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
+    elif path.exists():
+        path.unlink()
+
+def install_hooks(runtime: str, project: Path, *, dry_run: bool):
+    path = project / HOOK_SETTINGS[runtime]
+    before = load_settings(path)
+    settings = without_harness_hooks(json.loads(json.dumps(before)))
+    entries = settings.setdefault("hooks", {}).setdefault("PreToolUse", [])
+    for matcher in HOOK_MATCHERS:
+        entries.append({"matcher": matcher, "hooks": [{"type": "command", "command": hook_command(runtime)}]})
+    if settings != before:
+        write_settings(path, settings, dry_run=dry_run, verb="register")
+    print(HOOK_DISCLOSURE.format(path=HOOK_SETTINGS[runtime]))
+
+def remove_hooks(runtime: str, project: Path, *, dry_run: bool):
+    path = project / HOOK_SETTINGS[runtime]
+    if not path.exists():
+        return
+    try:
+        before = load_settings(path)
+    except SystemExit:
+        print(f"skip unreadable settings file: {HOOK_SETTINGS[runtime]}")
+        return
+    settings = without_harness_hooks(json.loads(json.dumps(before)))
+    if settings != before:
+        write_settings(path, settings, dry_run=dry_run, verb="remove")
+
 def merge_agents_block(project: Path, *, dry_run: bool):
     block = (template_root() / "AGENTS.block.md").read_text(encoding="utf-8").strip()
     path = project / "AGENTS.md"
@@ -276,7 +356,7 @@ def install_shared(project: Path, state: dict, *, force: bool, dry_run: bool):
     if not dry_run:
         state["shared_installed"] = True
 
-def install_runtime(runtime: str, project: Path, state: dict, *, force: bool, dry_run: bool):
+def install_runtime(runtime: str, project: Path, state: dict, *, force: bool, dry_run: bool, hooks: bool = True):
     overlay = distribution_root() / "runtimes" / runtime
     managed_tree(
         overlay, project, project, state,
@@ -287,6 +367,11 @@ def install_runtime(runtime: str, project: Path, state: dict, *, force: bool, dr
             project / NATIVE_SKILL_DIRS[runtime], project, state,
             compact=False, force=force, dry_run=dry_run, label=f"runtime:{runtime}",
         )
+    if runtime in HOOK_SETTINGS:
+        if hooks:
+            install_hooks(runtime, project, dry_run=dry_run)
+        else:
+            remove_hooks(runtime, project, dry_run=dry_run)
     if not dry_run and runtime not in state["runtimes"]:
         state["runtimes"].append(runtime)
 
@@ -302,7 +387,7 @@ def cmd_install(args):
 
     install_shared(project, state, force=args.force, dry_run=args.dry_run)
     for runtime in runtimes:
-        install_runtime(runtime, project, state, force=args.force, dry_run=args.dry_run)
+        install_runtime(runtime, project, state, force=args.force, dry_run=args.dry_run, hooks=not args.no_hooks)
 
     final_runtimes = sorted(set(state["runtimes"]) | set(runtimes), key=RUNTIMES.index)
     write_harness_config(
@@ -368,6 +453,7 @@ def cmd_doctor(args):
     required = [
         ".harness/core/routing/ROUTING-POLICY.md",
         ".harness/bin/route.py",
+        ".harness/bin/hook.py",
         ".harness/core/pre-pr/FINAL-PRE-PR-GATE.md",
         ".harness/agents/reviewer/AGENT.md",
         ".harness/evals/end-to-end/E2E-ORACLE.md",
@@ -388,6 +474,13 @@ def cmd_doctor(args):
         for key in runtime_checks[runtime]:
             if not (project / key).exists():
                 errors.append(f"{runtime}: missing {key}")
+
+    for runtime in state.get("runtimes") or []:
+        if runtime in HOOK_SETTINGS:
+            settings_file = project / HOOK_SETTINGS[runtime]
+            registered = settings_file.exists() and HOOK_MARKER in settings_file.read_text(encoding="utf-8")
+            if not registered:
+                warnings.append(f"{runtime}: guard hooks are not registered in {HOOK_SETTINGS[runtime]}; gates are advisory only.")
 
     agents_md = (project / "AGENTS.md").read_text(encoding="utf-8") if (project / "AGENTS.md").exists() else ""
     if START not in agents_md:
@@ -454,6 +547,10 @@ def cmd_uninstall(args):
             if not args.dry_run:
                 state["managed_files"].pop(key, None)
 
+    for runtime in runtimes:
+        if runtime in HOOK_SETTINGS:
+            remove_hooks(runtime, project, dry_run=args.dry_run)
+
     remaining = [r for r in installed if r not in runtimes]
 
     if args.purge_shared and not remaining:
@@ -503,6 +600,7 @@ def build_parser():
         sp.add_argument("--profile", choices=PROFILES, default="standard")
         sp.add_argument("--force", action="store_true")
         sp.add_argument("--dry-run", action="store_true")
+        sp.add_argument("--no-hooks", action="store_true", help="do not register the harness guard hooks")
 
     ins = sub.add_parser("install", help="Install one or more runtime adapters")
     common_install(ins)

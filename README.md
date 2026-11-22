@@ -161,6 +161,7 @@ python3 tests/check_distribution.py   # structural integrity of distribution/
 python3 tests/smoke_test.py           # install / doctor / uninstall round trip
 python3 tests/test_eval_scoring.py    # scenario scorer
 python3 tests/test_route.py           # deterministic router
+python3 tests/test_hook.py            # pre-tool-use guard
 ```
 
 `evals/` runs the routing scenarios against a real agent runtime; see [evals/README.md](evals/README.md).
