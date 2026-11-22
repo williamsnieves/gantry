@@ -1,0 +1,120 @@
+skill: identifying-architecture-drivers
+version: 0.1.0
+passing_policy:
+  every_requirement_as_driver_allowed: 0
+  business_priority_equals_architecture_significance_allowed: 0
+  vague_scale_as_strong_driver_allowed: 0
+  technology_tactic_selected_allowed: 0
+  constraint_mislabeled_as_quality_driver_allowed: 0
+  assumption_promoted_to_fact_allowed: 0
+  driver_without_rationale_allowed: 0
+  conflict_silently_resolved_allowed: 0
+  missing_measure_hidden_allowed: 0
+  small_local_crud_feature_as_driver_allowed: 0
+discovery:
+  positive:
+  - id: positive-foundation
+    prompt: Classify these FRs, NFRs, quality scenarios, constraints and assumptions
+      into the small set that should drive architecture.
+    expected: activate
+  - id: positive-scale
+    prompt: Determine whether our 100k concurrent connection target, tenant isolation,
+      RTO/RPO and provider outage requirements are architecture drivers.
+    expected: activate
+  - id: positive-constraints
+    prompt: Separate actual architecture drivers from hard cloud constraints, team
+      assumptions, and ordinary important requirements.
+    expected: activate
+  negative:
+  - id: negative-design
+    prompt: Design the architecture that satisfies these drivers.
+    expected: do-not-activate
+    expected_alternative: designing-system-architecture
+  - id: negative-tradeoff
+    prompt: Compare modular monolith and microservices against these drivers.
+    expected: do-not-activate
+    expected_alternative: analyzing-architecture-tradeoffs
+  - id: negative-nfr
+    prompt: Turn these vague quality expectations into formal NFRs first.
+    expected: do-not-activate
+    expected_alternative: defining-non-functional-requirements
+procedure:
+- id: support-platform-drivers
+  fixture: fixtures/support-platform-architecture-input.md
+  required_steps:
+  - establish-system-boundary-decision-horizon-and-authoritative-input-versions
+  - collect-fr-nfr-qa-constraint-assumption-risk-and-dependency-candidates
+  - classify-each-candidate-using-the-six-required-categories
+  - separate-business-priority-from-architecture-significance
+  - evaluate-structure-deployment-data-communication-trust-failure-scale-geography-operations-cost-and-organization-impact
+  - reject-vague-scale-performance-and-realtime-claims-as-strong-drivers-without-measures
+  - recognize-authoritative-extreme-scale-strict-availability-recovery-security-boundary-or-consistency-where-supported
+  - classify-mandatory-platform-cloud-onpremise-or-policy-as-constraints
+  - preserve-team-provider-scale-and-other-uncertainties-as-assumptions-or-missing-evidence
+  - keep-ordinary-crud-and-local-behavior-as-important-or-local-not-drivers
+  - record-driver-rationale-strength-category-evidence-crosscutting-impact-and-reversibility
+  - surface-tensions-conflicts-and-high-risk-assumptions-without-resolving-architecture
+  - audit-architecture-inflation-and-technology-tactic-leakage
+  - derive-mechanism-neutral-candidate-architecture-evaluation-criteria
+  - produce-architecture-design-handoff-and-readiness
+  prohibited_actions:
+  - mark-dashboard-fast-as-primary-driver-without-measure
+  - mark-every-fr-as-driver
+  - mark-gcp-as-driver-if-only-context
+  - choose-microservices
+  - choose-kubernetes
+  - choose-queue-cache-or-replica
+  - turn-five-engineer-team-into-monolith-decision
+  - promote-thousands-of-companies-aspiration-to-scale-fact
+  - resolve-retention-policy-conflict
+  - perform-architecture-design
+  expected_output: expected/support-platform-architecture-drivers.md
+edge_cases:
+- id: must-scale
+  scenario: NFR says system must scale, but no tenant/user/message/concurrency target
+    exists.
+  expected_behavior: not-a-ready-architecture-driver-record-measure-or-scale-forecast-gap
+- id: 100k-connections
+  scenario: Accepted requirement says 100,000 concurrent persistent connections while
+    meeting defined latency/error targets.
+  expected_behavior: classify-as-architecture-driver-with-scale-communication-resource-and-deployment-impact
+- id: small-crud
+  scenario: Users can edit their profile name and avatar in a small internal app.
+  expected_behavior: important-or-local-design-concern-not-architecture-driver
+- id: mandatory-cloud
+  scenario: Organization policy requires all production workloads to run on GCP.
+  expected_behavior: classify-as-hard-constraint-with-architecture-impact-not-quality-driver
+- id: strict-recovery
+  scenario: Accepted RTO is 5 minutes and RPO is 1 minute for core transaction capability.
+  expected_behavior: classify-as-architecture-driver-or-primary-quality-driver-without-selecting-replication-topology
+- id: team-size
+  scenario: One five-engineer team owns build and operations; no independent-deployment
+    requirement exists.
+  expected_behavior: classify-as-organizational-constraint-context-and-possible-secondary-significance-not-direct-microservice-or-monolith-decision
+context_efficiency:
+- id: standard-driver-analysis
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/architecture-significance-classification-and-scope.md
+  - references/quality-scale-availability-recovery-and-consistency-drivers.md
+  - references/constraints-assumptions-dependencies-cost-and-organization.md
+  - references/driver-priority-tensions-conflicts-and-missing-evidence.md
+  - references/architecture-evaluation-criteria-and-design-handoff.md
+  must_not_load_unless_needed:
+  - references/security-privacy-geography-realtime-and-data-boundaries.md
+  - references/brownfield-reversibility-risk-and-cross-cutting-impact.md
+  - evals/
+quality_rubric:
+  scope_and_input_quality: 5
+  classification_precision: 5
+  business_priority_vs_significance: 5
+  quality_scale_recovery: 5
+  security_privacy_data_geography: 5
+  constraints_assumptions_dependencies: 5
+  cost_team_organization: 5
+  brownfield_risk_reversibility: 5
+  driver_rationale_and_strength: 5
+  tensions_conflicts_missing_evidence: 5
+  no_architecture_inflation_or_tactic_leakage: 5
+  evaluation_criteria_and_handoff: 5

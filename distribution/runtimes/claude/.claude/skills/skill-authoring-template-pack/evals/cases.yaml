@@ -1,0 +1,47 @@
+skill: skill-name
+version: 0.1.0
+
+discovery:
+  positive:
+    - id: positive-001
+      prompt: "[Prompt that must activate the skill]"
+      expected: activate
+  negative:
+    - id: negative-001
+      prompt: "[Near-match prompt that must not activate the skill]"
+      expected: do-not-activate
+      expected_alternative: "[Adjacent skill, agent, or workflow]"
+  ambiguous:
+    - id: ambiguous-001
+      prompt: "[Ambiguous prompt]"
+      expected: "[activate, do-not-activate, or request-context]"
+
+procedure:
+  - id: procedure-001
+    description: "[Normal successful execution]"
+    fixture: "fixtures/[fixture-name]"
+    required_steps:
+      - "[Required step]"
+      - "[Required validation]"
+    expected_output: "expected/[expected-output]"
+
+edge_cases:
+  - id: edge-001
+    description: "[Missing mandatory input]"
+    expected_behavior: "stop-and-report"
+  - id: edge-002
+    description: "[Tool or validation failure]"
+    expected_behavior: "preserve-evidence-and-report"
+
+quality_rubric:
+  correctness: 0
+  completeness: 0
+  evidence: 0
+  relevance: 0
+  actionability: 0
+  context_efficiency: 0
+
+regressions:
+  - id: regression-001
+    description: "[Previously observed failure]"
+    expected_behavior: "[Correct behavior]"

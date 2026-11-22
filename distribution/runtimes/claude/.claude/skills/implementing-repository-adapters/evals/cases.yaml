@@ -1,0 +1,107 @@
+skill: implementing-repository-adapters
+version: 0.1.0
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  orm_type_leakage_allowed: 0
+  domain_invariant_bypass_allowed: 0
+  silent_invalid_data_coercion_allowed: 0
+  non_atomic_duplicate_protection_allowed: 0
+  mock_only_validation_allowed: 0
+  hidden_transaction_semantics_allowed: 0
+discovery:
+  positive:
+  - id: positive-postgres
+    prompt: Implement the PostgreSQL adapter for this repository port with mappings
+      and integration tests.
+    expected: activate
+  - id: positive-document
+    prompt: Implement the Mongo document repository behind the accepted Domain repository.
+    expected: activate
+  negative:
+  - id: negative-design
+    prompt: Design the repository interface and InMemory implementation.
+    expected: do-not-activate
+    expected_alternative: designing-domain-repositories
+  - id: negative-provider
+    prompt: Implement the campaign provider SDK adapter.
+    expected: do-not-activate
+    expected_alternative: implementing-external-service-adapters
+  - id: negative-controller
+    prompt: Implement the REST controller.
+    expected: do-not-activate
+    expected_alternative: implementing-http-controllers
+procedure:
+- id: promotion-postgres-adapter
+  fixture: fixtures/promotion-postgres-adapter.md
+  required_steps:
+  - confirm-readiness
+  - map-port-contract
+  - inspect-schema-and-constraints
+  - design-bidirectional-mapping
+  - implement-domain-reconstitution
+  - implement-query-and-save-semantics
+  - implement-authoritative-duplicate-protection
+  - translate-technical-errors
+  - respect-transaction-ownership
+  - add-real-integration-tests
+  - run-shared-contract-tests
+  - test-invalid-stored-data
+  - validate-migrations-and-cleanup
+  - audit-boundaries
+  prohibited_actions:
+  - return-prisma-row
+  - cast-row-to-entity
+  - mutate-domain-private-fields
+  - use-exists-check-only-for-uniqueness
+  - leak-constraint-name
+  - mock-only-tests
+  - silently-default-unknown-status
+  - redesign-port
+  expected_output: expected/promotion-postgres-adapter-report.md
+edge_cases:
+- id: unknown-enum
+  scenario: Stored status is not known by Domain.
+  expected_behavior: corrupt-or-incompatible-record-not-default
+- id: upsert
+  scenario: ORM save performs upsert but port distinguishes create conflict.
+  expected_behavior: do-not-use-upsert-semantics-blindly
+- id: duplicate-concurrency
+  scenario: Two concurrent inserts target same subscription/campaign.
+  expected_behavior: real-unique-or-atomic-protection
+- id: transaction-owner
+  scenario: Use Case supplies an outer transaction context.
+  expected_behavior: adapter-participates-without-hidden-independent-commit
+- id: money-roundtrip
+  scenario: Decimal amount maps through driver.
+  expected_behavior: exact-domain-roundtrip
+- id: legacy-record
+  scenario: Old document lacks a required new field.
+  expected_behavior: explicit-compatibility-or-migration-decision
+context_efficiency:
+- id: simple-find-save
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/adapter-readiness-and-contract-mapping.md
+  - references/persistence-domain-mapping.md
+  - references/save-errors-transactions-and-concurrency.md
+  - references/integration-and-contract-testing.md
+  - references/security-observability-and-lifecycle.md
+  must_not_load:
+  - references/query-pagination-and-deletion.md
+  - references/migrations-brownfield-and-invalid-data.md
+  - evals/
+quality_rubric:
+  contract_fidelity: 5
+  mapping_correctness: 5
+  domain_reconstitution: 5
+  write_semantics: 5
+  error_translation: 5
+  transaction_and_concurrency: 5
+  query_semantics: 5
+  integration_testing: 5
+  migration_safety: 5
+  boundary_purity: 5
+  operational_quality: 5
+  context_efficiency: 4

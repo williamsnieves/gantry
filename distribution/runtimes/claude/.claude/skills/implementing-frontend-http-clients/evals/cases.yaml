@@ -1,0 +1,107 @@
+skill: implementing-frontend-http-clients
+version: 0.1.0
+passing_policy:
+  stale_token_capture_allowed: 0
+  token_logging_allowed: 0
+  malformed_json_as_success_allowed: 0
+  cancellation_as_network_error_allowed: 0
+  global_404_to_undefined_allowed: 0
+  provider_409_semantics_in_http_client_allowed: 0
+  unsafe_post_auto_retry_allowed: 0
+  react_router_in_http_client_allowed: 0
+  provider_dto_mapping_in_http_client_allowed: 0
+  vendor_error_leak_allowed: 0
+discovery:
+  positive:
+  - id: positive-client
+    prompt: Implement the approved frontend HTTP client with auth headers, decoding,
+      stable errors, cancellation, and retries.
+    expected: activate
+  - id: positive-upload
+    prompt: Extend our HTTP abstraction for multipart upload and abort support without
+      leaking provider details.
+    expected: activate
+  - id: positive-stream
+    prompt: Add streaming-response support to the shared frontend HTTP transport layer.
+    expected: activate
+  negative:
+  - id: negative-repository
+    prompt: Implement the PromotionsRepository mapping API payloads into Application
+      DTOs.
+    expected: do-not-activate
+    expected_alternative: implementing-frontend-repository-adapters
+  - id: negative-validation
+    prompt: Decide whether this external JSON needs Zod runtime validation.
+    expected: do-not-activate
+    expected_alternative: validating-external-frontend-data
+  - id: negative-server-state
+    prompt: Configure React Query staleTime and invalidation for profile data.
+    expected: do-not-activate
+    expected_alternative: server-state skill
+procedure:
+- id: shared-http-client
+  fixture: fixtures/shared-http-client.md
+  required_steps:
+  - inspect-existing-http-library-policy-and-runtime
+  - define-small-transport-request-and-response-api
+  - implement-request-time-authentication-and-header-policy
+  - implement-json-empty-text-binary-and-stream-decoding
+  - normalize-stable-transport-errors
+  - preserve-provider-semantics-for-adapters
+  - propagate-caller-cancellation
+  - implement-bounded-idempotency-aware-retry-policy
+  - implement-safe-correlation-and-observability
+  - support-file-upload-with-correct-content-type
+  - support-streaming-with-cancellation-and-cleanup
+  - validate-server-client-lifecycle-and-token-scope
+  - migrate-or-document-raw-fetch-exceptions
+  - test-token-abort-malformed-json-401-retry-upload-streaming
+  - audit-security-privacy-and-layer-leakage
+  - produce-http-client-record
+  prohibited_actions:
+  - capture-token-at-module-initialization
+  - log-authorization-header
+  - convert-all-404-to-undefined
+  - map-409-to-promotion-already-applied
+  - retry-all-posts
+  - navigate-login-on-401-from-http-core
+  - map-promotion-dto-in-http-client
+  - set-json-content-type-for-formdata
+  - swallow-abort-as-network-error
+  - share-server-client-with-first-user-auth-state
+  expected_output: expected/shared-http-client-record.md
+edge_cases:
+- id: token-injection
+  scenario: Access token changes after the HTTP client singleton is created.
+  expected_behavior: request-uses-current-token-not-construction-time-token
+- id: abort
+  scenario: Caller aborts an in-flight request.
+  expected_behavior: transport-aborts-and-stable-cancelled-error-is-exposed
+- id: malformed-json
+  scenario: Server returns HTTP 200 with malformed JSON.
+  expected_behavior: stable-malformed-response-not-success
+- id: '401'
+  scenario: Server responds 401.
+  expected_behavior: stable-unauthenticated-or-approved-refresh-flow-no-react-routing
+- id: retry
+  scenario: GET fails once with a retryable network error; POST payment fails similarly.
+  expected_behavior: bounded-get-retry-and-no-unsafe-payment-post-retry-by-default
+- id: upload
+  scenario: Multipart upload uses FormData.
+  expected_behavior: do-not-manually-set-multipart-boundary-and-support-cancellation
+- id: stream
+  scenario: Streaming response is cancelled after several chunks.
+  expected_behavior: abort-and-cleanup-stream-with-stable-cancellation
+quality_rubric:
+  scope_and_api_restraint: 5
+  authentication_and_headers: 5
+  decoding_and_response_modes: 5
+  stable_error_taxonomy: 5
+  cancellation: 5
+  retry_and_idempotency: 5
+  upload: 5
+  streaming: 5
+  observability_security_privacy: 5
+  server_client_lifecycle: 5
+  testing_and_migration: 5
+  layer_separation_and_final_status: 5

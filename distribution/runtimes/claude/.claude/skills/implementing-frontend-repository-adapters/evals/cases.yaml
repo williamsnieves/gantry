@@ -1,0 +1,104 @@
+skill: implementing-frontend-repository-adapters
+version: 0.1.0
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  raw_response_leakage_allowed: 0
+  swallowed_network_error_allowed: 0
+  unchecked_enum_cast_allowed: 0
+  invalid_date_allowed: 0
+  every_404_as_undefined_allowed: 0
+  business_rule_in_adapter_allowed: 0
+  react_api_in_adapter_allowed: 0
+  invented_retry_policy_allowed: 0
+  new_library_selection_allowed: 0
+discovery:
+  positive:
+  - id: positive-http
+    prompt: Implement the frontend repository port using the existing typed HTTP client.
+    expected: activate
+  - id: positive-indexeddb
+    prompt: Implement an IndexedDB repository adapter with migration and stable failures.
+    expected: activate
+  - id: positive-mapping
+    prompt: Map API dates, enums, nulls, pagination, and errors into the accepted
+      frontend port.
+    expected: activate
+  negative:
+  - id: negative-port-design
+    prompt: Design the repository port for this frontend capability.
+    expected: do-not-activate
+    expected_alternative: Domain/Application port design
+  - id: negative-server-state
+    prompt: Design the SWR hook and cache behavior.
+    expected: do-not-activate
+    expected_alternative: designing-react-custom-hooks
+  - id: negative-library
+    prompt: Choose Zod or Valibot for runtime validation.
+    expected: do-not-activate
+    expected_alternative: validating-external-frontend-data or architecture decision
+procedure:
+- id: promotion-http-adapter
+  fixture: fixtures/promotion-repository-adapter.md
+  required_steps:
+  - confirm-port-contract-and-approved-infrastructure
+  - define-exact-transport-types
+  - implement-runtime-validation-policy
+  - implement-inbound-and-outbound-mappers
+  - map-dates-enums-nullability-and-pagination
+  - preserve-not-found-empty-forbidden-unavailable-and-malformed-semantics
+  - translate-technical-failures-without-swallowing
+  - forward-abort-and-classify-cancellation
+  - reuse-retry-policy-without-inventing-one
+  - keep-business-ui-and-react-logic-out
+  - test-mappers-and-faithful-boundary
+  - verify-dependency-direction-and-composition
+  - produce-adapter-implementation-record
+  prohibited_actions:
+  - return-raw-json
+  - cast-api-response-to-domain
+  - return-axios-or-fetch-error
+  - convert-all-404-to-undefined
+  - swallow-network-error-and-return-empty
+  - retry-post-automatically
+  - copy-eligibility-rule
+  - import-react
+  - instantiate-adapter-in-presentational-component
+  - add-validation-library
+  expected_output: expected/promotion-repository-adapter-record.md
+edge_cases:
+- id: malformed-date
+  scenario: API returns an invalid applied_at date.
+  expected_behavior: contract-mismatch-not-invalid-date-inward
+- id: unknown-enum
+  scenario: API returns promotion status PARTIALLY_APPLIED unknown to the accepted
+    model.
+  expected_behavior: reject-preserve-unknown-or-compatibility-map-per-policy
+- id: lookup-404
+  scenario: findBySubscription receives 404 and port defines optional absence.
+  expected_behavior: return-undefined
+- id: command-404
+  scenario: applyPromotion receives 404 for the subscription.
+  expected_behavior: stable-not-found-error-not-undefined-success
+- id: network
+  scenario: Network request fails.
+  expected_behavior: unavailable-or-network-semantic-not-empty-data
+- id: abort
+  scenario: Caller aborts request.
+  expected_behavior: cancelled-no-retry-no-product-failure
+- id: pagination
+  scenario: API returns items and next_cursor snake_case.
+  expected_behavior: map-to-stable-items-nextCursor-type
+quality_rubric:
+  port_compliance: 5
+  external_type_accuracy: 5
+  inbound_mapping: 5
+  outbound_mapping: 5
+  runtime_validation: 5
+  absence_and_error_semantics: 5
+  cancellation_and_retry: 5
+  pagination_stream_file_handling: 5
+  storage_cache_offline_handling: 5
+  architecture_and_composition: 5
+  testing_and_contracts: 5
+  scope_and_no_leakage: 5

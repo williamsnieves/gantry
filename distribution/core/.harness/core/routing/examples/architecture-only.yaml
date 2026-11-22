@@ -1,0 +1,17 @@
+change: Design a new payment orchestration architecture without implementation.
+work_mode: ARCHITECTURE_ONLY
+scopes:
+- REQUIREMENTS
+- SOFTWARE_ARCHITECTURE
+- DATA
+- EVENTING
+risk_triggers:
+- ARCHITECTURE
+- SECURITY
+- DATA_INTEGRITY
+routing:
+  implementation_agents: NOT_APPLICABLE
+  requirements_architecture_skills: REQUIRED
+  threat-modeling-with-stride: REQUIRED
+  validating-architecture-design: REQUIRED
+  reviewer: NOT_TRIGGERED

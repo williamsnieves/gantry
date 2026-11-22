@@ -1,0 +1,92 @@
+skill: enriching-user-stories
+version: 0.1.0
+
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  fabricated_decisions_allowed: 0
+  regressions_allowed: 0
+  unnecessary_reference_loads_allowed: 0
+
+discovery:
+  positive:
+    - id: positive-ticket
+      prompt: "Enrich this ticket before we create the technical specification."
+      expected: activate
+    - id: positive-criteria
+      prompt: "This feature request is vague. Identify missing context and make the acceptance criteria testable."
+      expected: activate
+    - id: positive-readiness
+      prompt: "Is this story ready for autonomous implementation?"
+      expected: activate
+  negative:
+    - id: negative-implement
+      prompt: "Implement this already approved user story."
+      expected: do-not-activate
+    - id: negative-review
+      prompt: "Review the code for this completed ticket."
+      expected: do-not-activate
+    - id: negative-openspec
+      prompt: "Explore and create an OpenSpec change for this idea."
+      expected: do-not-activate
+      expected_alternative: exploring-openspec-changes
+
+procedure:
+  - id: incomplete-story
+    fixture: fixtures/incomplete-story.md
+    required_steps:
+      - preserve-original
+      - assess-readiness
+      - classify-gaps
+      - create-testable-acceptance-criteria
+      - avoid-fabrication
+      - assign-readiness
+    expected_output: expected/incomplete-story.md
+
+  - id: project-context
+    fixture: fixtures/project-context-story.md
+    required_references:
+      - references/readiness-dimensions.md
+      - references/context-retrieval.md
+    expected_behavior:
+      - retrieve-discoverable-context
+      - cite-project-evidence
+      - avoid-unnecessary-repository-scan
+
+edge_cases:
+  - id: missing-content
+    scenario: "The user refers to a ticket but provides neither content nor an accessible source."
+    expected_behavior: request-minimum-required-input
+
+  - id: product-decision
+    scenario: "The story requires choosing a pricing policy that has not been approved."
+    expected_behavior: record-blocking-question
+    prohibited_behavior:
+      - invent-policy
+
+  - id: already-ready
+    scenario: "The input already contains clear behavior, constraints, and testable acceptance criteria."
+    expected_behavior: preserve-and-report-ready
+    prohibited_behavior:
+      - add-speculative-detail
+
+context_efficiency:
+  - id: basic-direct-input
+    always_loaded:
+      - SKILL.md
+    conditionally_loaded:
+      - references/readiness-dimensions.md
+      - references/gap-classification.md
+      - references/acceptance-criteria.md
+    must_not_load:
+      - references/context-retrieval.md
+      - evals/
+
+quality_rubric:
+  intent_preservation: 5
+  completeness: 5
+  acceptance_testability: 5
+  gap_classification: 5
+  non_fabrication: 5
+  readiness_accuracy: 5
+  context_efficiency: 4

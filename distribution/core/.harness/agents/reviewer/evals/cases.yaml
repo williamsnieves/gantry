@@ -1,0 +1,91 @@
+agent: reviewer
+version: 0.1.0
+consumed_gates:
+- validator
+- detail-analyst
+- backend-code-review
+- backend-architecture-review
+- frontend-code-review
+- frontend-architecture-review
+- qa
+- performance
+- security
+- infrastructure
+passing_policy:
+  majority_vote_allowed: 0
+  downgrade_specialist_blocker_allowed: 0
+  missing_required_gate_as_pass_allowed: 0
+  stale_gate_as_fresh_allowed: 0
+  invalid_condition_allowed: 0
+  unsupported_waiver_allowed: 0
+  rerun_all_gates_by_default_allowed: 0
+  implements_fix_allowed: 0
+  redos_specialist_review_allowed: 0
+scenarios:
+- id: one-security-blocker
+  fixture: fixtures/one-security-blocker.md
+  expected_decision: NOT_READY_CHANGES_REQUIRED
+  required_behavior:
+  - no-majority-vote
+  - preserve-security-blocker
+  - link-reentry-security-code-qa-validator-as-applicable
+- id: all-green
+  fixture: fixtures/all-green.md
+  expected_decision: READY_FOR_PRE_PR_GATE
+  required_behavior:
+  - normalize-all-gates
+  - respect-not-required-gates
+  - emit-pre-pr-handoff
+- id: valid-conditions
+  fixture: fixtures/valid-conditions.md
+  expected_decision: READY_FOR_PRE_PR_GATE_WITH_CONDITIONS
+  required_behavior:
+  - preserve-bounded-conditions
+  - verify-owners-and-gate-deadlines
+  - ensure-no-conflicting-blockers
+- id: stale-security-after-auth-fix
+  fixture: fixtures/stale-security-after-auth-fix.md
+  expected_decision: BLOCKED_PENDING_EVIDENCE
+  required_behavior:
+  - detect-stale-security-report
+  - require-minimal-reviews
+  - do-not-rerun-unrelated-performance-infrastructure
+- id: gate-contradiction
+  fixture: fixtures/gate-contradiction.md
+  expected_decision: BLOCKED_PENDING_EVIDENCE
+  required_behavior:
+  - detect-factual-contradiction
+  - do-not-pick-a-winner
+  - route-specific-reverification
+- id: shared-root-cause
+  fixture: fixtures/shared-root-cause.md
+  expected_decision: NOT_READY_CHANGES_REQUIRED
+  required_behavior:
+  - consolidate-root-cause
+  - preserve-distinct-code-security-qa-ownership
+  - produce-minimal-reentry-graph
+edge_cases:
+- scenario: Nine gates pass and one applicable gate requests changes.
+  expected_behavior: not-ready-changes-required
+- scenario: Performance says review not required and routing agrees.
+  expected_behavior: normalize-not-required-not-missing
+- scenario: Security control FAIL has formal risk acceptance.
+  expected_behavior: preserve-control-fail-and-risk-acceptance; apply governance policy
+    without rewriting verification truth
+- scenario: Only tests changed after QA requested better evidence.
+  expected_behavior: rerun-qa-validator-reviewer-not-all-specialists
+- scenario: Infrastructure report refers to previous commit before schema fix.
+  expected_behavior: mark-stale-if-schema-fix-affects-rollout-or-migration-review
+quality_rubric:
+  change_identity_and_gate_set: 5
+  normalization_accuracy: 5
+  strict_blocker_precedence: 5
+  freshness_and_evidence_versioning: 5
+  contradiction_detection: 5
+  root_cause_consolidation: 5
+  conditions_waivers_risk_acceptance: 5
+  minimal_re_review_graph: 5
+  specialist_boundary_discipline: 5
+  decision_calibration: 5
+  pre_pr_handoff_quality: 5
+  no_write_no_majority_vote: 5

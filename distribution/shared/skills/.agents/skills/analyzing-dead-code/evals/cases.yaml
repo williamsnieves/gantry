@@ -1,0 +1,104 @@
+skill: analyzing-dead-code
+version: 0.1.0
+
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  automatic_deletions_allowed: 0
+  static_only_removal_claims_allowed: 0
+  ignored_dynamic_usage_allowed: 0
+  regressions_allowed: 0
+
+discovery:
+  positive:
+    - id: positive-cleanup
+      prompt: "Find code and dependencies that can be safely removed, and prove each candidate."
+      expected: activate
+    - id: positive-analyzer
+      prompt: "Our unused-export tool found 80 candidates. Triage them for real removal safety."
+      expected: activate
+    - id: positive-legacy
+      prompt: "Analyze whether the old compatibility layer is still used before we delete it."
+      expected: activate
+  negative:
+    - id: negative-broad-audit
+      prompt: "Audit the whole service for security, performance, and maintainability."
+      expected: do-not-activate
+      expected_alternative: auditing-code
+    - id: negative-delete
+      prompt: "Delete every file that the linter says is unused."
+      expected: do-not-activate
+    - id: negative-validation
+      prompt: "Run the required test and build checks."
+      expected: do-not-activate
+
+procedure:
+  - id: plugin-system
+    fixture: fixtures/plugin-system.md
+    required_steps:
+      - define-scope
+      - discover-entry-points
+      - generate-candidates
+      - inspect-dynamic-usage
+      - assess-external-consumers
+      - classify-candidates
+      - design-removal-proof
+      - report
+    prohibited_actions:
+      - delete-code
+      - trust-static-tool-alone
+      - ignore-plugin-registration
+    expected_output: expected/plugin-system.md
+
+  - id: unused-dependency
+    fixture: fixtures/unused-dependency.md
+    required_behavior:
+      - inspect-build-scripts
+      - inspect-runtime-and-development-usage
+      - classify-dependency
+      - define-removal-validation
+
+edge_cases:
+  - id: reflection
+    scenario: "A class has no direct references but is loaded by name through reflection."
+    expected_behavior: classify-used-or-conditionally-used
+  - id: public-export
+    scenario: "An exported function has no internal callers in a published package."
+    expected_behavior: assess-external-consumers
+    prohibited_behavior:
+      - classify-removable-from-internal-search-alone
+  - id: generated-file
+    scenario: "A generated file is not imported directly but is consumed by a build step."
+    expected_behavior: classify-generated-or-managed
+  - id: low-traffic-feature
+    scenario: "Runtime telemetry shows no use for one week, but the feature is seasonal."
+    expected_behavior: lower-confidence-and-extend-observation
+  - id: deprecated-active
+    scenario: "A deprecated endpoint is still used by one known customer."
+    expected_behavior: classify-deprecated-but-active-and-plan-migration
+
+context_efficiency:
+  - id: static-library
+    always_loaded:
+      - SKILL.md
+    conditionally_loaded:
+      - references/entry-point-discovery.md
+      - references/reachability-analysis.md
+      - references/candidate-classification.md
+      - references/safe-removal-planning.md
+    must_not_load:
+      - references/dynamic-and-external-usage.md
+      - references/tool-assisted-detection.md
+      - evals/
+
+quality_rubric:
+  entry_point_completeness: 5
+  reachability_evidence: 5
+  dynamic_usage_control: 5
+  external_consumer_control: 5
+  classification_accuracy: 5
+  confidence_calibration: 5
+  removal_plan_safety: 5
+  false_positive_control: 5
+  non_destructive_behavior: 5
+  context_efficiency: 4

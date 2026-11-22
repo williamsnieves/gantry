@@ -1,0 +1,477 @@
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import sys
+from pathlib import Path
+from typing import Iterable
+
+try:
+    import yaml
+except Exception:
+    yaml = None
+
+VERSION = "1.0.0"
+START = "<!-- LOOP-ENGINEERING-HARNESS:START -->"
+END = "<!-- LOOP-ENGINEERING-HARNESS:END -->"
+RUNTIMES = ("claude", "codex", "cursor", "opencode", "omp")
+ALIASES = {
+    "claude-code": "claude",
+    "oh-my-pi": "omp",
+    "ohmypi": "omp",
+    "open-code": "opencode",
+}
+SCOPES = ("fullstack", "backend", "frontend", "architecture", "infrastructure", "mixed")
+PROFILES = ("lean", "standard", "strict")
+
+def package_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+def distribution_root() -> Path:
+    return package_root() / "distribution"
+
+def template_root() -> Path:
+    return package_root() / "templates"
+
+def normalize_runtime(value: str) -> str:
+    v = value.strip().lower()
+    return ALIASES.get(v, v)
+
+def parse_runtimes(raw: str) -> list[str]:
+    if not raw:
+        return []
+    vals = [normalize_runtime(v) for v in raw.split(",") if v.strip()]
+    if "all" in vals:
+        vals = list(RUNTIMES)
+    bad = [v for v in vals if v not in RUNTIMES]
+    if bad:
+        raise SystemExit(f"Unsupported runtime(s): {', '.join(bad)}")
+    # stable de-dupe
+    out = []
+    for v in vals:
+        if v not in out:
+            out.append(v)
+    return out
+
+def ensure_project(path: str) -> Path:
+    p = Path(path).expanduser().resolve()
+    if not p.exists() or not p.is_dir():
+        raise SystemExit(f"Project directory does not exist: {p}")
+    return p
+
+def iter_files(root: Path) -> Iterable[Path]:
+    for p in root.rglob("*"):
+        if p.is_file():
+            yield p
+
+def sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def state_path(project: Path) -> Path:
+    return project / ".harness/install-state.json"
+
+def load_state(project: Path) -> dict:
+    p = state_path(project)
+    if not p.exists():
+        return {
+            "harness_version": None,
+            "runtimes": [],
+            "managed_files": {},
+            "shared_installed": False,
+        }
+    return json.loads(p.read_text(encoding="utf-8"))
+
+def save_state(project: Path, state: dict) -> None:
+    p = state_path(project)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+def rel(project: Path, path: Path) -> str:
+    return path.relative_to(project).as_posix()
+
+def managed_copy(src: Path, dst: Path, project: Path, state: dict, *, force: bool, dry_run: bool, label: str):
+    key = rel(project, dst)
+    managed = state["managed_files"].get(key)
+
+    if dst.exists():
+        if managed:
+            current_hash = sha256(dst)
+            previous_hash = managed.get("sha256")
+            if current_hash != previous_hash and not force:
+                raise SystemExit(
+                    f"Refusing to overwrite locally modified harness file: {dst}\n"
+                    f"Use --force only after reviewing the local changes."
+                )
+        elif not force:
+            raise SystemExit(
+                f"Refusing to overwrite existing unmanaged file: {dst}\n"
+                f"Use --force only if the harness should own this path."
+            )
+
+    print(f"{'[DRY-RUN] ' if dry_run else ''}install {label}: {key}")
+    if dry_run:
+        return
+
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
+    state["managed_files"][key] = {
+        "sha256": sha256(dst),
+        "owner": label,
+    }
+
+def managed_tree(src_root: Path, dst_root: Path, project: Path, state: dict, *, force: bool, dry_run: bool, label: str):
+    for src in iter_files(src_root):
+        target = dst_root / src.relative_to(src_root)
+        managed_copy(src, target, project, state, force=force, dry_run=dry_run, label=label)
+
+def merge_agents_block(project: Path, *, dry_run: bool):
+    block = (template_root() / "AGENTS.block.md").read_text(encoding="utf-8").strip()
+    path = project / "AGENTS.md"
+    old = path.read_text(encoding="utf-8") if path.exists() else ""
+
+    if START in old and END in old:
+        pattern = re.compile(re.escape(START) + r".*?" + re.escape(END), re.S)
+        new = pattern.sub(block, old)
+    else:
+        new = old.rstrip() + ("\n\n" if old.strip() else "") + block + "\n"
+
+    if new == old:
+        return
+    print(f"{'[DRY-RUN] ' if dry_run else ''}merge managed block: AGENTS.md")
+    if not dry_run:
+        path.write_text(new, encoding="utf-8")
+
+def remove_agents_block(project: Path, *, dry_run: bool):
+    path = project / "AGENTS.md"
+    if not path.exists():
+        return
+    old = path.read_text(encoding="utf-8")
+    if START not in old or END not in old:
+        return
+    pattern = re.compile(r"\n?" + re.escape(START) + r".*?" + re.escape(END) + r"\n?", re.S)
+    new = pattern.sub("\n", old).strip()
+    if new:
+        new += "\n"
+    print(f"{'[DRY-RUN] ' if dry_run else ''}remove managed block: AGENTS.md")
+    if not dry_run:
+        if new:
+            path.write_text(new, encoding="utf-8")
+        else:
+            path.unlink()
+
+def write_harness_config(project: Path, runtimes: list[str], scope: str, profile: str, *, dry_run: bool):
+    config_path = project / ".harness/harness.config.yaml"
+    config = {
+        "harness_version": VERSION,
+        "project": {
+            "scope_profile": scope,
+            "delivery_profile": profile,
+        },
+        "routing": {
+            "scope_profile_is_advisory": True,
+            "risk_triggers_override_scope_profile": True,
+            "dynamic_routing": True,
+        },
+        "execution": {
+            "default_review_mode": "parallel_when_safe",
+            "review_agents_read_only": True,
+            "stable_snapshot_per_wave": True,
+            "minimal_rereview": True,
+        },
+        "pre_pr": {
+            "enabled": True,
+            "allow_pass_with_conditions": True,
+        },
+        "installed_runtimes": runtimes,
+    }
+    text = (
+        yaml.safe_dump(config, sort_keys=False, allow_unicode=True)
+        if yaml else
+        json.dumps(config, indent=2)
+    )
+    print(f"{'[DRY-RUN] ' if dry_run else ''}write: .harness/harness.config.yaml")
+    if not dry_run:
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text(text, encoding="utf-8")
+
+def install_shared(project: Path, state: dict, *, force: bool, dry_run: bool):
+    droot = distribution_root()
+    managed_tree(
+        droot / "core/.harness",
+        project / ".harness",
+        project, state,
+        force=force, dry_run=dry_run, label="shared-core",
+    )
+    managed_tree(
+        droot / "shared/skills/.agents",
+        project / ".agents",
+        project, state,
+        force=force, dry_run=dry_run, label="shared-skills",
+    )
+    merge_agents_block(project, dry_run=dry_run)
+    if not dry_run:
+        state["shared_installed"] = True
+
+def install_runtime(runtime: str, project: Path, state: dict, *, force: bool, dry_run: bool):
+    overlay = distribution_root() / "runtimes" / runtime
+    managed_tree(
+        overlay, project, project, state,
+        force=force, dry_run=dry_run, label=f"runtime:{runtime}"
+    )
+    if not dry_run and runtime not in state["runtimes"]:
+        state["runtimes"].append(runtime)
+
+def cmd_install(args):
+    project = ensure_project(args.project)
+    runtimes = parse_runtimes(args.runtime)
+    if not runtimes:
+        raise SystemExit("Select at least one runtime with --runtime.")
+
+    state = load_state(project)
+    state.setdefault("managed_files", {})
+    state.setdefault("runtimes", [])
+
+    install_shared(project, state, force=args.force, dry_run=args.dry_run)
+    for runtime in runtimes:
+        install_runtime(runtime, project, state, force=args.force, dry_run=args.dry_run)
+
+    final_runtimes = sorted(set(state["runtimes"]) | set(runtimes), key=RUNTIMES.index)
+    write_harness_config(
+        project, final_runtimes, args.scope, args.profile, dry_run=args.dry_run
+    )
+
+    if not args.dry_run:
+        state["harness_version"] = VERSION
+        state["runtimes"] = final_runtimes
+        save_state(project, state)
+
+    print()
+    print("Installed runtimes:", ", ".join(final_runtimes))
+    print_entrypoints(final_runtimes)
+
+def print_entrypoints(runtimes):
+    entries = {
+        "claude": "/harness-run",
+        "codex": "$harness-run",
+        "cursor": "/harness-run",
+        "opencode": "/harness-run",
+        "omp": "/harness-run",
+    }
+    print("Start commands:")
+    for r in runtimes:
+        print(f"  {r:8} -> {entries[r]}")
+
+def cmd_plan(args):
+    args.dry_run = True
+    cmd_install(args)
+
+def cmd_status(args):
+    project = ensure_project(args.project)
+    state = load_state(project)
+    print(f"Harness version: {state.get('harness_version') or 'not installed'}")
+    print("Installed runtimes:", ", ".join(state.get("runtimes") or []) or "none")
+    print("Managed files:", len(state.get("managed_files") or {}))
+    cfg = project / ".harness/harness.config.yaml"
+    if cfg.exists():
+        print("Config:", cfg)
+    if state.get("runtimes"):
+        print_entrypoints(state["runtimes"])
+
+def cmd_doctor(args):
+    project = ensure_project(args.project)
+    state = load_state(project)
+    errors = []
+    warnings = []
+
+    if not state.get("harness_version"):
+        errors.append("Harness install state is missing.")
+
+    # Check managed files still exist and hashes match.
+    for key, meta in (state.get("managed_files") or {}).items():
+        p = project / key
+        if not p.exists():
+            errors.append(f"Missing managed file: {key}")
+            continue
+        if sha256(p) != meta.get("sha256"):
+            warnings.append(f"Locally modified managed file: {key}")
+
+    # Core invariants.
+    required = [
+        ".harness/core/routing/ROUTING-POLICY.md",
+        ".harness/core/pre-pr/FINAL-PRE-PR-GATE.md",
+        ".harness/agents/reviewer/AGENT.md",
+        ".harness/evals/end-to-end/E2E-ORACLE.md",
+        ".agents/skills/harness-run/SKILL.md",
+    ]
+    for key in required:
+        if not (project / key).exists():
+            errors.append(f"Missing core artifact: {key}")
+
+    runtime_checks = {
+        "claude": [".claude/agents/reviewer.md", ".claude/skills/harness-run/SKILL.md"],
+        "codex": [".codex/agents/reviewer.toml"],
+        "cursor": [".cursor/agents/reviewer.md", ".cursor/rules/00-portable-harness.mdc"],
+        "opencode": [".opencode/agents/reviewer.md", ".opencode/commands/harness-run.md"],
+        "omp": [".omp/agents/reviewer.md", ".omp/commands/harness-run.md", ".omp/RULES.md"],
+    }
+    for runtime in state.get("runtimes") or []:
+        for key in runtime_checks[runtime]:
+            if not (project / key).exists():
+                errors.append(f"{runtime}: missing {key}")
+
+    if START not in ((project / "AGENTS.md").read_text(encoding="utf-8") if (project / "AGENTS.md").exists() else ""):
+        warnings.append("Managed AGENTS.md harness block is missing.")
+
+    if errors:
+        print("DOCTOR: FAIL")
+    elif warnings:
+        print("DOCTOR: PASS WITH WARNINGS")
+    else:
+        print("DOCTOR: PASS")
+
+    for e in errors:
+        print("ERROR:", e)
+    for w in warnings:
+        print("WARN :", w)
+    raise SystemExit(1 if errors else 0)
+
+def remove_managed_file(project: Path, key: str, meta: dict, *, force: bool, dry_run: bool):
+    p = project / key
+    if not p.exists():
+        return True
+    current = sha256(p)
+    if current != meta.get("sha256") and not force:
+        print(f"skip locally modified file: {key}")
+        return False
+    print(f"{'[DRY-RUN] ' if dry_run else ''}remove: {key}")
+    if not dry_run:
+        p.unlink()
+        # clean empty dirs upward but never remove project root
+        parent = p.parent
+        while parent != project and parent.exists():
+            try:
+                parent.rmdir()
+            except OSError:
+                break
+            parent = parent.parent
+    return True
+
+def cmd_uninstall(args):
+    project = ensure_project(args.project)
+    state = load_state(project)
+    installed = list(state.get("runtimes") or [])
+    if not installed and not state.get("shared_installed"):
+        print("Harness is not installed.")
+        return
+
+    runtimes = parse_runtimes(args.runtime) if args.runtime else installed
+    if args.runtime and "all" in args.runtime.lower():
+        runtimes = installed
+
+    managed = dict(state.get("managed_files") or {})
+    remove_keys = []
+    for key, meta in managed.items():
+        owner = meta.get("owner", "")
+        if owner.startswith("runtime:") and owner.split(":", 1)[1] in runtimes:
+            remove_keys.append(key)
+
+    for key in remove_keys:
+        if remove_managed_file(project, key, managed[key], force=args.force, dry_run=args.dry_run):
+            if not args.dry_run:
+                state["managed_files"].pop(key, None)
+
+    remaining = [r for r in installed if r not in runtimes]
+
+    if args.purge_shared and not remaining:
+        for key, meta in list(state.get("managed_files", {}).items()):
+            if meta.get("owner", "").startswith("shared-"):
+                if remove_managed_file(project, key, meta, force=args.force, dry_run=args.dry_run):
+                    if not args.dry_run:
+                        state["managed_files"].pop(key, None)
+        remove_agents_block(project, dry_run=args.dry_run)
+        if not args.dry_run:
+            state["shared_installed"] = False
+
+    if not args.dry_run:
+        state["runtimes"] = remaining
+        if remaining:
+            save_state(project, state)
+            # Update config with existing scope/profile when possible.
+            cfg = project / ".harness/harness.config.yaml"
+            scope, profile = "mixed", "standard"
+            if cfg.exists() and yaml:
+                try:
+                    data = yaml.safe_load(cfg.read_text(encoding="utf-8")) or {}
+                    scope = data.get("project", {}).get("scope_profile", scope)
+                    profile = data.get("project", {}).get("delivery_profile", profile)
+                except Exception:
+                    pass
+            write_harness_config(project, remaining, scope, profile, dry_run=False)
+            save_state(project, state)
+        elif args.purge_shared:
+            sp = state_path(project)
+            if sp.exists():
+                sp.unlink()
+        else:
+            save_state(project, state)
+
+    print("Remaining runtimes:", ", ".join(remaining) or "none")
+
+def build_parser():
+    p = argparse.ArgumentParser(prog="leh", description="Loop Engineering Harness installer")
+    p.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
+    sub = p.add_subparsers(dest="command", required=True)
+
+    def common_install(sp):
+        sp.add_argument("--project", default=".")
+        sp.add_argument("--runtime", required=True, help="claude,codex,cursor,opencode,omp or all")
+        sp.add_argument("--scope", choices=SCOPES, default="mixed")
+        sp.add_argument("--profile", choices=PROFILES, default="standard")
+        sp.add_argument("--force", action="store_true")
+        sp.add_argument("--dry-run", action="store_true")
+
+    ins = sub.add_parser("install", help="Install one or more runtime adapters")
+    common_install(ins)
+    ins.set_defaults(func=cmd_install)
+
+    init = sub.add_parser("init", help="Alias for install")
+    common_install(init)
+    init.set_defaults(func=cmd_install)
+
+    plan = sub.add_parser("plan", help="Show what install would change")
+    common_install(plan)
+    plan.set_defaults(func=cmd_plan)
+
+    st = sub.add_parser("status", help="Show installed harness/runtime state")
+    st.add_argument("--project", default=".")
+    st.set_defaults(func=cmd_status)
+
+    dr = sub.add_parser("doctor", help="Validate the installed harness")
+    dr.add_argument("--project", default=".")
+    dr.set_defaults(func=cmd_doctor)
+
+    un = sub.add_parser("uninstall", help="Remove selected runtime overlays")
+    un.add_argument("--project", default=".")
+    un.add_argument("--runtime", help="runtime list; defaults to all installed")
+    un.add_argument("--purge-shared", action="store_true", help="remove shared core/skills when no runtimes remain")
+    un.add_argument("--force", action="store_true")
+    un.add_argument("--dry-run", action="store_true")
+    un.set_defaults(func=cmd_uninstall)
+
+    return p
+
+def main():
+    parser = build_parser()
+    args = parser.parse_args()
+    args.func(args)
+
+if __name__ == "__main__":
+    main()

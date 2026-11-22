@@ -1,0 +1,96 @@
+skill: applying-backend-engineering-standard
+version: 0.1.0
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  invented_project_policies_allowed: 0
+  irrelevant_rule_activation_allowed: 0
+  missed_mandatory_invariants_allowed: 0
+  implementation_actions_allowed: 0
+  unresolved_conflicts_ignored_allowed: 0
+discovery:
+  positive:
+  - id: positive-feature
+    prompt: Determine which backend engineering rules apply before implementing this
+      new subscription promotion endpoint.
+    expected: activate
+  - id: positive-brownfield
+    prompt: Classify the backend layers and target rules for extending this legacy
+      billing module.
+    expected: activate
+  negative:
+  - id: negative-frontend
+    prompt: Select the frontend architecture profile and React rules for this form.
+    expected: do-not-activate
+    expected_alternative: applying-frontend-engineering-standard
+  - id: negative-implement
+    prompt: Implement the backend endpoint and its tests.
+    expected: do-not-activate
+  - id: negative-audit
+    prompt: Audit the completed backend code and produce findings.
+    expected: do-not-activate
+    expected_alternative: auditing-code
+procedure:
+- id: promotion-change
+  fixture: fixtures/subscription-promotion.md
+  required_steps:
+  - resolve-change
+  - discover-instructions-and-policies
+  - map-backend-topology
+  - classify-change
+  - select-applicable-rules
+  - separate-invariants-defaults-policies-exceptions
+  - detect-conflicts
+  - route-to-focused-skills
+  - build-validation-plan
+  - decide-readiness
+  prohibited_actions:
+  - implement-code
+  - invent-di-policy
+  - activate-all-backend-rules
+  - ignore-controller-repository-violation
+  - force-big-bang-rewrite
+  expected_output: expected/subscription-promotion-report.md
+edge_cases:
+- id: simple-service
+  scenario: A simple CRUD service has no meaningful domain behavior.
+  expected_behavior: do-not-force-rich-domain-model
+- id: missing-id-policy
+  scenario: The standard allows generic or typed IDs but project policy is missing.
+  expected_behavior: decision-required-not-guess
+- id: legacy-controller
+  scenario: Existing controllers call repositories directly, but the new feature can
+    use a Use Case seam.
+  expected_behavior: record-exception-and-apply-target-to-new-code
+- id: public-contract
+  scenario: A small code change modifies an API error enum.
+  expected_behavior: activate-contract-and-consumer-validation
+- id: frontend-only
+  scenario: No backend workspace or backend behavior is affected.
+  expected_behavior: not-a-backend-change
+context_efficiency:
+- id: application-only-change
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/intake-and-repository-discovery.md
+  - references/backend-change-classification.md
+  - references/rule-selection-and-precedence.md
+  - references/backend-topology-and-boundaries.md
+  - references/skill-routing.md
+  - references/backend-validation-planning.md
+  must_not_load:
+  - references/deviations-and-brownfield.md
+  - evals/
+quality_rubric:
+  scope_resolution: 5
+  repository_discovery: 5
+  classification_accuracy: 5
+  rule_selection: 5
+  policy_non_fabrication: 5
+  conflict_detection: 5
+  brownfield_proportionality: 5
+  skill_routing: 5
+  validation_planning: 5
+  readiness_decision: 5
+  context_efficiency: 4

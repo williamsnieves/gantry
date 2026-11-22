@@ -1,0 +1,52 @@
+name: loop-engineering-harness
+version: 1.0.0
+cli: leh
+supported_runtimes:
+- claude
+- codex
+- cursor
+- opencode
+- omp
+runtime_aliases:
+  claude-code: claude
+  oh-my-pi: omp
+  ohmypi: omp
+  open-code: opencode
+shared_paths:
+- .harness/
+- .agents/skills/
+- AGENTS.md managed block
+runtime_paths:
+  claude:
+  - .claude/agents/
+  - .claude/skills/
+  - .claude/rules/
+  codex:
+  - .codex/agents/
+  cursor:
+  - .cursor/agents/
+  - .cursor/rules/
+  opencode:
+  - .opencode/agents/
+  - .opencode/commands/
+  omp:
+  - .omp/agents/
+  - .omp/commands/
+  - .omp/RULES.md
+entrypoints:
+  claude: /harness-run
+  codex: $harness-run
+  cursor: /harness-run
+  opencode: /harness-run
+  omp: /harness-run
+project_scopes:
+- fullstack
+- backend
+- frontend
+- architecture
+- infrastructure
+- mixed
+delivery_profiles:
+- lean
+- standard
+- strict

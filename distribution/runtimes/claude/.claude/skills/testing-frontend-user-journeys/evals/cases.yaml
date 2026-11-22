@@ -1,0 +1,106 @@
+skill: testing-frontend-user-journeys
+version: 0.1.0
+passing_policy:
+  all_e2e_strategy_allowed: 0
+  every_validation_branch_in_e2e_allowed: 0
+  shared_mutable_test_data_allowed: 0
+  production_destructive_resources_allowed: 0
+  brittle_css_selector_as_default_allowed: 0
+  arbitrary_sleep_allowed: 0
+  real_login_repeated_in_every_authenticated_test_allowed: 0
+  real_payment_allowed: 0
+  permanent_flaky_test_skip_without_owner_allowed: 0
+  internal_app_layer_mocked_in_e2e_allowed: 0
+discovery:
+  positive:
+  - id: positive-critical
+    prompt: Implement the critical end-to-end journey for an authenticated user upgrading
+      a subscription across real routes and backend integration.
+    expected: activate
+  - id: positive-recovery
+    prompt: Add one E2E recovery path for a declined sandbox payment followed by a
+      successful retry.
+    expected: activate
+  - id: positive-deployment
+    prompt: Test this critical route-to-route flow in the deployed preview environment
+      to catch base-path and hydration integration failures.
+    expected: activate
+  negative:
+  - id: negative-domain
+    prompt: Test every promotion validation rule.
+    expected: do-not-activate
+    expected_alternative: testing-frontend-domain-and-use-cases
+  - id: negative-component
+    prompt: Test all loading/error/empty states of this React component.
+    expected: do-not-activate
+    expected_alternative: testing-react-components
+  - id: negative-visual
+    prompt: Test light/dark responsive screenshots for this dashboard.
+    expected: do-not-activate
+    expected_alternative: testing-frontend-visual-regressions
+procedure:
+- id: subscription-upgrade-journey
+  fixture: fixtures/subscription-upgrade-journey.md
+  required_steps:
+  - confirm-test-strategy-classifies-journey-as-e2e-required
+  - state-unique-integration-risk-not-proved-below
+  - select-controlled-environment-and-ci-tier
+  - isolate-user-tenant-subscription-and-provider-data-per-test-worker
+  - seed-prerequisites-through-deterministic-test-support-when-not-part-of-journey
+  - choose-auth-strategy-real-login-only-if-auth-is-risk-otherwise-safe-session-state
+  - stabilize-flags-roles-locale-timezone-and-provider-mode
+  - use-semantic-user-locators-and-user-visible-assertions
+  - cover-essential-success-and-at-most-one-or-few-critical-recovery-paths
+  - avoid-arbitrary-sleeps-and-exact-internal-network-order
+  - verify-durable-end-state-across-route-or-reload-when-contract-requires
+  - define-idempotent-cleanup-and-parallel-isolation
+  - preserve-trace-screenshot-console-page-error-and-safe-network-diagnostics
+  - audit-browser-matrix-privacy-flake-and-lower-level-duplication
+  - produce-user-journey-testing-record
+  prohibited_actions:
+  - test-every-promotion-error-e2e
+  - create-shared-global-subscription
+  - login-through-ui-in-every-test
+  - use-css-nth-child-selectors
+  - wait-for-timeout-2000
+  - mock-usecase
+  - mock-repository
+  - use-real-payment-card
+  - reuse-production-account
+  - skip-flaky-test-forever
+  expected_output: expected/subscription-upgrade-journey-record.md
+edge_cases:
+- id: lower-boundary
+  scenario: Invalid promotion format is fully covered by Domain and component tests.
+  expected_behavior: do-not-add-e2e-unless-a-distinct-backend-route-integration-risk-exists
+- id: auth
+  scenario: Twenty authenticated journeys each perform full login UI before their
+    actual test.
+  expected_behavior: test-login-once-as-critical-journey-and-reuse-safe-authenticated-state-elsewhere
+- id: data
+  scenario: Parallel subscription tests modify the same seeded account.
+  expected_behavior: per-worker-or-per-test-isolated-user-resource-namespace
+- id: recovery
+  scenario: Payment sandbox can deterministically decline then accept retry.
+  expected_behavior: one-critical-recovery-e2e-with-test-mode-no-real-charge-and-cleanup
+- id: flake
+  scenario: Test passes only after runner retry because it waits for a CSS selector
+    after fixed 2-second sleep.
+  expected_behavior: replace-with-semantic-locator-readiness-fix-root-flake-and-track-retry-dependence
+- id: incident
+  scenario: Production incident was caused by wrong deployed API base path; unit/component
+    tests all passed.
+  expected_behavior: add-deployed-preview-critical-journey-regression-plus-lower-config-test-if-possible
+quality_rubric:
+  journey_selection_and_unique_risk: 5
+  environment_contract: 5
+  data_isolation_and_cleanup: 5
+  authentication_and_determinism: 5
+  locators_and_assertions: 5
+  critical_success_and_recovery_scope: 5
+  provider_and_revenue_safety: 5
+  browser_matrix_and_deployment_confidence: 5
+  diagnostics: 5
+  ci_flake_and_quarantine: 5
+  lower_level_duplication_restraint: 5
+  final_status: 5

@@ -1,0 +1,5 @@
+reviewer: READY_FOR_PRE_PR_GATE_WITH_CONDITIONS
+conditions:
+- production RUM confirmation after staged rollout
+- temporary manual provider step before deployment with owner/runbook
+final: PRE_PR_PASS_WITH_CONDITIONS

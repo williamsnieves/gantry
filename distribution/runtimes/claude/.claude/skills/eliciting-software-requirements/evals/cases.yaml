@@ -1,0 +1,126 @@
+skill: eliciting-software-requirements
+version: 0.1.0
+passing_policy:
+  fabricated_product_decisions_allowed: 0
+  fabricated_architecture_decisions_allowed: 0
+  stakeholder_preference_as_hard_constraint_allowed: 0
+  analyst_inference_as_fact_allowed: 0
+  vague_nfr_given_invented_number_allowed: 0
+  conflict_silently_reconciled_allowed: 0
+  every_unknown_marked_blocking_allowed: 0
+  final_prd_written_by_this_skill_allowed: 0
+  technology_solution_selected_allowed: 0
+  untraceable_critical_requirement_allowed: 0
+discovery:
+  positive:
+  - id: positive-greenfield
+    prompt: We have an idea for a multi-tenant SaaS product. Help us elicit the software
+      requirements before we write the PRD or architecture.
+    expected: activate
+  - id: positive-vague
+    prompt: This system idea is vague. Identify stakeholders, actors, functional needs,
+      NFRs, constraints, assumptions, risks, and open questions.
+    expected: activate
+  - id: positive-architecture-input
+    prompt: Before designing the architecture, structure what we actually know and
+      what still needs stakeholder decisions.
+    expected: activate
+  negative:
+  - id: negative-prd
+    prompt: Create the final PRD from this completed discovery record.
+    expected: do-not-activate
+    expected_alternative: creating-product-requirement-documents
+  - id: negative-story
+    prompt: Enrich this Jira user story before implementation.
+    expected: do-not-activate
+    expected_alternative: enriching-user-stories
+  - id: negative-architecture
+    prompt: Choose between microservices and a modular monolith for these accepted
+      requirements.
+    expected: do-not-activate
+    expected_alternative: designing-system-architecture
+procedure:
+- id: multi-tenant-support-platform
+  fixture: fixtures/multi-tenant-support-platform.md
+  required_steps:
+  - define-bounded-discovery-scope-and-authoritative-input
+  - create-source-ledger-and-preserve-epistemic-status
+  - separate-problem-from-proposed-solution
+  - identify-material-stakeholders-and-decision-authority
+  - identify-human-and-system-actors
+  - clarify-goals-outcomes-and-non-goal-candidates
+  - capture-high-value-user-system-journeys
+  - capture-traceable-functional-requirement-candidates
+  - capture-non-functional-quality-expectations-without-inventing-targets
+  - separate-hard-soft-unknown-constraints-from-preferences
+  - record-architecture-significant-assumptions-and-validation-actions
+  - record-dependencies-external-systems-data-and-operational-concerns
+  - record-evidence-based-risks
+  - surface-conflicting-stakeholder-needs-with-decision-owner
+  - classify-open-questions-as-blocking-important-or-follow-up
+  - capture-success-condition-candidates-without-inventing-kpis
+  - audit-contradictions-and-missing-actors
+  - assign-discovery-readiness
+  - produce-bounded-prd-handoff
+  - stop-before-architecture-or-final-prd
+  prohibited_actions:
+  - choose-kubernetes
+  - choose-microservices
+  - invent-p95-200ms
+  - call-postgresql-mandatory-without-authority
+  - invent-gdpr-retention-period
+  - resolve-security-vs-product-conflict-silently
+  - invent-personas-with-demographics
+  - create-c4-diagram
+  - write-final-prd
+  - create-openspec-change
+  expected_output: expected/multi-tenant-support-platform-record.md
+edge_cases:
+- id: solution-first
+  scenario: 'Stakeholder says: ''We need Kubernetes and microservices so the system
+    can scale.'' No scale data or organizational mandate is provided.'
+  expected_behavior: record-proposed-solution-and-underlying-scale-need-do-not-treat-technologies-as-confirmed-hard-constraints
+- id: conflict
+  scenario: Product wants indefinite conversation history while privacy owner says
+    data must be deleted after an as-yet-undecided retention period.
+  expected_behavior: record-conflict-and-blocking-policy-decision-do-not-invent-retention
+- id: vague-performance
+  scenario: Requirement says the dashboard must be very fast.
+  expected_behavior: record-performance-expectation-with-unknown-measure-and-targeted-follow-up-question
+- id: missing-actor
+  scenario: The system must approve account deletion, but no actor or automated policy
+    is identified.
+  expected_behavior: flag-missing-actor-and-decision-authority
+- id: brownfield
+  scenario: A new workflow replaces a legacy endpoint still used by old mobile clients.
+  expected_behavior: record-existing-consumers-and-compatibility-as-discovery-input-not-assume-breaking-migration
+- id: assumption
+  scenario: Team assumes fewer than 10k tenants because current pilot has 50.
+  expected_behavior: record-assumption-confidence-validation-and-failure-impact-not-confirmed-scale-fact
+context_efficiency:
+- id: direct-idea
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/discovery-scope-provenance-and-epistemic-status.md
+  - references/stakeholders-actors-goals-and-user-journeys.md
+  - references/functional-and-non-functional-discovery.md
+  - references/constraints-assumptions-dependencies-and-risks.md
+  - references/open-questions-conflicts-and-success-conditions.md
+  must_not_load_unless_needed:
+  - references/brownfield-data-operations-and-external-systems.md
+  - references/adaptive-elicitation-question-strategy.md
+  - evals/
+quality_rubric:
+  scope_and_provenance: 5
+  epistemic_status_precision: 5
+  problem_goal_outcome: 5
+  stakeholders_actors_journeys: 5
+  functional_discovery: 5
+  nonfunctional_discovery: 5
+  constraints_assumptions_dependencies: 5
+  risk_conflict_questions: 5
+  data_external_operations: 5
+  success_and_traceability: 5
+  non_fabrication_and_no_architecture: 5
+  readiness_and_prd_handoff: 5

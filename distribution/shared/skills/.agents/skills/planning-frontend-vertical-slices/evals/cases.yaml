@@ -1,0 +1,100 @@
+skill: planning-frontend-vertical-slices
+version: 0.1.0
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  implementation_code_allowed: 0
+  technical_layer_plan_allowed: 0
+  speculative_shared_abstraction_allowed: 0
+  invented_requirement_allowed: 0
+  ceremonial_layer_allowed: 0
+  accessibility_deferred_to_final_slice_allowed: 0
+  duplicate_all_tests_across_levels_allowed: 0
+discovery:
+  positive:
+  - id: positive-ready-feature
+    prompt: Break this accepted frontend feature into the smallest end-to-end vertical
+      slices.
+    expected: activate
+  - id: positive-profile-b
+    prompt: Plan the implementation sequence across Domain, Application, adapters,
+      React UI, accessibility, and tests.
+    expected: activate
+  - id: positive-brownfield
+    prompt: Plan a change-local frontend strangler sequence by user-visible behavior.
+    expected: activate
+  negative:
+  - id: negative-profile
+    prompt: Choose Profile A, B, or C.
+    expected: do-not-activate
+    expected_alternative: classifying-frontend-architecture-profile
+  - id: negative-component
+    prompt: Design the component API for this feature.
+    expected: do-not-activate
+    expected_alternative: designing-react-components
+  - id: negative-implement
+    prompt: Implement all slices.
+    expected: do-not-activate
+    expected_alternative: focused implementation skills
+procedure:
+- id: promotion-ui-slices
+  fixture: fixtures/promotion-ui-slices.md
+  required_steps:
+  - confirm-readiness-profile-and-local-rules
+  - inventory-user-visible-behaviors
+  - assign-capability-ownership
+  - create-smallest-end-to-end-slices
+  - map-only-justified-boundaries
+  - define-data-error-and-cache-mappings
+  - define-ui-state-matrix-per-slice
+  - attach-accessibility-checkpoints-per-slice
+  - map-tests-to-cheapest-reliable-levels
+  - sequence-dependencies-and-risk
+  - define-completion-evidence
+  - exclude-speculative-sharing-and-invented-states
+  - produce-final-slice-readiness-decision
+  prohibited_actions:
+  - write-code
+  - plan-all-components-first
+  - plan-all-tests-last
+  - introduce-domain-layer
+  - introduce-new-state-library
+  - create-shared-promotion-form
+  - invent-offline-support
+  - defer-keyboard-support
+  - repeat-every-case-in-e2e
+  - reorganize-unrelated-features
+  expected_output: expected/promotion-ui-slice-plan.md
+edge_cases:
+- id: simple-ui
+  scenario: One static accessible notice with no data.
+  expected_behavior: one-profile-a-slice-component-style-accessibility-test
+- id: rich-offline
+  scenario: Offline editor has lifecycle, sync, conflicts, and several surfaces.
+  expected_behavior: profile-b-slices-with-domain-application-adapters-ui
+- id: large-story
+  scenario: Success, semantic errors, unavailable retry, and advanced optimistic update
+    are in one story.
+  expected_behavior: split-coherent-slices-by-user-outcome-and-risk
+- id: shared-speculation
+  scenario: A unique form may be reused someday.
+  expected_behavior: keep-feature-local
+- id: accessibility-later
+  scenario: Plan suggests adding keyboard behavior after visual implementation.
+  expected_behavior: reject-defer-accessibility-within-each-slice
+- id: test-duplication
+  scenario: Every semantic error is planned in adapter, hook, component, and E2E tests.
+  expected_behavior: select-cheapest-reliable-level-plus-critical-public-flow
+quality_rubric:
+  readiness_and_behavior_inventory: 5
+  capability_ownership: 5
+  vertical_slice_quality: 5
+  profile_proportionality: 5
+  data_state_and_mapping: 5
+  react_boundary_mapping: 5
+  styling_and_accessibility: 5
+  test_matrix: 5
+  dependency_and_risk_sequence: 5
+  completion_evidence: 5
+  scope_and_non_speculation: 5
+  non_implementation: 5

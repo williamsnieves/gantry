@@ -1,0 +1,10 @@
+id: valid-conditions
+description: All blockers resolved; Performance and Infrastructure retain explicit
+  non-blocking rollout conditions.
+oracle:
+  reviewer: READY_FOR_PRE_PR_GATE_WITH_CONDITIONS
+  final: PRE_PR_PASS_WITH_CONDITIONS
+  conditions_must_survive: true
+critical_assertions:
+- conditions need owner and verification
+- conditions must be carried into final report

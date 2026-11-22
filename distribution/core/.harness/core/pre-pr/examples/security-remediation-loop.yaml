@@ -1,0 +1,18 @@
+wave_1:
+  validator: PASS
+  backend-code-review: REQUEST_CHANGES
+  qa: QA_CHANGES_REQUIRED
+  security: SECURITY_CHANGES_REQUIRED
+root_cause: tenant authorization enforcement incomplete
+remediation: authoritative tenant/resource check added plus negative regression test
+wave_2_required_reruns:
+- validator
+- backend-code-review
+- qa
+- security
+- detail-analyst
+- reviewer
+wave_2_not_rerun:
+- performance
+- infrastructure
+final: PRE_PR_PASS

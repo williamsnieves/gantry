@@ -1,0 +1,12 @@
+id: stale-gate
+description: Security approved commit A; authorization changes materially in commit
+  B before final integration.
+oracle:
+  security_result: STALE
+  reviewer: BLOCKED_PENDING_EVIDENCE
+  final: PRE_PR_BLOCKED
+  required_rerun:
+  - security
+critical_assertions:
+- stale approval must not be reused
+- unrelated gates need not rerun

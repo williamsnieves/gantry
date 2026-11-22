@@ -1,0 +1,103 @@
+skill: validating-external-frontend-data
+version: 0.1.0
+passing_policy:
+  typescript_assertion_as_runtime_validation_allowed: 0
+  provider_schema_equal_application_dto_by_default_allowed: 0
+  all_fields_optional_to_avoid_failures_allowed: 0
+  silent_enum_cast_allowed: 0
+  raw_validator_error_leak_allowed: 0
+  full_sensitive_payload_logging_allowed: 0
+  postmessage_without_origin_check_allowed: 0
+  new_validation_library_without_approval_allowed: 0
+  duplicate_validation_every_layer_allowed: 0
+  fallback_empty_object_on_mismatch_allowed: 0
+discovery:
+  positive:
+  - id: positive-api
+    prompt: Decide whether this API response needs runtime validation and validate
+      it before repository mapping.
+    expected: activate
+  - id: positive-persisted
+    prompt: Validate and migrate versioned IndexedDB data safely before creating Domain
+      models.
+    expected: activate
+  - id: positive-postmessage
+    prompt: Validate postMessage payloads and contract mismatches safely.
+    expected: activate
+  negative:
+  - id: negative-form
+    prompt: Validate required form fields and show accessible field errors.
+    expected: do-not-activate
+    expected_alternative: form/accessibility validation skill
+  - id: negative-http
+    prompt: Handle malformed JSON in the common HTTP client.
+    expected: do-not-activate
+    expected_alternative: implementing-frontend-http-clients
+  - id: negative-domain
+    prompt: Validate that Quantity is between 1 and 10 as a business invariant.
+    expected: do-not-activate
+    expected_alternative: modeling-frontend-domain
+procedure:
+- id: subscription-external-data
+  fixture: fixtures/subscription-external-data.md
+  required_steps:
+  - identify-external-sources-trust-and-structural-importance
+  - inspect-existing-validation-library-and-policy
+  - decide-runtime-validation-necessity
+  - separate-http-decoding-from-provider-schema-validation
+  - define-exact-external-contract
+  - define-unknown-missing-null-and-enum-policy
+  - define-version-and-persisted-data-migration
+  - validate-postmessage-origin-and-payload-separately
+  - validate-before-application-domain-mapping
+  - translate-mismatch-to-stable-error
+  - define-redacted-observability
+  - check-security-and-sanitization-separation
+  - evaluate-performance-and-duplicate-validation
+  - test-valid-invalid-enum-version-and-safe-diagnostics
+  - audit-overvalidation-and-undervalidation
+  - produce-external-data-validation-record
+  prohibited_actions:
+  - cast-json-as-subscription-response
+  - make-all-provider-fields-optional
+  - silently-cast-status-enum
+  - put-zoderror-in-application-result
+  - log-full-provider-payload
+  - validate-provider-again-in-hook
+  - trust-localstorage-json-as-current-type
+  - validate-postmessage-without-origin
+  - install-zod-when-valibot-is-already-approved
+  - default-missing-required-id-to-empty-string
+  expected_output: expected/subscription-external-data-record.md
+edge_cases:
+- id: typescript
+  scenario: response.json() is cast with `as SubscriptionApiResponse`.
+  expected_behavior: reject-as-runtime-validation
+- id: unknown-field
+  scenario: Provider adds a harmless additive field.
+  expected_behavior: follow-explicit-forward-compatibility-policy-not-automatic-strict-rejection
+- id: unknown-enum
+  scenario: Provider returns status `PAUSED` but frontend only knows ACTIVE/EXPIRED.
+  expected_behavior: explicit-contract-mismatch-or-safe-unknown-policy
+- id: persisted
+  scenario: IndexedDB contains v1 record while application now uses v3.
+  expected_behavior: version-specific-validate-migrate-and-revalidate
+- id: postmessage
+  scenario: Message payload shape is valid but origin is not allowed.
+  expected_behavior: reject-origin-schema-validation-alone-is-insufficient
+- id: trusted-internal
+  scenario: Typed object is created inside same process and never serialized.
+  expected_behavior: runtime-validation-not-required
+quality_rubric:
+  validation_decision: 5
+  boundary_placement: 5
+  external_contract_fidelity: 5
+  strictness_optionality_and_enums: 5
+  versioning_and_persistence: 5
+  postmessage_imports_and_remote_config: 5
+  failure_semantics: 5
+  observability_security_privacy: 5
+  library_policy: 5
+  performance_and_duplicate_validation: 5
+  testing_and_contract_drift: 5
+  overvalidation_restraint_and_final_status: 5

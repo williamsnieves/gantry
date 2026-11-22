@@ -1,0 +1,141 @@
+skill: validating-architecture-design
+version: 0.1.0
+passing_policy:
+  unknown_as_pass_allowed: 0
+  artifact_presence_as_validity_allowed: 0
+  architecture_by_preference_allowed: 0
+  unsupported_scalability_claim_allowed: 0
+  unsupported_availability_claim_allowed: 0
+  hard_constraint_violation_ignored_allowed: 0
+  conflicting_adr_ignored_allowed: 0
+  impossible_sequence_ignored_allowed: 0
+  data_ownership_ambiguity_ignored_allowed: 0
+  security_threat_model_presence_as_treatment_allowed: 0
+discovery:
+  positive:
+  - id: positive-full-validation
+    prompt: Validate this completed Architecture Package against drivers, quality
+      attributes, ADRs, models, deployment and STRIDE before we hand it to implementation.
+    expected: activate
+  - id: positive-conditional
+    prompt: Perform architecture validation and distinguish blockers from acceptable
+      open conditions/TBD implementation decisions.
+    expected: activate
+  - id: positive-cross-model
+    prompt: Check whether our ADRs, C4, sequences, state/data models and deployment
+      contradict each other.
+    expected: activate
+  negative:
+  - id: negative-design
+    prompt: Generate candidate architectures for this system.
+    expected: do-not-activate
+    expected_alternative: designing-system-architecture
+  - id: negative-threat-discovery
+    prompt: Perform STRIDE threat modeling on this DFD.
+    expected: do-not-activate
+    expected_alternative: threat-modeling-with-stride
+  - id: negative-control-verification
+    prompt: Verify the implemented authentication controls against ASVS.
+    expected: do-not-activate
+    expected_alternative: verifying-security-controls
+procedure:
+- id: support-platform-architecture-validation
+  fixture: fixtures/support-platform-architecture-package.md
+  required_steps:
+  - establish-validation-scope-profile-architecture-version-and-authority
+  - inventory-required-and-applicable-architecture-artifacts-with-version-status
+  - validate-primary-drivers-to-decisions-models-and-evidence
+  - validate-quality-scenarios-and-refuse-strong-pass-where-measures-are-tbd
+  - detect-architecture-by-preference-and-unsupported-scale-availability-claims
+  - validate-hard-constraints-assumptions-and-tradeoffs
+  - audit-adr-status-scope-supersession-conflicts-and-c4-deployment-alignment
+  - validate-critical-sequence-feasibility-authorization-and-failure-paths
+  - validate-state-model-consistency-with-usecases-sequences-and-domain-data
+  - validate-domain-data-ownership-cardinality-identifiers-tenancy-and-lifecycle
+  - validate-dfd-trust-thirdparty-privacy-and-secret-alignment
+  - validate-event-producer-consumer-state-domain-and-deployment-consistency
+  - validate-deployment-placement-connectivity-recovery-observability-secrets-and-spof-claims
+  - validate-stride-threat-treatment-and-residual-risk-not-just-threat-model-presence
+  - build-crossmodel-identity-relationship-and-architecture-claim-evidence-matrices
+  - classify-findings-by-severity-type-impact-evidence-remediation-and-blocking-status
+  - produce-acceptance-recommendation-and-openspec-implementation-handoff
+  prohibited_actions:
+  - mark-scale-pass-with-no-target
+  - mark-high-availability-pass-with-no-failover-topology
+  - silently-select-cloud-region
+  - silently-resolve-conflicting-adrs
+  - invent-concurrency-policy
+  - invent-data-owner
+  - treat-missing-stride-mitigation-as-addressed
+  - redesign-architecture-inside-validation
+  - require-event-flow-for-system-with-no-events
+  - block-only-because-optional-diagram-is-missing
+  expected_output: expected/support-platform-architecture-validation-report.md
+edge_cases:
+- id: architecture-preference
+  scenario: ADR says Kubernetes was selected because it is industry standard, with
+    no driver/constraint requiring it.
+  expected_behavior: flag-architecture-by-preference-and-insufficient-rationale-not-auto-accept
+- id: unsupported-scale
+  scenario: Architecture claims massive scalability but scale target and capacity
+    evidence are TBD.
+  expected_behavior: flag-unsupported-scalability-claim-or-unmeasurable-quality-support
+- id: conflicting-adrs
+  scenario: One ACCEPTED ADR says single deployable while another ACCEPTED ADR says
+    core capabilities must deploy independently.
+  expected_behavior: flag-conflicting-accepted-adrs-as-blocking-model-conflict
+- id: missing-failure-path
+  scenario: Critical provider-dependent sequence has no behavior for provider outage
+    despite outage resilience being a primary driver.
+  expected_behavior: flag-critical-failure-path-missing
+- id: impossible-sequence
+  scenario: Sequence calls an independently deployed ingestion service that does not
+    exist in accepted C4/deployment.
+  expected_behavior: flag-impossible-sequence-and-architecture-model-conflict
+- id: data-ownership
+  scenario: Conversation module and Audit module both claim authoritative write ownership
+    of Conversation.
+  expected_behavior: flag-data-ownership-ambiguity-or-conflict
+- id: state-inconsistency
+  scenario: Sequence reopens RESOLVED conversation but state machine has no accepted
+    reopen transition.
+  expected_behavior: flag-state-machine-inconsistency
+- id: deployment-mismatch
+  scenario: C4 says one logical deployable but deployment shows five independent services
+    with no superseding ADR.
+  expected_behavior: flag-deployment-architecture-mismatch-and-adr-c4-conflict
+- id: security-threat
+  scenario: STRIDE records cross-tenant access threat as HIGH but mitigation/control
+    requirement is still OPEN.
+  expected_behavior: security-threat-remains-open-or-blocking-not-treated-because-threat-model-file-exists
+- id: not-applicable
+  scenario: System has no event-driven interactions and no meaningful lifecycle state
+    machine.
+  expected_behavior: allow-event-and-state-models-not-applicable-with-rationale-rather-than-fail-package
+context_efficiency:
+- id: standard-architecture-validation
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/validation-scope-profiles-evidence-and-package-inventory.md
+  - references/drivers-quality-attributes-constraints-and-unsupported-claims.md
+  - references/adrs-tradeoffs-c4-and-cross-model-consistency.md
+  - references/sequence-state-data-dfd-event-and-deployment-feasibility.md
+  - references/security-threat-treatment-residual-risk-and-control-handoff.md
+  must_not_load_unless_needed:
+  - references/findings-blockers-conditional-acceptance-and-rework.md
+  - references/traceability-claims-evidence-and-openspec-handoff.md
+  - evals/
+quality_rubric:
+  scope_profile_package_inventory: 5
+  drivers_and_quality_attributes: 5
+  constraints_assumptions_tradeoffs: 5
+  adr_and_c4_consistency: 5
+  sequence_and_failure_feasibility: 5
+  state_and_domain_data_consistency: 5
+  dfd_event_privacy_alignment: 5
+  deployment_feasibility: 5
+  security_threat_treatment: 5
+  claims_evidence_crossmodel_traceability: 5
+  findings_blockers_conditional_acceptance: 5
+  openspec_handoff_and_final_status: 5

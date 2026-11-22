@@ -1,0 +1,106 @@
+skill: preparing-full-stack-change
+version: 0.1.0
+passing_policy:
+  implement_code_inside_preparation_allowed: 0
+  create_duplicate_openspec_without_exploration_allowed: 0
+  frontend_backend_invent_contract_independently_allowed: 0
+  parallelize_before_contract_stable_allowed: 0
+  frontend_permission_as_authoritative_security_allowed: 0
+  breaking_change_without_compatibility_sequence_allowed: 0
+  mock_as_second_contract_source_allowed: 0
+  blocking_question_left_for_implementation_allowed: 0
+  shared_spec_overprescribes_stack_internals_allowed: 0
+  acceptance_criterion_without_owner_allowed: 0
+discovery:
+  positive:
+  - id: positive-feature
+    prompt: Prepare this full-stack feature using OpenSpec, identify backend/frontend
+      slices, stabilize the API contract, and hand it off for implementation.
+    expected: activate
+  - id: positive-api
+    prompt: This frontend story needs a new backend endpoint. Prepare the cross-stack
+      change and sequencing before either team implements it.
+    expected: activate
+  - id: positive-breaking
+    prompt: Plan a coordinated frontend/backend migration for this breaking API contract.
+    expected: activate
+  negative:
+  - id: negative-front
+    prompt: Implement this frontend-only feature.
+    expected: do-not-activate
+    expected_alternative: implementing-frontend-change
+  - id: negative-review
+    prompt: Review this completed backend + frontend PR.
+    expected: do-not-activate
+    expected_alternative: reviewing-full-stack-change
+  - id: negative-story
+    prompt: Improve this user story acceptance criteria.
+    expected: do-not-activate
+    expected_alternative: enriching-user-stories
+procedure:
+- id: subscription-upgrade-fullstack
+  fixture: fixtures/subscription-upgrade-fullstack.md
+  required_steps:
+  - enrich-request-and-resolve-blocking-product-questions
+  - explore-openspec-before-create-or-edit
+  - create-or-edit-the-correct-change
+  - name-full-stack-capability-and-identify-current-vs-intended-behavior
+  - decompose-backend-and-frontend-slices
+  - stabilize-request-response-error-authorization-idempotency-and-redirect-contracts
+  - classify-compatibility-and-plan-deployment-migration-sequence
+  - construct-dependency-graph-and-parallelize-only-after-contract-stability
+  - derive-frontend-mocks-fixtures-from-accepted-contract
+  - route-security-privacy-performance-triggers-to-specialists
+  - map-every-acceptance-criterion-to-stack-contract-and-verification-ownership
+  - produce-bounded-backend-handoff
+  - produce-bounded-frontend-handoff-to-implementing-frontend-change
+  - record-shared-decisions-open-questions-non-goals-and-scope-growth
+  - stop-before-code-implementation
+  - produce-full-stack-change-preparation-record
+  prohibited_actions:
+  - implement-react-or-backend-code
+  - create-new-openspec-change-without-search
+  - let-frontend-assume-provider-response
+  - let-backend-change-error-code-without-contract-update
+  - start-both-stacks-before-contract
+  - treat-hidden-button-as-permission-enforcement
+  - deploy-breaking-backend-without-old-client-compatibility
+  - maintain-handwritten-mock-that-diverges-from-contract
+  - leave-payment-cancel-behavior-unspecified
+  - embed-all-backend-frontend-rules-in-preparation
+  expected_output: expected/subscription-upgrade-fullstack-preparation.md
+edge_cases:
+- id: existing-change
+  scenario: An OpenSpec change already exists for the capability but the new request
+    adds one acceptance criterion.
+  expected_behavior: edit-existing-change-not-create-duplicate
+- id: contract-block
+  scenario: Backend wants status=409 while frontend assumes 422 for upgrade conflict.
+  expected_behavior: block-parallel-implementation-until-one-accepted-error-contract-is-decided
+- id: additive
+  scenario: Backend adds an optional response field that old frontend safely ignores.
+  expected_behavior: classify-additive-or-backward-compatible-and-allow-backend-first-rollout
+- id: breaking
+  scenario: Existing response field is renamed and both old/new frontend versions
+    may be live.
+  expected_behavior: require-compatibility-versioning-or-dual-field-deployment-plan
+- id: auth
+  scenario: Frontend hides action for users without permission but backend endpoint
+    currently allows any authenticated user.
+  expected_behavior: make-backend-authorization-an-explicit-blocking-requirement
+- id: provider
+  scenario: Payment provider callback semantics are unknown.
+  expected_behavior: third-party-contract-question-blocks-dependent-redirect-success-flow-until-resolved
+quality_rubric:
+  request_enrichment: 5
+  openspec_exploration_and_change: 5
+  capability_and_slice_decomposition: 5
+  contract_stability: 5
+  authorization_idempotency_errors: 5
+  compatibility_and_deployment_sequence: 5
+  dependency_graph_and_parallelism: 5
+  risk_routing: 5
+  acceptance_traceability: 5
+  backend_frontend_handoffs: 5
+  scope_decisions_and_conflicts: 5
+  preparation_not_implementation: 5

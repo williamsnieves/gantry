@@ -1,0 +1,92 @@
+skill: editing-openspec-changes
+version: 0.1.0
+
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  hidden_scope_expansion_allowed: 0
+  false_task_status_allowed: 0
+  artifact_contradictions_allowed: 0
+  validation_failures_allowed: 0
+
+discovery:
+  positive:
+    - id: positive-design
+      prompt: "Update the active OpenSpec change to use a queue instead of synchronous processing."
+      expected: activate
+    - id: positive-scope
+      prompt: "Narrow this active change to the MVP and update its specs and tasks."
+      expected: activate
+    - id: positive-drift
+      prompt: "Implementation changed the behavior; reconcile the active change before we continue."
+      expected: activate
+  negative:
+    - id: negative-new
+      prompt: "Create a new OpenSpec change for a separate theming system."
+      expected: do-not-activate
+    - id: negative-sync
+      prompt: "Merge the completed delta specs into the main specs."
+      expected: do-not-activate
+      expected_alternative: syncing-openspec-specs
+    - id: negative-apply
+      prompt: "Continue implementing the unchecked tasks."
+      expected: do-not-activate
+
+procedure:
+  - id: approach-change
+    fixture: fixtures/approach-change.md
+    required_steps:
+      - confirm-same-intent
+      - assess-artifact-impact
+      - update-design
+      - reconcile-tasks
+      - validate
+      - report
+    expected_output: expected/approach-change.md
+
+  - id: scope-explosion
+    fixture: fixtures/scope-explosion.md
+    required_steps:
+      - compare-original-and-new-intent
+      - assess-independence
+      - recommend-new-change
+    prohibited_actions:
+      - fold-independent-work-into-active-change
+
+edge_cases:
+  - id: checked-task-invalidated
+    scenario: "A completed task no longer satisfies the revised design."
+    expected_behavior: reopen-task-with-rationale
+  - id: accidental-code-drift
+    scenario: "Manual code differs from specs but no approval exists."
+    expected_behavior: stop-and-request-truth-decision
+  - id: stale-spec-approved-code
+    scenario: "Approved manual implementation is correct and the delta spec is stale."
+    expected_behavior: update-artifacts-and-validate
+  - id: unclear-rethink
+    scenario: "The team no longer agrees on the underlying problem."
+    expected_behavior: return-to-exploration
+
+context_efficiency:
+  - id: planning-only-edit
+    always_loaded:
+      - SKILL.md
+    conditionally_loaded:
+      - references/update-versus-new.md
+      - references/artifact-impact-propagation.md
+      - references/tasks-as-living-plan.md
+      - references/edit-validation.md
+    must_not_load:
+      - references/code-artifact-reconciliation.md
+      - evals/
+
+quality_rubric:
+  intent_preservation: 5
+  update_new_decision: 5
+  impact_propagation: 5
+  artifact_consistency: 5
+  task_truthfulness: 5
+  drift_reconciliation: 5
+  validation_evidence: 5
+  scope_control: 5
+  context_efficiency: 4

@@ -1,0 +1,7 @@
+qa: BLOCKED_PENDING_DECISION
+question: retry behavior after ambiguous provider timeout
+independent_reviews_may_continue:
+- backend-code-review
+- security
+reviewer: BLOCKED_PENDING_DECISION
+final: PRE_PR_BLOCKED

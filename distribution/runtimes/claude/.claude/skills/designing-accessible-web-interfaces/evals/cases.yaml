@@ -1,0 +1,104 @@
+skill: designing-accessible-web-interfaces
+version: 0.1.0
+baseline:
+  standard: WCAG 2.2
+  principles:
+  - Perceivable
+  - Operable
+  - Understandable
+  - Robust
+  default_target: Level AA unless another accepted target applies
+passing_policy:
+  implementation_code_allowed: 0
+  automated_scan_as_conformance_allowed: 0
+  aria_instead_of_native_semantics_allowed: 0
+  keyboard_incomplete_allowed: 0
+  focus_contract_missing_allowed: 0
+  color_only_meaning_allowed: 0
+  pointer_only_essential_action_allowed: 0
+  unsupported_legal_claim_allowed: 0
+  framework_locked_core_allowed: 0
+discovery:
+  positive:
+  - id: generic-design
+    prompt: Design the accessibility contract for this web interface using WCAG 2.2.
+    expected: activate
+  - id: complex-widget
+    prompt: Define keyboard, focus, semantics, status announcements, and evidence
+      for this dialog and combobox.
+    expected: activate
+  - id: multi-framework
+    prompt: Create one framework-neutral accessibility design and add React and Angular
+      adaptation notes.
+    expected: activate
+  negative:
+  - id: implemented-audit
+    prompt: Audit this implemented page and rank accessibility violations.
+    expected: do-not-activate
+    expected_alternative: reviewing-web-accessibility
+  - id: implementation
+    prompt: Write the React dialog implementation.
+    expected: do-not-activate
+    expected_alternative: implementation workflow
+  - id: legal
+    prompt: Tell me exactly which accessibility law applies to my company.
+    expected: do-not-activate
+    expected_alternative: legal research
+procedure:
+- id: promotion-flow
+  fixture: fixtures/promotion-accessibility-design.md
+  required_steps:
+  - confirm-scope-users-journeys-and-target
+  - map-applicable-wcag-criteria
+  - design-perceivable-content-and-visual-behavior
+  - design-keyboard-focus-motion-and-input-alternatives
+  - design-label-error-authentication-and-recovery-behavior
+  - design-semantics-names-roles-values-states-and-status
+  - select-native-design-system-or-proven-widget
+  - define-responsive-zoom-theme-forced-color-and-motion
+  - add-framework-adaptation-after-neutral-contract
+  - write-observable-acceptance-criteria
+  - define-automated-manual-keyboard-focus-and-at-evidence
+  - record-exceptions-and-final-decision
+  prohibited_actions:
+  - write-code
+  - claim-aa-because-axe-passes
+  - use-clickable-div
+  - omit-visible-label
+  - use-color-only-errors
+  - trap-focus-without-exit
+  - announce-every-state-assertively
+  - rely-only-on-hover
+  - remove-password-paste
+  - require-drag-only-interaction
+  - trust-wrapper-without-validation
+  expected_output: expected/promotion-accessibility-design-record.md
+edge_cases:
+- id: icon-button
+  scenario: Icon-only close action.
+  expected_behavior: semantic-button-action-name-focus-and-target-review
+- id: dialog
+  scenario: Modal opens over a page.
+  expected_behavior: label-initial-focus-containment-close-escape-background-and-restoration
+- id: drag
+  scenario: Items can only be reordered by dragging.
+  expected_behavior: non-drag-alternative-status-and-focus-preservation
+- id: zoom
+  scenario: Sticky footer covers the focused action at 400 percent zoom.
+  expected_behavior: focus-not-obscured-and-reflow-redesign
+- id: axe-only
+  scenario: Automated scan reports zero issues.
+  expected_behavior: insufficient-for-conformance
+quality_rubric:
+  scope_users_and_target: 5
+  wcag_applicability: 5
+  perceivable: 5
+  operable: 5
+  understandable: 5
+  robust: 5
+  complex_widgets: 5
+  dynamic_status_and_focus: 5
+  visual_responsive_motion: 5
+  framework_neutrality: 5
+  verification_honesty: 5
+  exceptions_and_non_implementation: 5

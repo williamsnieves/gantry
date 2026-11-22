@@ -1,0 +1,26 @@
+id: small-frontend
+description: Small React form behavior change; no architecture/security/performance/infrastructure
+  trigger.
+input:
+  work_mode: IMPLEMENTATION
+  scopes:
+  - FRONTEND
+  risk_triggers:
+  - BEHAVIORAL
+oracle:
+  routing:
+    validator: REQUIRED
+    frontend-code-review: REQUIRED
+    frontend-architecture-review: NOT_TRIGGERED
+    qa: REQUIRED
+    performance: NOT_TRIGGERED
+    security: NOT_TRIGGERED
+    infrastructure: NOT_APPLICABLE
+    detail-analyst: REQUIRED
+    reviewer: REQUIRED
+  reviewer: READY_FOR_PRE_PR_GATE
+  final: PRE_PR_PASS
+critical_assertions:
+- do not activate backend reviews
+- do not mechanically activate performance/security
+- Validator + Frontend Code Review + QA + Detail Analyst + Reviewer are sufficient

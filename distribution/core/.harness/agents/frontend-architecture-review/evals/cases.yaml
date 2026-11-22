@@ -1,0 +1,111 @@
+agent: frontend-architecture-review
+version: 0.1.0
+required_skill:
+- reviewing-frontend-architecture
+supporting_skills:
+- validating-frontend-architecture
+- reviewing-web-accessibility
+- reviewing-frontend-performance
+- reviewing-frontend-security
+- reviewing-frontend-privacy-and-analytics
+- testing-frontend-user-journeys
+- testing-frontend-adapters
+- testing-react-components
+- testing-react-hooks
+- auditing-code
+- reviewing-adversarially
+- analyzing-details
+passing_policy:
+  implements_refactor_allowed: 0
+  invented_project_policy_allowed: 0
+  forces_heavier_profile_allowed: 0
+  should_as_blocker_without_risk_allowed: 0
+  duplicate_frontend_code_review_finding_allowed: 0
+  missing_manual_memoization_as_default_finding_allowed: 0
+  effect_in_hook_as_default_violation_allowed: 0
+  unrelated_repository_redesign_allowed: 0
+role_activation:
+  positive:
+  - prompt: Act as Frontend Architecture Review and evaluate this PR against the selected
+      profile, ownership, boundaries, state, composition and test strategy.
+    expected: activate
+  - prompt: Review whether this frontend feature is architecturally healthy and proportionate,
+      not just whether it has bugs.
+    expected: activate
+  negative:
+  - prompt: Find concrete React bugs and stale async races in this diff.
+    expected: route-to-frontend-code-review
+  - prompt: Run frontend architecture import/cycle checks.
+    expected: route-to-validator-or-validating-frontend-architecture
+  - prompt: Implement this frontend feature.
+    expected: route-to-frontend-implementation
+scenarios:
+- id: direct-adapter-import
+  fixture: fixtures/direct-adapter-import.md
+  expected_status: CHANGES_REQUESTED
+  required_behavior:
+  - classify-as-mandatory-invariant-if-standard-says-must-not
+  - explain-presentation-infrastructure-coupling
+  - recommend-semantic-dependency-injection-at-composition-boundary
+  - avoid-duplicating-code-bug
+- id: compiler-memoization
+  fixture: fixtures/compiler-memoization.md
+  expected_status: APPROVE
+  required_behavior:
+  - detect-react-compiler-enabled
+  - do-not-recommend-usememo-usecallback-reactmemo-routinely
+  - avoid-performance-advisory-without-evidence
+- id: should-level-convention
+  fixture: fixtures/should-level-convention.md
+  expected_status: APPROVE_WITH_ADVISORIES
+  required_behavior:
+  - classify-default-convention-not-mandatory
+  - keep-as-advisory-or-low-nonblocking
+  - avoid-promoting-preference-to-blocker
+- id: temporary-migration-deviation
+  fixture: fixtures/temporary-migration-deviation.md
+  expected_status: APPROVE_WITH_ADVISORIES
+  required_behavior:
+  - recognize-accepted-temporary-deviation
+  - verify-scope-owner-removal-trigger
+  - do-not-report-as-violation-while-conditions-hold
+- id: profile-missing
+  fixture: fixtures/profile-missing.md
+  expected_status: BLOCKED_PENDING_DECISION
+  required_behavior:
+  - do-not-invent-profile
+  - surface-architecture-profile-required
+  - route-profile-selection
+- id: code-bug-already-reported
+  fixture: fixtures/code-bug-already-reported.md
+  expected_status: APPROVE
+  required_behavior:
+  - reference-code-review-defect-without-duplicating-it
+  - keep-architecture-approval-independent-when-no-structural-root-cause
+edge_cases:
+- scenario: A 300-line component is cohesive and selected profile permits local ownership.
+  expected_behavior: do-not-flag-size-alone
+- scenario: A custom hook contains an effect that synchronizes a browser subscription
+    and cleans up correctly.
+  expected_behavior: do-not-flag-effect-in-hook
+- scenario: A one-implementation semantic port protects a real API/provider boundary.
+  expected_behavior: do-not-reject-single-implementation-port-by-count-alone
+- scenario: Accessibility evidence proves a critical headless primitive wrapper is
+    broken.
+  expected_behavior: classify-impact-appropriately-and-request-changes-if-mandatory
+- scenario: A state library differs from reviewer preference but conforms to selected
+    project policy.
+  expected_behavior: no-issue-or-accepted-project-policy-not-personal-preference-finding
+quality_rubric:
+  scope_profile_authoritative_basis: 5
+  primary_skill_usage: 5
+  mandatory_vs_advisory_classification: 5
+  ownership_dependency_boundaries: 5
+  state_effects_composition: 5
+  ui_styling_accessibility_error_semantics: 5
+  test_strategy_performance_react_compiler: 5
+  security_privacy: 5
+  abstraction_brownfield_deviations: 5
+  code_review_validator_boundary: 5
+  finding_status_calibration: 5
+  handoff_no_write_discipline: 5

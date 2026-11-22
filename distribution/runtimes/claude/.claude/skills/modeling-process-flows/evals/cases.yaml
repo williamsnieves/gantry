@@ -1,0 +1,113 @@
+skill: modeling-process-flows
+version: 0.1.0
+passing_policy:
+  invent_branch_rule_allowed: 0
+  invent_retry_count_allowed: 0
+  invent_approval_sla_allowed: 0
+  sequence_diagram_disguised_as_flowchart_allowed: 0
+  state_machine_disguised_as_flowchart_allowed: 0
+  implementation_control_flow_allowed: 0
+  unlabeled_decision_branches_allowed: 0
+  dangling_branch_marked_ready_allowed: 0
+  infinite_retry_loop_marked_ready_allowed: 0
+  requirement_conflict_silently_resolved_allowed: 0
+discovery:
+  positive:
+  - id: positive-decision-tree
+    prompt: Model this business workflow as a flowchart with decisions, conditions,
+      failures and terminal outcomes.
+    expected: activate
+  - id: positive-retry
+    prompt: Create a process flow showing accepted retry and fallback behavior for
+      this provider-dependent workflow.
+    expected: activate
+  - id: positive-approval
+    prompt: Model this manual approval workflow with requester, system, reviewer and
+      approved/rejected paths.
+    expected: activate
+  negative:
+  - id: negative-usecase
+    prompt: Model actors and capabilities for this system.
+    expected: do-not-activate
+    expected_alternative: modeling-use-cases
+  - id: negative-state
+    prompt: Define valid lifecycle states and transitions for a subscription.
+    expected: do-not-activate
+    expected_alternative: modeling-state-machines
+  - id: negative-sequence
+    prompt: Show frontend, API, service, database and provider calls over time.
+    expected: do-not-activate
+    expected_alternative: modeling-system-sequences
+procedure:
+- id: support-platform-process-flows
+  fixture: fixtures/support-platform-process-input.md
+  required_steps:
+  - select-bounded-process-questions-from-usecases-and-frs
+  - define-start-success-and-other-terminal-outcomes
+  - identify-meaningful-activities-and-owners
+  - define-decision-questions-with-labeled-branches-and-rule-traceability
+  - model-manager-reassignment-validation-and-rejection-path
+  - model-ai-availability-manual-fallback-without-architecture
+  - model-provider-ingestion-failure-operator-handoff-only-as-supported
+  - model-retries-only-where-accepted-and-flag-missing-policy
+  - use-swimlanes-when-manual-automated-ownership-transitions-add-clarity
+  - avoid-state-sequence-ui-architecture-and-code-flow-leakage
+  - audit-branch-completeness-reachability-deadends-and-loop-safety
+  - trace-flows-to-usecases-frs-and-business-rules
+  - surface-requirement-conflicts-and-unspecified-branch-behavior
+  - identify-state-machine-and-sequence-diagram-handoffs
+  - produce-process-flow-model-and-readiness
+  prohibited_actions:
+  - invent-three-retries
+  - invent-exponential-backoff
+  - invent-manager-approval-timeout
+  - create-frontend-api-db-message-flow
+  - create-conversation-state-machine
+  - model-react-if-statements
+  - add-kafka-queue
+  - invent-retention-expiry-flow
+  - leave-no-branch-unlabeled
+  - mark-dangling-branch-ready
+  expected_output: expected/support-platform-process-flow-model.md
+edge_cases:
+- id: conditional-branching
+  scenario: Manager can reassign only when target agent belongs to same organization.
+  expected_behavior: decision-node-with-yes-reassign-no-reject-or-rule-defined-outcome-and-br003-traceability
+- id: retry-loop
+  scenario: Provider operation may retry, but no retry count or deadline is accepted.
+  expected_behavior: flag-retry-policy-required-rather-than-invent-loop-count
+- id: manual-approval
+  scenario: Request requires human approval, but escalation timing is undefined.
+  expected_behavior: model-known-request-pending-review-approved-rejected-paths-and-flag-escalation-or-timeout-gap
+- id: failure-fallback
+  scenario: AI provider unavailable; agent must continue manual reply.
+  expected_behavior: explicit-unavailable-branch-to-manual-fallback-without-circuit-breaker-cache-or-provider-selection
+- id: flow-vs-state
+  scenario: Requirement lists OPEN, RESOLVED, REOPENED and legal transitions.
+  expected_behavior: handoff-to-modeling-state-machines-instead-of-forcing-lifecycle-into-process-flow
+context_efficiency:
+- id: standard-process-flow
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/process-flow-purpose-scope-and-diagram-selection.md
+  - references/activities-decisions-conditions-and-branch-completeness.md
+  - references/loops-retries-approvals-fallbacks-and-handoffs.md
+  - references/traceability-reachability-deadends-and-conflicts.md
+  - references/process-vs-usecase-state-sequence-and-architecture.md
+  must_not_load_unless_needed:
+  - references/swimlanes-parallelism-subflows-and-diagram-discipline.md
+  - evals/
+quality_rubric:
+  scope_start_end: 5
+  activities_and_ownership: 5
+  decisions_and_branching: 5
+  loops_and_retries: 5
+  approvals_and_handoffs: 5
+  fallback_failure_degraded_mode: 5
+  swimlanes_parallelism_subflows: 5
+  diagram_discipline: 5
+  traceability_and_coverage: 5
+  reachability_deadends_loop_safety: 5
+  model_boundary_and_no_leakage: 5
+  handoffs_and_readiness: 5

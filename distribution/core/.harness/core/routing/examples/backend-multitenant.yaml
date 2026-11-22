@@ -1,0 +1,19 @@
+change: Modify backend subscription update flow and tenant/resource lookup.
+work_mode: IMPLEMENTATION
+scopes:
+- BACKEND
+- API_CONTRACT
+risk_triggers:
+- BEHAVIORAL
+- SECURITY
+- DATA_INTEGRITY
+routing:
+  validator: REQUIRED
+  backend-code-review: REQUIRED
+  backend-architecture-review: CONDITIONAL
+  qa: REQUIRED
+  security: REQUIRED
+  performance: NOT_TRIGGERED
+  infrastructure: NOT_TRIGGERED
+  detail-analyst: REQUIRED
+  reviewer: REQUIRED

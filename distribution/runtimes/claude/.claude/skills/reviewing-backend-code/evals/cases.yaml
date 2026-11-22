@@ -1,0 +1,115 @@
+skill: reviewing-backend-code
+version: 0.1.0
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  personal_style_findings_allowed: 0
+  unsupported_rule_findings_allowed: 0
+  evidence_free_findings_allowed: 0
+  code_rewrite_allowed: 0
+  unrelated_debt_as_changed_finding_allowed: 0
+  blocked_validation_reported_as_pass_allowed: 0
+  duplicate_root_cause_findings_allowed: 0
+  guessed_product_decision_allowed: 0
+discovery:
+  positive:
+  - id: positive-pr
+    prompt: Review this backend PR against our definitive standard and prioritize
+      actionable defects.
+    expected: activate
+  - id: positive-slice
+    prompt: Review the completed promotion vertical slice for correctness, security,
+      architecture, and tests.
+    expected: activate
+  - id: positive-brownfield
+    prompt: Review this legacy backend change and distinguish new drift from existing
+      debt.
+    expected: activate
+  negative:
+  - id: negative-architecture-only
+    prompt: Validate import direction and module boundaries.
+    expected: do-not-activate
+    expected_alternative: validating-backend-architecture
+  - id: negative-implementation
+    prompt: Fix all issues in this backend PR.
+    expected: do-not-activate
+    expected_alternative: focused implementation skills
+  - id: negative-validation
+    prompt: Run the complete backend validation matrix.
+    expected: do-not-activate
+    expected_alternative: validating-backend-change
+procedure:
+- id: promotion-pr-review
+  fixture: fixtures/promotion-pr-review.md
+  required_steps:
+  - confirm-specification-standard-and-scope
+  - trace-changed-behavior-end-to-end
+  - inspect-validation-evidence
+  - review-correctness-and-state
+  - review-domain-application-infrastructure-http-composition
+  - review-security-and-tenancy
+  - review-transactions-concurrency-idempotency-and-migration
+  - review-provider-failure-and-reconciliation
+  - review-tests-at-correct-boundaries
+  - challenge-adversarial-failure-scenarios
+  - classify-new-worsened-and-preexisting-issues
+  - produce-evidenced-prioritized-findings
+  - remove-style-only-and-duplicate-findings
+  - make-review-decision-with-honest-evidence
+  prohibited_actions:
+  - rewrite-code
+  - invent-requirement
+  - report-formatting-preference
+  - report-unrelated-billing-debt
+  - mark-blocked-test-passed
+  - split-one-root-cause-into-many-findings
+  - guess-partial-failure-policy
+  - ignore-tenant-scope-risk
+  - approve-with-critical-or-high-unresolved-defect
+  expected_output: expected/promotion-pr-review-report.md
+edge_cases:
+- id: preexisting-adjacent
+  scenario: Unrelated billing controller already calls ORM directly.
+  expected_behavior: exclude-from-change-findings-unless-directly-affected
+- id: missing-product-decision
+  scenario: Provider success followed by DB failure has no accepted policy.
+  expected_behavior: blocking-question-not-invented-fix
+- id: type-only-sdk-leak
+  scenario: Application imports provider SDK response using import type.
+  expected_behavior: architecture-finding-because-contract-leaks
+- id: mock-only-persistence
+  scenario: Repository tests mock Prisma and all pass.
+  expected_behavior: testing-finding-for-missing-real-persistence-evidence
+- id: blocked-sandbox
+  scenario: Sandbox tests did not run because credentials were unavailable.
+  expected_behavior: blocked-evidence-not-provider-pass
+- id: same-root-cause
+  scenario: Use Case imports SDK type, checks HTTP status, and returns provider enum.
+  expected_behavior: one-provider-boundary-finding-with-multiple-evidence-points
+context_efficiency:
+- id: focused-pr
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/review-scope-and-evidence.md
+  - references/correctness-and-layer-review.md
+  - references/security-data-integrity-and-operations.md
+  - references/testing-and-validation-review.md
+  - references/finding-quality-severity-and-decisions.md
+  must_not_load:
+  - references/brownfield-and-compatibility-review.md
+  - evals/
+quality_rubric:
+  scope_and_standard_fidelity: 5
+  correctness_analysis: 5
+  architecture_analysis: 5
+  security_and_tenancy: 5
+  data_integrity_and_concurrency: 5
+  transactions_idempotency_and_external_effects: 5
+  migration_and_compatibility: 5
+  testing_and_validation_evidence: 5
+  adversarial_depth: 5
+  finding_evidence_and_actionability: 5
+  severity_and_status_accuracy: 5
+  scope_control_and_non_speculation: 5
+  context_efficiency: 4

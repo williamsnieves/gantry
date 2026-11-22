@@ -1,0 +1,13 @@
+id: local-evidence-block
+description: Required browser evidence unavailable, but backend Security/Code Review
+  can continue independently.
+oracle:
+  qa: BLOCKED_PENDING_EVIDENCE
+  independent_continue:
+  - backend-code-review
+  - security
+  reviewer: BLOCKED_PENDING_EVIDENCE
+  final: PRE_PR_BLOCKED
+critical_assertions:
+- do not stop all branches unnecessarily
+- do not pass final gate with missing required QA evidence

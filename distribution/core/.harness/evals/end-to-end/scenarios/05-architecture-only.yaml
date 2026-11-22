@@ -1,0 +1,24 @@
+id: architecture-only
+description: System design work with no implementation.
+input:
+  work_mode: ARCHITECTURE_ONLY
+  scopes:
+  - REQUIREMENTS
+  - SOFTWARE_ARCHITECTURE
+  - DATA
+  - EVENTING
+  risk_triggers:
+  - ARCHITECTURE
+  - SECURITY
+oracle:
+  implementation_agents: NOT_APPLICABLE
+  skills:
+  - designing-software-system
+  - threat-modeling-with-stride
+  - validating-architecture-design
+  validator: NOT_APPLICABLE
+  qa: NOT_APPLICABLE
+  reviewer: NOT_TRIGGERED
+critical_assertions:
+- must not force implementation gate flow
+- STRIDE can still run

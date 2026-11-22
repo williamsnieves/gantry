@@ -1,0 +1,113 @@
+agent: security
+version: 0.1.0
+primary_skills:
+- threat-modeling-with-stride
+- reviewing-application-security
+- verifying-security-controls
+conditional_skills:
+- reviewing-frontend-security
+- reviewing-frontend-privacy-and-analytics
+supporting_skills:
+- auditing-code
+- reviewing-adversarially
+- analyzing-details
+- analyzing-algorithmic-complexity
+passing_policy:
+  planned_control_as_pass_allowed: 0
+  invented_asvs_ids_allowed: 0
+  invented_privacy_policy_allowed: 0
+  risk_acceptance_turns_fail_into_pass_allowed: 0
+  scanner_clean_means_secure_allowed: 0
+  frontend_guard_as_authoritative_auth_allowed: 0
+  owasp_or_cwe_rank_as_severity_allowed: 0
+  implements_fix_allowed: 0
+  duplicates_code_review_finding_allowed: 0
+role_activation:
+  positive:
+  - prompt: 'Act as Security Agent: threat-model this change, review the implementation
+      for concrete weaknesses, then verify the required controls.'
+    expected: activate
+  - prompt: Review this multi-tenant auth/webhook/frontend change for threats, vulnerabilities,
+      OWASP/CWE classification and control evidence.
+    expected: activate
+  negative:
+  - prompt: Run the secret scanner and tell me whether the command passes.
+    expected: route-to-validator
+  - prompt: Does this test suite cover the right functional scenarios?
+    expected: route-to-qa
+  - prompt: Configure cloud IAM roles and Kubernetes network policies.
+    expected: route-to-infrastructure
+scenarios:
+- id: cross-tenant-auth
+  fixture: fixtures/cross-tenant-auth.md
+  expected_decision: SECURITY_CHANGES_REQUIRED
+  required_behavior:
+  - identify-authorization-tenant-root-cause
+  - reference-or-create-stride-threat
+  - map-concrete-weakness-to-cwe-when-justified
+  - require-authoritative-server-side-control-and-negative-verification
+- id: planned-control-not-pass
+  fixture: fixtures/planned-control-not-pass.md
+  expected_decision: SECURITY_BLOCKED_PENDING_EVIDENCE
+  required_behavior:
+  - do-not-mark-backlog-control-pass
+  - use-not-verified-or-fail-according-to-baseline
+  - require-production-path-evidence
+- id: asvs-source-missing
+  fixture: fixtures/asvs-source-missing.md
+  expected_decision: SECURITY_BLOCKED_PENDING_EVIDENCE
+  required_behavior:
+  - do-not-invent-asvs-id-or-wording
+  - surface-control-baseline-source-required
+  - continue-only-with-available-project-defined-controls
+- id: frontend-secret
+  fixture: fixtures/frontend-secret.md
+  expected_decision: SECURITY_CHANGES_REQUIRED
+  required_behavior:
+  - apply-browser-trust-model
+  - treat-client-shipped-secret-as-exposed
+  - route-secret-dependent-operation-to-trusted-runtime
+  - verify-secret-no-longer-shipped
+- id: analytics-policy-unknown
+  fixture: fixtures/analytics-policy-unknown.md
+  expected_decision: SECURITY_BLOCKED_PENDING_DECISION
+  required_behavior:
+  - do-not-invent-consent-or-retention-policy
+  - surface-privacy-policy-required
+  - route-product-privacy-governance-decision
+- id: scanner-cve-unreachable
+  fixture: fixtures/scanner-cve-unreachable.md
+  expected_decision: SECURITY_APPROVED_WITH_CONDITIONS
+  required_behavior:
+  - interpret-scanner-evidence
+  - distinguish-build-only-unreachable-path
+  - avoid-using-cve-score-alone-as-release-severity
+  - record-upgrade-or-monitoring-condition-if-project-policy-requires
+edge_cases:
+- scenario: A dangerous-looking HTML API receives only compile-time trusted static
+    markup.
+  expected_behavior: trace-source-sink-and-do-not-flag-xss-by-api-name-alone
+- scenario: A frontend route guard hides admin page but server endpoint has no authorization.
+  expected_behavior: treat-client-guard-as-ux-only-and-report-authoritative-auth-gap
+- scenario: A control is FAIL but an executive has formally accepted the residual
+    risk.
+  expected_behavior: preserve-control-fail-status-record-risk-acceptance-and-decide-gate-per-approved-governance
+- scenario: Dependency scanner reports high CVSS issue in dev-only unreachable transitive
+    package.
+  expected_behavior: assess-reachability-and-runtime-scope-before-severity
+- scenario: A rate-limit control improves security but materially violates an accepted
+    latency budget.
+  expected_behavior: do-not-remove-security-control-unilaterally-route-security-performance-architecture-tradeoff
+quality_rubric:
+  scope_assets_trust_boundaries: 5
+  stride_threat_model_usage: 5
+  application_security_exploitability: 5
+  owasp_cwe_classification_discipline: 5
+  frontend_security_privacy: 5
+  authorization_tenant_secrets_integrity: 5
+  control_baseline_and_asvs_discipline: 5
+  control_evidence_and_status_accuracy: 5
+  residual_risk_compensating_controls_acceptance: 5
+  role_boundary_discipline: 5
+  decision_finding_calibration: 5
+  handoff_reverification_no_write: 5

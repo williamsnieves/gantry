@@ -1,0 +1,120 @@
+skill: modeling-domain-data
+version: 0.1.0
+passing_policy:
+  domain_entity_equals_table_allowed: 0
+  invent_field_allowed: 0
+  invent_identifier_format_allowed: 0
+  invent_cardinality_allowed: 0
+  invent_aggregate_boundary_allowed: 0
+  invent_history_entity_allowed: 0
+  invent_physical_schema_allowed: 0
+  mix_erd_levels_allowed: 0
+  api_dto_as_domain_model_allowed: 0
+  state_machine_conflict_silently_resolved_allowed: 0
+discovery:
+  positive:
+  - id: positive-conceptual
+    prompt: Model the conceptual and logical domain data for these requirements, including
+      relationships, cardinality, identifiers, ownership and invariants.
+    expected: activate
+  - id: positive-tenant
+    prompt: Create a tenant-aware logical data model and ERD without choosing a database
+      schema.
+    expected: activate
+  - id: positive-brownfield
+    prompt: Separate the current legacy schema concepts from the target domain data
+      model and identify migration mappings.
+    expected: activate
+  negative:
+  - id: negative-dfd
+    prompt: Show how personal data moves to providers across trust boundaries.
+    expected: do-not-activate
+    expected_alternative: modeling-data-flows
+  - id: negative-event
+    prompt: Define event producers, consumers and delivery guarantees.
+    expected: do-not-activate
+    expected_alternative: modeling-event-flows
+  - id: negative-schema
+    prompt: Design PostgreSQL tables, indexes and foreign keys.
+    expected: do-not-activate
+    expected_alternative: physical schema/persistence design
+procedure:
+- id: support-platform-domain-data
+  fixture: fixtures/support-platform-domain-data-input.md
+  required_steps:
+  - establish-domain-scope-modeling-levels-and-authoritative-source-models
+  - extract-meaningful-domain-concepts-without-promoting-every-noun
+  - define-semantic-relationships-and-evidence-backed-cardinality
+  - define-ownership-authority-and-tenant-scope
+  - define-semantic-identifiers-without-format-invention
+  - capture-business-invariants-from-accepted-rules
+  - link-conversation-lifecycle-to-state-machine-without-duplicating-transition-logic
+  - distinguish-authoritative-derived-ephemeral-and-external-reference-data
+  - avoid-inventing-persistence-for-ai-suggestion-or-history
+  - produce-conceptual-model-first-and-logical-model-only-as-needed
+  - decide-whether-logical-erd-adds-value-and-label-its-level
+  - keep-physical-schema-gated-and-technology-neutral
+  - audit-dfd-c4-state-usecase-and-business-rule-alignment
+  - audit-duplicate-concepts-cardinality-ownership-tenancy-and-physical-leakage
+  - produce-event-deployment-physical-schema-and-validation-handoffs
+  - produce-domain-data-model-and-readiness
+  prohibited_actions:
+  - create-table-for-every-domain-concept
+  - invent-uuid-primary-keys
+  - invent-postgresql-types
+  - invent-message-foreign-key
+  - invent-conversation-history-table
+  - invent-ai-suggestion-persistence
+  - invent-reopened-status
+  - invent-tenant-schema
+  - invent-indexes
+  - mix-conceptual-and-physical-erd
+  expected_output: expected/support-platform-domain-data-model.md
+edge_cases:
+- id: cardinality
+  scenario: A conversation belongs to one organization, but whether it may exist with
+    zero messages is not specified.
+  expected_behavior: model-organization-conversation-cardinality-from-evidence-and-leave-message-minimum-cardinality-unresolved
+- id: identifier
+  scenario: Conversation has an identifier but no format is specified.
+  expected_behavior: record-conversation-identifier-semantics-with-format-tbd-not-uuid-or-integer
+- id: tenant-boundary
+  scenario: Reassignment target must belong to same organization.
+  expected_behavior: encode-same-tenant-invariant-without-tenant-per-schema-or-db-design
+- id: lifecycle
+  scenario: Conversation states accepted are OPEN and RESOLVED; reopen only discussed.
+  expected_behavior: align-logical-lifecycle-to-open-resolved-and-exclude-reopened
+- id: derived-data
+  scenario: AI suggestion is optional and persistence is unspecified.
+  expected_behavior: model-as-derived-ephemeral-or-persistence-tbd-not-create-table
+- id: domain-entity-table
+  scenario: Domain model contains Organization, Conversation, Message, Internal Note
+    and Assignment.
+  expected_behavior: do-not-assume-five-physical-tables-and-stop-at-conceptual-logical-model-unless-schema-scope-exists
+context_efficiency:
+- id: standard-domain-data
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/conceptual-logical-physical-layering.md
+  - references/concepts-entities-values-and-identifiers.md
+  - references/relationships-cardinality-optionality-and-ownership.md
+  - references/invariants-tenancy-lifecycle-and-history.md
+  - references/domain-data-vs-schema-dfd-event-and-api-models.md
+  must_not_load_unless_needed:
+  - references/erd-selection-levels-and-visual-discipline.md
+  - references/brownfield-current-target-migration-and-alignment.md
+  - evals/
+quality_rubric:
+  scope_and_layering: 5
+  concept_quality: 5
+  relationships_cardinality_optionality: 5
+  ownership_and_authority: 5
+  identifiers: 5
+  invariants_and_tenancy: 5
+  lifecycle_history_derived_data: 5
+  erd_discipline: 5
+  physical_schema_boundary: 5
+  cross_model_alignment: 5
+  integrity_audits: 5
+  handoffs_and_readiness: 5

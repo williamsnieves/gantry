@@ -1,0 +1,13 @@
+routing:
+- validator
+- frontend-code-review
+- qa
+- detail-analyst
+- reviewer
+wave_1:
+  validator: PASS
+  frontend-code-review: APPROVE
+  qa: QA_APPROVED
+  detail-analyst: READY
+  reviewer: READY_FOR_PRE_PR_GATE
+final: PRE_PR_PASS

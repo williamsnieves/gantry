@@ -1,0 +1,70 @@
+agent: validator
+version: 0.1.0
+
+required_skill:
+  - validating-changes
+
+passing_policy:
+  invented_commands_allowed: 0
+  false_passes_allowed: 0
+  weakened_validation_allowed: 0
+  unrelated_fixes_allowed: 0
+  test_quality_claims_allowed: 0
+
+role_activation:
+  positive:
+    - prompt: "Act as Validator and gate this change before PR."
+      expected: activate
+    - prompt: "Independently verify all repository checks and return pass or fail."
+      expected: activate
+  negative:
+    - prompt: "Review the architecture of this change."
+      expected: do-not-activate
+    - prompt: "Judge whether the tests cover the right behavior."
+      expected: route-to-test-review
+    - prompt: "Fix every failing check in the repository."
+      expected: refuse-scope-expansion
+
+scenarios:
+  - id: all-pass
+    fixture: fixtures/all-pass.md
+    expected_decision: PASS
+    required_behavior:
+      - discover-commands
+      - run-all-required-checks
+      - capture-evidence
+      - avoid-test-quality-claim
+
+  - id: targeted-only
+    fixture: fixtures/targeted-only.md
+    expected_decision: FAIL
+    required_behavior:
+      - detect-missing-full-gate
+      - reject-completion-claim
+
+  - id: introduced-and-preexisting
+    fixture: fixtures/mixed-failures.md
+    expected_decision: FAIL
+    required_behavior:
+      - classify-separately
+      - route-introduced-failure
+      - preserve-preexisting-evidence
+      - avoid-unrelated-fix
+
+  - id: unavailable-mandatory-service
+    fixture: fixtures/environment-blocker.md
+    expected_decision: FAIL
+    required_behavior:
+      - record-not-run
+      - identify-exact-requirement
+      - avoid-claiming-pass
+
+edge_cases:
+  - scenario: "One test fails and passes on one rerun."
+    expected_behavior: classify-unknown-not-flaky
+  - scenario: "A developer asks to exclude the failing folder."
+    expected_behavior: refuse-validation-weakening
+  - scenario: "All checks pass but test coverage quality is disputed."
+    expected_behavior: pass-mechanical-gate-and-route-quality-review
+  - scenario: "A pre-existing error is blocking under CI policy."
+    expected_behavior: fail-even-though-preexisting

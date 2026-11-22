@@ -1,0 +1,100 @@
+skill: reviewing-frontend-privacy-and-analytics
+version: 0.1.0
+passing_policy:
+  invent_legal_requirement_allowed: 0
+  invent_retention_period_allowed: 0
+  raw_password_payment_field_analytics_allowed: 0
+  consent_unknown_treated_as_granted_without_policy_allowed: 0
+  withdrawal_ui_only_while_sdk_continues_allowed: 0
+  hash_called_anonymous_automatically_allowed: 0
+  direct_provider_sdk_bypasses_policy_allowed: 0
+  full_location_href_sent_without_review_allowed: 0
+  raw_domain_object_event_payload_allowed: 0
+  production_sensitive_debug_payload_logging_allowed: 0
+discovery:
+  positive:
+  - id: positive-page
+    prompt: Review our SPA page tracking, consent gating, user IDs, and analytics
+      SDK boundaries.
+    expected: activate
+  - id: positive-form
+    prompt: Review whether our form analytics and session replay capture PII or sensitive
+      fields.
+    expected: activate
+  - id: positive-withdraw
+    prompt: Review consent withdrawal so analytics providers stop collecting correctly.
+    expected: activate
+  negative:
+  - id: negative-security
+    prompt: Review this third-party script for XSS and token theft.
+    expected: do-not-activate
+    expected_alternative: reviewing-frontend-security
+  - id: negative-legal
+    prompt: Tell me exactly what GDPR retention period applies to our analytics.
+    expected: do-not-activate
+    expected_alternative: legal/privacy policy source required
+procedure:
+- id: analytics-review
+  fixture: fixtures/analytics-privacy-surface.md
+  required_steps:
+  - load-accepted-privacy-consent-policy-or-mark-policy-required
+  - inventory-events-purposes-payloads-identifiers-providers-and-retention-owners
+  - review-page-tracking-url-query-and-spa-duplication
+  - review-form-field-session-replay-and-autocapture
+  - review-consent-initialization-unknown-denied-granted-and-withdrawal
+  - review-user-identifiers-pseudonymization-logout-account-and-tenant-switch
+  - review-debug-logging-error-telemetry-and-sensitive-context
+  - review-third-party-sdk-auto-collection-disable-and-provider-boundary
+  - verify-data-minimization-and-explicit-event-contracts
+  - record-retention-evidence-or-gap-without-inventing-duration
+  - define-lowest-boundary-tests-for-consent-payload-and-provider-behavior
+  - handoff-security-concerns-to-reviewing-frontend-security
+  - produce-frontend-privacy-analytics-review-record
+  prohibited_actions:
+  - send-full-location-href
+  - track-entire-form-state
+  - track-password
+  - initialize-consent-sensitive-sdk-before-consent-resolves
+  - withdraw-only-react-state
+  - identify-user-by-email-by-default
+  - claim-sha256-email-is-anonymous
+  - console-log-full-event-payload-in-production
+  - call-provider-sdk-directly-from-components
+  - invent-30-day-retention
+  expected_output: expected/analytics-privacy-surface-record.md
+edge_cases:
+- id: page
+  scenario: SPA manually tracks page views while provider auto-page tracking is also
+    enabled.
+  expected_behavior: detect-production-duplicate-page-events-and-select-one-owned-strategy
+- id: form
+  scenario: Session replay masks inputs but captures account email rendered as page
+    text.
+  expected_behavior: review-dom-text-capture-not-assume-input-masking-solves-all-sensitive-data
+- id: withdraw
+  scenario: Consent toggle becomes off but provider SDK continues queueing and sending
+    events.
+  expected_behavior: confirmed-withdrawal-implementation-gap
+- id: identifier
+  scenario: Email is SHA-256 hashed before sending to provider.
+  expected_behavior: treat-as-pseudonymous-persistent-identifier-not-automatically-anonymous
+- id: debug
+  scenario: Production console logs every analytics event payload including userId
+    and form errors.
+  expected_behavior: remove-or-scrub-sensitive-debug-payloads
+- id: sdk
+  scenario: Provider SDK auto-starts at import time before consent state loads.
+  expected_behavior: move-initialization-behind-central-policy-consent-gate
+quality_rubric:
+  policy_and_scope: 5
+  event_inventory_and_minimization: 5
+  page_tracking: 5
+  forms_replay_autocapture: 5
+  consent_withdrawal: 5
+  user_identity: 5
+  debug_error_telemetry: 5
+  provider_boundary: 5
+  retention_evidence: 5
+  testing: 5
+  security_handoff: 5
+  final_status: 5

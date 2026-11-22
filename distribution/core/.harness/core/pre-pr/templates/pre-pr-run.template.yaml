@@ -1,0 +1,22 @@
+pre_pr_flow_version: 0.1.0
+run_id: ''
+wave_id: 1
+change_identity:
+  type: commit|diff|working-tree|openspec-change
+  value: ''
+routing_plan_ref: ''
+state: ROUTING
+snapshot:
+  id: ''
+  frozen_for_review: false
+agents: []
+dynamic_triggers: []
+blockers: []
+conditions: []
+remediation_cycles: []
+detail_analyst: {}
+reviewer: {}
+final_pre_pr:
+  decision: ''
+  pr_creation_allowed: false
+  checks: []

@@ -1,0 +1,99 @@
+skill: auditing-code
+version: 0.1.0
+
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  unsupported_findings_allowed: 0
+  duplicate_root_causes_allowed: 0
+  code_modifications_allowed: 0
+  regressions_allowed: 0
+
+discovery:
+  positive:
+    - id: positive-release
+      prompt: "Audit this service before release for correctness, security, performance, and maintainability risks."
+      expected: activate
+    - id: positive-debt
+      prompt: "Perform a technical-debt audit and give me a prioritized remediation plan."
+      expected: activate
+    - id: positive-dependencies
+      prompt: "Audit how this codebase uses its dependencies and identify unsafe or obsolete patterns."
+      expected: activate
+  negative:
+    - id: negative-validation
+      prompt: "Run lint, tests, and build for this change."
+      expected: do-not-activate
+      expected_alternative: validating-changes
+    - id: negative-dead-code
+      prompt: "Find all dead code and prove what can be removed."
+      expected: do-not-activate
+      expected_alternative: analyzing-dead-code
+    - id: negative-fix
+      prompt: "Fix every issue in this audit report."
+      expected: do-not-activate
+
+procedure:
+  - id: payment-service
+    fixture: fixtures/payment-service.md
+    required_steps:
+      - define-scope
+      - map-critical-flows
+      - inspect-applicable-dimensions
+      - validate-findings
+      - prioritize
+      - report
+    prohibited_actions:
+      - modify-code
+      - report-tool-output-without-triage
+      - inflate-duplicate-symptoms
+    expected_output: expected/payment-service.md
+
+  - id: narrow-sample
+    fixture: fixtures/narrow-sample.md
+    required_behavior:
+      - state-sampling-limit
+      - avoid-repository-wide-claim
+
+edge_cases:
+  - id: scanner-only
+    scenario: "A vulnerability scanner reports a dependency issue that is not used in the affected runtime path."
+    expected_behavior: assess-applicability-before-finding
+  - id: unreachable-candidate
+    scenario: "A function appears unsafe but all production callers enforce the required guard."
+    expected_behavior: omit-or-record-observation
+  - id: critical-secret
+    scenario: "A live production credential is committed and reachable."
+    expected_behavior: report-critical-first-and-recommend-containment
+  - id: style-preference
+    scenario: "The code uses a style the auditor dislikes but project rules allow it."
+    expected_behavior: do-not-report-as-defect
+  - id: dead-code-uncertainty
+    scenario: "Static analysis marks a reflective entry point unused."
+    expected_behavior: route-to-dead-code-analysis-or-record-uncertainty
+
+context_efficiency:
+  - id: focused-subsystem
+    always_loaded:
+      - SKILL.md
+    conditionally_loaded:
+      - references/audit-planning.md
+      - references/finding-evidence.md
+      - references/severity-and-prioritization.md
+      - references/audit-dimensions.md
+    must_not_load:
+      - references/brownfield-auditing.md
+      - references/tool-assisted-auditing.md
+      - evals/
+
+quality_rubric:
+  scope_accuracy: 5
+  system_understanding: 5
+  evidence_quality: 5
+  finding_accuracy: 5
+  severity_calibration: 5
+  prioritization: 5
+  false_positive_control: 5
+  remediation_quality: 5
+  limitation_honesty: 5
+  context_efficiency: 4

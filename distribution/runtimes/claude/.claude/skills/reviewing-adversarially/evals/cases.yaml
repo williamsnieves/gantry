@@ -1,0 +1,101 @@
+skill: reviewing-adversarially
+version: 0.1.0
+
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  unsupported_findings_allowed: 0
+  style_nits_allowed: 0
+  duplicate_root_causes_allowed: 0
+  code_modifications_allowed: 0
+
+discovery:
+  positive:
+    - id: positive-pr
+      prompt: "Adversarially review this pull request and try to break its guarantees."
+      expected: activate
+    - id: positive-idempotency
+      prompt: "Challenge whether this order-processing change is truly idempotent under retries and timeouts."
+      expected: activate
+    - id: positive-security
+      prompt: "Perform a hostile review of this authorization change before release."
+      expected: activate
+  negative:
+    - id: negative-audit
+      prompt: "Audit the entire repository for technical debt and security risks."
+      expected: do-not-activate
+      expected_alternative: auditing-code
+    - id: negative-validation
+      prompt: "Run lint, type checks, tests, and build."
+      expected: do-not-activate
+      expected_alternative: validating-changes
+    - id: negative-fix
+      prompt: "Fix the issues in this pull request."
+      expected: do-not-activate
+
+procedure:
+  - id: idempotent-orders
+    fixture: fixtures/idempotent-orders.md
+    required_steps:
+      - extract-contract
+      - map-attack-surface
+      - generate-hypotheses
+      - trace-execution
+      - falsify
+      - triage
+      - calibrate-findings
+      - report-verdict
+    prohibited_actions:
+      - modify-code
+      - report-style-nits
+      - claim-failure-without-trigger
+    expected_output: expected/idempotent-orders.md
+
+  - id: defended-path
+    fixture: fixtures/defended-path.md
+    required_behavior:
+      - inspect-existing-guard
+      - reject-false-positive
+      - record-effective-control
+
+edge_cases:
+  - id: timeout-after-commit
+    scenario: "A payment provider commits successfully but the local request times out before recording the response."
+    expected_behavior: analyze-retry-and-duplicate-effect
+  - id: cross-tenant
+    scenario: "A user supplies a valid resource ID belonging to another tenant."
+    expected_behavior: trace-authorization-boundary
+  - id: vague-concern
+    scenario: "The reviewer feels the code may be brittle but cannot identify a contract or trigger."
+    expected_behavior: omit-or-record-question
+  - id: unrelated-debt
+    scenario: "An old module has poor style but is not touched or exposed by the change."
+    expected_behavior: exclude-from-findings
+  - id: no-findings
+    scenario: "All realistic hypotheses are prevented by verified controls."
+    expected_behavior: accept-and-document-strengths
+
+context_efficiency:
+  - id: focused-diff
+    always_loaded:
+      - SKILL.md
+    conditionally_loaded:
+      - references/contract-and-invariants.md
+      - references/adversarial-lenses.md
+      - references/falsification-methods.md
+      - references/finding-calibration.md
+      - references/review-boundaries.md
+    must_not_load:
+      - evals/
+
+quality_rubric:
+  contract_accuracy: 5
+  adversarial_depth: 5
+  path_tracing: 5
+  evidence_quality: 5
+  false_positive_control: 5
+  severity_calibration: 5
+  remediation_focus: 5
+  review_economy: 5
+  verdict_accuracy: 5
+  context_efficiency: 4

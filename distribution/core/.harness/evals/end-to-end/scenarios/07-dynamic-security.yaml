@@ -1,0 +1,22 @@
+id: dynamic-security
+description: Initial frontend change appears ordinary; Frontend Code Review discovers
+  PII sent to analytics.
+input:
+  work_mode: IMPLEMENTATION
+  scopes:
+  - FRONTEND
+  initial_risk_triggers:
+  - BEHAVIORAL
+oracle:
+  initial_security: NOT_TRIGGERED
+  dynamic_trigger:
+    source: frontend-code-review
+    trigger: 'SECURITY: PRIVACY_ANALYTICS'
+    security: REQUIRED
+  required_handoff: true
+  fan_in_must_include:
+  - security
+critical_assertions:
+- new Security gate must be recorded
+- handoff must contain PII/analytics evidence
+- Reviewer cannot run before Security terminal result

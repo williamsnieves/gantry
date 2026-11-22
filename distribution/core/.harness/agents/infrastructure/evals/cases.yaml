@@ -1,0 +1,111 @@
+agent: infrastructure
+version: 0.1.0
+architecture_evidence_skill:
+- modeling-deployment-architecture
+supporting_skills:
+- validating-architecture-design
+- verifying-security-controls
+- reviewing-application-security
+- reviewing-frontend-performance
+- reviewing-full-stack-change
+- auditing-code
+- reviewing-adversarially
+- analyzing-details
+passing_policy:
+  invent_cloud_provider_allowed: 0
+  invent_region_allowed: 0
+  invent_kubernetes_primitives_allowed: 0
+  invent_resource_sizes_allowed: 0
+  successful_iac_plan_means_safe_allowed: 0
+  git_revert_means_rollback_safe_allowed: 0
+  ci_syntax_pass_means_pipeline_safe_allowed: 0
+  implements_infra_change_allowed: 0
+  security_finding_can_be_weakened_allowed: 0
+role_activation:
+  positive:
+  - prompt: Act as Infrastructure Agent and review this GitHub Actions, Terraform
+      and Kubernetes deployment change before merge.
+    expected: activate
+  - prompt: Review rollout, rollback, secrets, environments, observability and migration
+      ordering for this release.
+    expected: activate
+  negative:
+  - prompt: Design the runtime deployment architecture from requirements.
+    expected: route-to-modeling-deployment-architecture
+  - prompt: Run terraform validate and tell me if the command succeeds.
+    expected: route-to-validator
+  - prompt: Benchmark CPU/memory and tell me what instance size we need.
+    expected: route-to-performance-first
+scenarios:
+- id: github-pr-target-secret
+  fixture: fixtures/github-pr-target-secret.md
+  expected_decision: INFRASTRUCTURE_CHANGES_REQUIRED
+  required_behavior:
+  - identify-untrusted-pr-code-secret-boundary
+  - review-workflow-trigger-and-permissions
+  - route-security-control-review
+  - request-safe-pipeline-design
+- id: terraform-destructive-replacement
+  fixture: fixtures/terraform-destructive-replacement.md
+  expected_decision: INFRASTRUCTURE_CHANGES_REQUIRED
+  required_behavior:
+  - interpret-plan-not-just-plan-success
+  - identify-stateful-resource-replacement
+  - assess-data-rollback-impact
+  - require-explicit-migration-or-approved-destruction
+- id: unsafe-schema-rollout
+  fixture: fixtures/unsafe-schema-rollout.md
+  expected_decision: INFRASTRUCTURE_CHANGES_REQUIRED
+  required_behavior:
+  - analyze-old-new-version-compatibility
+  - identify-deployment-order-risk
+  - require-compatible-migration-sequence
+  - assess-rollback-after-schema-change
+- id: missing-sizing-evidence
+  fixture: fixtures/missing-sizing-evidence.md
+  expected_decision: BLOCKED_PENDING_EVIDENCE
+  required_behavior:
+  - do-not-invent-cpu-memory-replicas
+  - route-sizing-evidence-to-performance
+  - preserve-infrastructure-decision-block
+- id: vercel-simple-change
+  fixture: fixtures/vercel-simple-change.md
+  expected_decision: INFRASTRUCTURE_APPROVED
+  required_behavior:
+  - treat-paas-as-infrastructure
+  - review-env-separation-and-runtime-config
+  - avoid-inventing-kubernetes-cloud-complexity
+- id: manual-step-with-exit
+  fixture: fixtures/manual-step-with-exit.md
+  expected_decision: INFRASTRUCTURE_APPROVED_WITH_CONDITIONS
+  required_behavior:
+  - allow-bounded-manual-step
+  - require-owner-verification-rollback-and-exit-path
+  - do-not-pretend-fully-automated
+edge_cases:
+- scenario: Terraform plan succeeds but replaces a production database.
+  expected_behavior: changes-required-unless-destruction-is-explicitly-approved-and-safe
+- scenario: Kubernetes Deployment has no CPU limits but project policy and performance
+    evidence do not require them.
+  expected_behavior: do-not-invent-resource-policy
+- scenario: 'GitHub workflow has contents: write but only reads source and uploads
+    no repository changes.'
+  expected_behavior: flag-excess-permission-with-concrete-least-privilege-rationale
+- scenario: Rollback to previous app is impossible after irreversible migration but
+    forward-fix plan is accepted and rollout is gated.
+  expected_behavior: do-not-pretend-rollback-exists-record-forward-fix-and-conditions
+- scenario: Vercel app uses platform-managed rollout and no Kubernetes.
+  expected_behavior: review-vercel-specific-runtime-without-requiring-kubernetes-or-terraform
+quality_rubric:
+  scope_architecture_environment_basis: 5
+  ci_cd_github_actions: 5
+  artifact_container_supply_chain: 5
+  iac_plan_drift: 5
+  kubernetes_cloud_paas_proportionality: 5
+  iam_secrets_network: 5
+  deployment_rollout_migration: 5
+  rollback_recovery: 5
+  observability_health_backup: 5
+  capacity_performance_integration: 5
+  decision_finding_role_boundaries: 5
+  handoff_reverification_no_write: 5

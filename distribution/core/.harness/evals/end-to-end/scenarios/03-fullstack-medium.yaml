@@ -1,0 +1,30 @@
+id: fullstack-medium
+description: Medium-risk full-stack feature with backend API and React flow, no security/performance/infra
+  trigger.
+input:
+  work_mode: IMPLEMENTATION
+  scopes:
+  - BACKEND
+  - FRONTEND
+  - FULL_STACK
+  - API_CONTRACT
+  risk_triggers:
+  - BEHAVIORAL
+  - COMPATIBILITY
+oracle:
+  routing:
+    validator: REQUIRED
+    backend-code-review: REQUIRED
+    frontend-code-review: REQUIRED
+    qa: REQUIRED
+    backend-architecture-review: CONDITIONAL
+    frontend-architecture-review: CONDITIONAL
+    performance: NOT_TRIGGERED
+    security: NOT_TRIGGERED
+    infrastructure: NOT_TRIGGERED
+    detail-analyst: REQUIRED
+    reviewer: REQUIRED
+  parallel_after_validator:
+  - backend-code-review
+  - frontend-code-review
+  - qa

@@ -1,0 +1,17 @@
+change: Change helper text and validation presentation in one React form; accepted
+  behavior changes one validation message but not API/state architecture.
+work_mode: IMPLEMENTATION
+scopes:
+- FRONTEND
+risk_triggers:
+- BEHAVIORAL
+routing:
+  validator: REQUIRED
+  frontend-code-review: REQUIRED
+  frontend-architecture-review: NOT_TRIGGERED
+  qa: REQUIRED
+  performance: NOT_TRIGGERED
+  security: NOT_TRIGGERED
+  infrastructure: NOT_APPLICABLE
+  detail-analyst: REQUIRED
+  reviewer: REQUIRED

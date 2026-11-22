@@ -1,0 +1,23 @@
+change: Introduce additive schema, backfill, mixed-version rollout, then remove legacy
+  field.
+work_mode: MIGRATION
+scopes:
+- BACKEND
+- DATABASE
+- MIGRATION
+- INFRASTRUCTURE
+risk_triggers:
+- DATA_INTEGRITY
+- MIGRATION
+- COMPATIBILITY
+- INFRASTRUCTURE
+routing:
+  validator: REQUIRED
+  backend-code-review: REQUIRED
+  backend-architecture-review: REQUIRED
+  qa: REQUIRED
+  security: CONDITIONAL
+  performance: CONDITIONAL
+  infrastructure: REQUIRED
+  detail-analyst: REQUIRED
+  reviewer: REQUIRED

@@ -1,0 +1,107 @@
+skill: integrating-frontend-server-state
+version: 0.1.0
+passing_policy:
+  new_server_state_library_selection_allowed: 0
+  raw_fetch_boundary_bypass_when_architecture_forbids_allowed: 0
+  query_library_type_leak_into_application_allowed: 0
+  duplicate_remote_cache_in_local_state_allowed: 0
+  presentation_state_in_query_key_allowed: 0
+  optimistic_duplicate_owner_allowed: 0
+  retry_stacking_allowed: 0
+  unsafe_non_idempotent_mutation_retry_allowed: 0
+  server_cross_user_cache_leak_allowed: 0
+  global_cache_persistence_without_requirement_allowed: 0
+discovery:
+  positive:
+  - id: positive-query
+    prompt: Integrate our selected SWR strategy with stable keys, deduplication, invalidation,
+      and route prefetch.
+    expected: activate
+  - id: positive-optimistic
+    prompt: Design React Query mutation cache updates and optimistic rollback while
+      preserving our repository boundary.
+    expected: activate
+  - id: positive-loader
+    prompt: Integrate framework route loaders with the existing server-state cache
+      without duplicate requests.
+    expected: activate
+  negative:
+  - id: negative-select
+    prompt: Should we choose React Query, SWR, or Apollo for this project?
+    expected: do-not-activate
+    expected_alternative: architecture/profile decision
+  - id: negative-async
+    prompt: Model idle/loading/success/error as a discriminated union.
+    expected: do-not-activate
+    expected_alternative: modeling-frontend-async-state
+  - id: negative-adapter
+    prompt: Implement the repository adapter that maps the API response.
+    expected: do-not-activate
+    expected_alternative: implementing-frontend-repository-adapters
+procedure:
+- id: promotion-server-state
+  fixture: fixtures/promotion-server-state.md
+  required_steps:
+  - confirm-selected-server-state-profile-and-architecture-boundary
+  - inventory-remote-resources-and-semantic-commands
+  - design-deterministic-complete-semantic-resource-identities
+  - define-cache-ownership-freshness-and-deduplication
+  - create-complete-invalidation-matrix
+  - integrate-mutations-without-business-logic-leakage
+  - assign-optimistic-update-to-one-owner-and-define-rollback
+  - choose-single-retry-owner-and-check-idempotency
+  - propagate-cancellation-through-accepted-boundaries
+  - design-dependent-queries-and-waterfall-mitigation
+  - design-route-prefetch-with-destination-key-reuse
+  - define-loader-ssr-hydration-cache-lifecycle
+  - define-error-boundary-and-security-scope
+  - validate-adapter-usecase-integration
+  - test-six-roadmap-evaluation-cases
+  - audit-duplicate-cache-and-generic-server-state-abstractions
+  - produce-server-state-integration-record
+  prohibited_actions:
+  - replace-swr-with-react-query
+  - queryfn-direct-fetch-bypassing-usecase
+  - use-component-name-in-query-key
+  - copy-swr-data-to-use-state
+  - invalidate-everything-after-every-mutation
+  - duplicate-optimistic-state-in-hook
+  - retry-payment-mutation-without-idempotency
+  - use-global-server-cache-across-users
+  - put-auth-token-in-query-key
+  - create-universal-server-state-wrapper
+  expected_output: expected/promotion-server-state-record.md
+edge_cases:
+- id: duplicate
+  scenario: Header and sidebar load the same profile resource at the same time.
+  expected_behavior: same-semantic-key-and-profile-native-deduplication
+- id: stale-invalidation
+  scenario: Updating a subscription refreshes detail but list and dashboard count
+    remain stale.
+  expected_behavior: complete-invalidation-or-authoritative-cache-update-matrix
+- id: optimistic
+  scenario: Optimistic promotion mutation fails after UI/cache was patched.
+  expected_behavior: rollback-all-optimistically-affected-semantic-caches
+- id: dependent
+  scenario: Organization settings require organizationId returned by profile.
+  expected_behavior: child-waits-for-real-id-key-includes-id-and-waterfall-is-reviewed
+- id: prefetch
+  scenario: Route prefetch uses a different key than destination query.
+  expected_behavior: unify-semantic-identity-to-reuse-prefetched-cache
+- id: adapter
+  scenario: Profile B queryFn calls fetch directly even though LoadProfile Use Case
+    exists.
+  expected_behavior: preserve-application-boundary-queryfn-calls-usecase
+quality_rubric:
+  profile_and_architecture_preservation: 5
+  query_identity: 5
+  cache_freshness_and_deduplication: 5
+  invalidation: 5
+  mutations_and_optimistic_updates: 5
+  retry_and_cancellation: 5
+  dependent_queries: 5
+  route_prefetch: 5
+  ssr_hydration_and_error_boundaries: 5
+  security_scope: 5
+  adapter_integration_and_testing: 5
+  overmodeling_and_final_status: 5

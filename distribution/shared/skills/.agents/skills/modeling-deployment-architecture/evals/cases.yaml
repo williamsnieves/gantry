@@ -1,0 +1,122 @@
+skill: modeling-deployment-architecture
+version: 0.1.0
+passing_policy:
+  invent_cloud_vendor_allowed: 0
+  invent_region_or_zone_allowed: 0
+  invent_cluster_or_replica_count_allowed: 0
+  invent_gateway_allowed: 0
+  invent_database_replication_allowed: 0
+  invent_queue_cache_object_store_allowed: 0
+  invent_observability_vendor_allowed: 0
+  invent_secret_store_allowed: 0
+  invent_failover_or_ha_claim_allowed: 0
+  logical_c4_and_deployment_levels_mixed_allowed: 0
+discovery:
+  positive:
+  - id: positive-topology
+    prompt: Model the runtime deployment topology for this accepted architecture,
+      including regions, compute, data stores, networking, observability, secrets
+      and failover only where decided.
+    expected: activate
+  - id: positive-recovery
+    prompt: Create a deployment view that shows which failure domains and failover
+      paths support our accepted RTO/RPO.
+    expected: activate
+  - id: positive-brownfield
+    prompt: Separate current, target and DR deployment topology and map each C4 container
+      to runtime nodes.
+    expected: activate
+  negative:
+  - id: negative-c4
+    prompt: Create L1/L2 logical C4 architecture.
+    expected: do-not-activate
+    expected_alternative: modeling-c4-architecture
+  - id: negative-event
+    prompt: Define event delivery, retries, ordering and dedup semantics.
+    expected: do-not-activate
+    expected_alternative: modeling-event-flows
+  - id: negative-iac
+    prompt: Write Terraform modules for this architecture.
+    expected: do-not-activate
+    expected_alternative: infrastructure implementation workflow
+procedure:
+- id: support-platform-deployment
+  fixture: fixtures/support-platform-deployment-input.md
+  required_steps:
+  - establish-target-environment-deployment-scope-and-accepted-architecture-basis
+  - map-single-support-application-and-persistent-store-from-c4-to-runtime-placement-without-inventing-runtime-technology
+  - preserve-region-zone-replica-autoscaling-and-cloud-provider-as-undecided
+  - model-external-email-ai-identity-provider-connectivity-at-known-boundary-only
+  - avoid-inventing-gateway-loadbalancer-queue-cache-objectstore-or-messaging-infrastructure
+  - map-network-trust-boundaries-from-dfd-without-subnet-cidr-invention
+  - model-observability-requirement-and-unknown-placement-vendor-without-full-content-logging-assumption
+  - model-provider-secret-consumers-and-secret-store-gap-without-vault-kms-selection
+  - identify-single-region-instance-store-provider-spof-questions-from-currently-undecided-topology
+  - preserve-rto-rpo-and-failover-as-unresolved-not-claim-ha
+  - audit-c4-sequence-dfd-domain-event-adr-alignment
+  - audit-security-residency-observability-secrets-spofs-and-blast-radius
+  - produce-specific-topology-gap-ledger
+  - produce-architecture-validation-handoff
+  - produce-deployment-architecture-model-and-readiness
+  prohibited_actions:
+  - choose-gcp-aws-azure
+  - invent-europe-west-region
+  - invent-three-replicas
+  - invent-kubernetes-cluster
+  - invent-load-balancer
+  - invent-postgresql-replica
+  - invent-pubsub-queue
+  - invent-redis-cache
+  - invent-secret-manager
+  - claim-multi-zone-ha
+  expected_output: expected/support-platform-deployment-architecture-model.md
+edge_cases:
+- id: unknown-region
+  scenario: No region or residency policy is accepted.
+  expected_behavior: mark-region-decision-required-or-unspecified-without-inventing-eu-us-or-cloud-region
+- id: event-without-broker
+  scenario: Internal async event exists but transport infrastructure is explicitly
+    undecided.
+  expected_behavior: keep-messaging-infrastructure-gap-and-do-not-invent-queue-broker-topic
+- id: availability-claim
+  scenario: Stakeholder says system must be resilient but RTO/RPO, zones, replicas
+    and failover are unspecified.
+  expected_behavior: reject-unsubstantiated-ha-claim-and-flag-recovery-objective-failure-domain-failover-gaps
+- id: secrets
+  scenario: Support Application needs Email Provider and AI Provider credentials but
+    secret storage mechanism is undecided.
+  expected_behavior: model-secret-consumer-and-category-with-secret-store-decision-required-not-vault-or-cloud-secret-manager
+- id: observability
+  scenario: Operators must identify tenant/provider ingestion failure but telemetry
+    platform and exact log data are unknown.
+  expected_behavior: model-observability-requirement-and-placement-gap-reference-dfd-logging-scope-without-vendor-or-full-payload-logging
+- id: c4-vs-deployment
+  scenario: One C4 Support Application is proposed to run on multiple replicas later.
+  expected_behavior: keep-one-logical-c4-container-and-represent-runtime-instances-only-in-deployment-model-when-replication-is-accepted
+context_efficiency:
+- id: standard-deployment-model
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/deployment-scope-logical-mapping-regions-zones-and-compute.md
+  - references/ingress-network-trust-and-external-provider-connectivity.md
+  - references/data-stores-queues-object-stores-caches-and-placement.md
+  - references/failover-recovery-spofs-blast-radius-and-scaling.md
+  - references/alignment-constraints-security-and-feasibility-audits.md
+  must_not_load_unless_needed:
+  - references/observability-secrets-and-administrative-access.md
+  - references/deployment-vs-c4-sequence-dfd-event-and-domain-models.md
+  - evals/
+quality_rubric:
+  scope_and_c4_mapping: 5
+  regions_zones_compute: 5
+  ingress_network_trust: 5
+  data_messaging_cache_object_storage: 5
+  external_provider_connectivity: 5
+  observability: 5
+  secrets: 5
+  failover_recovery_spofs: 5
+  scaling_and_blast_radius: 5
+  cross_model_alignment: 5
+  constraint_security_feasibility_audits: 5
+  validation_handoff_and_readiness: 5

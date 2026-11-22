@@ -1,0 +1,97 @@
+agent: backend-architecture-review
+version: 0.1.0
+required_skill:
+- reviewing-backend-architecture
+supporting_skills:
+- validating-backend-architecture
+- auditing-code
+- reviewing-adversarially
+- analyzing-details
+passing_policy:
+  implements_refactor_allowed: 0
+  invented_product_requirement_allowed: 0
+  personal_architecture_preference_allowed: 0
+  structural_validation_means_approval_allowed: 0
+  duplicate_code_review_finding_allowed: 0
+  event_driven_by_default_allowed: 0
+  temporary_deviation_without_exit_allowed: 0
+  unrelated_repository_redesign_allowed: 0
+role_activation:
+  positive:
+  - prompt: Act as Backend Architecture Review and evaluate whether these new ports,
+      modules, transactions and migration seams are appropriate.
+    expected: activate
+  - prompt: Review the architecture of this backend PR for ownership, abstraction
+      necessity, drift, reversibility and migration risk.
+    expected: activate
+  negative:
+  - prompt: Review this backend diff for concrete bugs and missing tenant filters.
+    expected: route-to-backend-code-review
+  - prompt: Run architecture tests and dependency checks.
+    expected: route-to-validator-or-validating-backend-architecture
+  - prompt: Refactor this legacy module to hexagonal architecture.
+    expected: route-to-remediation-skill
+scenarios:
+- id: unnecessary-generic-port
+  fixture: fixtures/unnecessary-generic-port.md
+  expected_decision: ARCHITECTURE_CHANGES_REQUIRED
+  required_behavior:
+  - challenge-abstraction-necessity
+  - tie-finding-to-maintenance-boundary-impact
+  - avoid-style-preference-language
+  - recommend-smallest-architecture-remediation
+- id: temporary-migration-no-exit
+  fixture: fixtures/temporary-migration-no-exit.md
+  expected_decision: ARCHITECTURE_CHANGES_REQUIRED
+  required_behavior:
+  - classify-new-or-worsened-drift
+  - detect-missing-authoritative-path-and-exit-condition
+  - review-reversibility-and-reconciliation
+  - request-architecture-change
+- id: transaction-owner-unresolved
+  fixture: fixtures/transaction-owner-unresolved.md
+  expected_decision: BLOCKED_PENDING_ARCHITECTURE_DECISION
+  required_behavior:
+  - raise-decision-question-not-invent-transaction-owner
+  - show-options-and-tradeoffs
+  - route-to-architecture-decision-owner
+- id: code-bug-not-architecture
+  fixture: fixtures/code-bug-not-architecture.md
+  expected_decision: ARCHITECTURE_APPROVED
+  required_behavior:
+  - avoid-duplicating-code-review-defect
+  - reference-backend-code-review-finding
+  - keep-architecture-decision-independent
+- id: valid-brownfield-seam
+  fixture: fixtures/valid-brownfield-seam.md
+  expected_decision: ARCHITECTURE_APPROVED_WITH_CONDITIONS
+  required_behavior:
+  - accept-bounded-temporary-deviation
+  - require-owner-removal-condition-and-observability
+  - preserve-condition-without-rejecting-whole-architecture
+edge_cases:
+- scenario: A port has only one implementation but protects a real provider boundary.
+  expected_behavior: do-not-reject-solely-because-one-implementation-exists
+- scenario: Architecture tests pass but a compatibility facade has no removal condition.
+  expected_behavior: do-not-equate-structural-pass-with-architecture-approval
+- scenario: A direct Application dependency would be valid, but team introduces local
+    event bus only for decoupling aesthetics.
+  expected_behavior: challenge-accidental-complexity-with-concrete-operability-testability-impact
+- scenario: Scale requirement is unknown and someone proposes microservice extraction
+    for future scalability.
+  expected_behavior: raise-evidence-or-architecture-decision-question-and-do-not-invent-scale-need
+- scenario: Backend Code Review already reports an incorrect idempotency-key reuse.
+  expected_behavior: do-not-duplicate-code-finding-unless-there-is-separate-systemic-idempotency-ownership-issue
+quality_rubric:
+  scope_and_authoritative_basis: 5
+  primary_skill_usage: 5
+  ownership_and_boundaries: 5
+  abstraction_and_proportionality: 5
+  transactions_idempotency_eventing: 5
+  migration_compatibility_reversibility: 5
+  drift_and_temporary_deviations: 5
+  testability_operability: 5
+  code_review_validator_boundary: 5
+  decision_question_calibration: 5
+  finding_evidence_and_decision: 5
+  handoff_and_no_write_discipline: 5

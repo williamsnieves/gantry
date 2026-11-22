@@ -1,0 +1,112 @@
+skill: designing-application-use-cases
+version: 0.1.0
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  multi_intention_use_cases_allowed: 0
+  use_case_chaining_allowed: 0
+  business_logic_in_application_allowed: 0
+  concrete_adapter_dependencies_allowed: 0
+  entity_outputs_allowed: 0
+  invented_business_rules_allowed: 0
+discovery:
+  positive:
+  - id: positive-apply
+    prompt: Design the ApplyPromotion Application Use Case, including ports, execute
+      boundary, orchestration, and tests.
+    expected: activate
+  - id: positive-service-refactor
+    prompt: Split this large billing service into intention-focused Application Use
+      Cases.
+    expected: activate
+  negative:
+  - id: negative-entity
+    prompt: Implement the Promotion redeem transition and invariants.
+    expected: do-not-activate
+    expected_alternative: modeling-domain-entities
+  - id: negative-controller
+    prompt: Implement the POST /promotions controller.
+    expected: do-not-activate
+    expected_alternative: implementing-http-controllers
+  - id: negative-adapter
+    prompt: Implement the provider HTTP client.
+    expected: do-not-activate
+    expected_alternative: implementing-external-service-adapters
+  - id: negative-dto-only
+    prompt: Design only the Response DTO fields.
+    expected: do-not-activate
+    expected_alternative: designing-application-dtos
+procedure:
+- id: apply-promotion
+  fixture: fixtures/apply-promotion-use-case.md
+  required_steps:
+  - confirm-use-case-suitability
+  - define-one-intention
+  - design-execute-boundary
+  - map-primitives-to-domain
+  - identify-inward-ports
+  - define-thin-orchestration
+  - delegate-domain-rules
+  - prevent-use-case-chaining
+  - define-authorization-transaction-and-idempotency
+  - define-response-and-errors
+  - design-tests
+  - check-boundaries
+  - decide-readiness
+  prohibited_actions:
+  - inject-postgres-repository
+  - inject-provider-sdk-client
+  - call-another-use-case
+  - implement-eligibility-formula-in-use-case
+  - return-promotion-entity
+  - return-http-status
+  - rely-on-frontend-idempotency
+  - invent-membership-rule
+  expected_output: expected/apply-promotion-use-case-report.md
+edge_cases:
+- id: multi-operation
+  scenario: One execute creates, activates, lists, and deletes promotions.
+  expected_behavior: split-independent-intentions
+- id: use-case-chain
+  scenario: ApplyPromotion calls ValidatePromotionUseCase.
+  expected_behavior: extract-domain-policy-or-port-not-chain
+- id: business-rule
+  scenario: Use Case calculates eligibility directly.
+  expected_behavior: delegate-to-domain
+- id: direct-adapter
+  scenario: Use Case imports PrismaPromotionRepository.
+  expected_behavior: depend-on-inward-port
+- id: too-many-primitives
+  scenario: Execute receives nine semantically grouped primitive arguments.
+  expected_behavior: use-request-dto-according-to-policy
+- id: entity-output
+  scenario: Use Case returns Promotion Entity to controller.
+  expected_behavior: map-to-response-dto-or-void
+context_efficiency:
+- id: simple-command
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/use-case-suitability-and-intention.md
+  - references/execute-boundary-and-inputs.md
+  - references/orchestration-domain-and-ports.md
+  - references/output-and-mapping.md
+  - references/use-case-testing.md
+  must_not_load:
+  - references/errors-transactions-and-idempotency.md
+  - references/refactoring-application-services.md
+  - evals/
+quality_rubric:
+  use_case_suitability: 5
+  single_intention: 5
+  execute_boundary: 5
+  domain_conversion: 5
+  port_design: 5
+  thin_orchestration: 5
+  domain_delegation: 5
+  transaction_and_idempotency: 5
+  output_and_error_semantics: 5
+  test_quality: 5
+  boundary_purity: 5
+  non_fabrication: 5
+  context_efficiency: 4

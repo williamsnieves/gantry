@@ -1,0 +1,109 @@
+skill: designing-react-custom-hooks
+version: 0.1.0
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  implementation_code_allowed: 0
+  second_application_layer_allowed: 0
+  concrete_adapter_import_allowed: 0
+  global_factory_lookup_allowed: 0
+  raw_setter_api_allowed: 0
+  server_state_reimplementation_allowed: 0
+  stale_response_overwrite_allowed: 0
+  mechanical_memoization_allowed: 0
+  new_library_selection_allowed: 0
+discovery:
+  positive:
+  - id: positive-state-hook
+    prompt: Design the custom hook API and state transitions for this React interaction.
+    expected: activate
+  - id: positive-race
+    prompt: Design cancellation and stale-response protection for this async hook.
+    expected: activate
+  - id: positive-server-state
+    prompt: Decide how this feature hook should wrap SWR without rebuilding caching
+      and retries.
+    expected: activate
+  negative:
+  - id: negative-component
+    prompt: Design the component props and semantic markup.
+    expected: do-not-activate
+    expected_alternative: designing-react-components
+  - id: negative-effect-only
+    prompt: Determine whether this useEffect is necessary and correct.
+    expected: do-not-activate
+    expected_alternative: designing-react-effects
+  - id: negative-implement
+    prompt: Write the custom hook.
+    expected: do-not-activate
+    expected_alternative: implementation workflow
+procedure:
+- id: promotion-hook
+  fixture: fixtures/promotion-custom-hook-design.md
+  required_steps:
+  - confirm-slice-component-state-and-server-state-readiness
+  - justify-hook-responsibility
+  - separate-react-behavior-from-application-business-logic
+  - design-dependency-injection
+  - classify-state-ownership
+  - choose-use-state-grouped-state-or-reducer
+  - define-state-machine-and-transition-table
+  - replace-raw-setters-with-semantic-commands
+  - choose-object-or-tuple-return-api
+  - define-async-success-failure-cancellation-retry-and-unmount
+  - define-race-and-stale-response-strategy
+  - place-effects-only-for-reusable-synchronization
+  - reuse-approved-server-state-library
+  - define-stable-error-model
+  - make-evidence-driven-memoization-decisions
+  - define-hook-and-pure-function-tests
+  - produce-hook-design-decision
+  prohibited_actions:
+  - write-hook-code
+  - import-prisma-or-http-adapter
+  - call-global-factory
+  - copy-backend-eligibility-rules
+  - expose-set-loading-set-error-set-data
+  - rebuild-swr-cache
+  - use-mounted-flag-as-race-solution
+  - suppress-exhaustive-deps
+  - memoize-every-function
+  - introduce-redux-zustand-or-react-query
+  expected_output: expected/promotion-custom-hook-design-record.md
+edge_cases:
+- id: one-vs-multiple-state
+  scenario: Input text and modal-open state evolve independently, while submission
+    data/error/status transition together.
+  expected_behavior: separate-independent-state-and-group-submission-state
+- id: use-reducer
+  scenario: Workflow has many explicit events, rollback, retry, and state preservation.
+  expected_behavior: use-reducer-may-be-justified-with-pure-transition-table
+- id: effect-in-hook
+  scenario: Hook owns a reusable document event subscription.
+  expected_behavior: effect-in-hook-allowed-with-dependencies-and-cleanup
+- id: stale-response
+  scenario: Second code submission resolves before the first.
+  expected_behavior: first-response-must-not-overwrite-latest-result
+- id: raw-setters
+  scenario: Hook returns setLoading, setError, and setData.
+  expected_behavior: replace-with-semantic-commands
+- id: tuple-object
+  scenario: Hook returns state plus six commands and will likely evolve.
+  expected_behavior: object-api-preferred
+- id: server-state-rebuild
+  scenario: Hook adds its own global cache, retry timer, and request registry over
+    SWR.
+  expected_behavior: reject-and-delegate-to-approved-library
+quality_rubric:
+  hook_necessity_and_responsibility: 5
+  react_application_boundary: 5
+  dependency_injection: 5
+  state_representation: 5
+  transitions_and_commands: 5
+  return_api: 5
+  async_cancellation_and_races: 5
+  effects_and_dependencies: 5
+  server_state_integration: 5
+  error_model: 5
+  memoization_and_identity: 5
+  test_boundary_and_non_implementation: 5

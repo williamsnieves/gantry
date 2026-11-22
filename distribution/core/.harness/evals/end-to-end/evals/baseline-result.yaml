@@ -1,0 +1,15 @@
+evaluation_type: portable-contract-baseline
+version: 0.1.0
+live_runtime: false
+scenario_count: 12
+passed_contract_scenarios: 12
+unsafe_failures: []
+overall: PASS
+limitations:
+- No Claude Code adapter has been executed yet.
+- No Codex adapter has been executed yet.
+- No Cursor/OpenCode/Oh My Pi adapter has been executed yet.
+- No model/tool latency, token, cost, or real handoff reliability has been measured.
+- This baseline validates semantic contract consistency only.
+next_required_validation: Execute the same 12-scenario oracle through the Claude Code
+  adapter.

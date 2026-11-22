@@ -1,0 +1,114 @@
+skill: testing-repository-adapters
+version: 0.1.0
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  mock_only_persistence_proof_allowed: 0
+  unsafe_shared_database_allowed: 0
+  manual_test_schema_drift_allowed: 0
+  non_atomic_duplicate_test_allowed: 0
+  silent_invalid_data_coercion_allowed: 0
+  blocked_test_reported_as_pass_allowed: 0
+  cleanup_leaks_allowed: 0
+discovery:
+  positive:
+  - id: positive-postgres
+    prompt: Test PrismaPromotionRepository against isolated PostgreSQL with Testcontainers.
+    expected: activate
+  - id: positive-concurrency
+    prompt: Prove the repository composite unique constraint under concurrent inserts.
+    expected: activate
+  - id: positive-migrations
+    prompt: Create the migration/bootstrap/reset harness for repository integration
+      tests.
+    expected: activate
+  negative:
+  - id: negative-use-case
+    prompt: Test ApplyPromotionUseCase with InMemory repositories.
+    expected: do-not-activate
+    expected_alternative: testing-application-use-cases
+  - id: negative-domain
+    prompt: Test Promotion Entity state transitions.
+    expected: do-not-activate
+    expected_alternative: testing-domain-models
+  - id: negative-provider
+    prompt: Test the Acme provider adapter.
+    expected: do-not-activate
+    expected_alternative: testing-external-service-adapters
+procedure:
+- id: promotion-repository-integration
+  fixture: fixtures/promotion-repository-adapter-tests.md
+  required_steps:
+  - confirm-real-persistence-readiness
+  - verify-safe-isolated-environment
+  - provision-test-database
+  - apply-authoritative-migrations
+  - generate-unique-test-namespace
+  - run-shared-contract-tests
+  - test-domain-round-trips-and-mappings
+  - test-write-and-absence-semantics
+  - test-real-constraints-and-concurrency
+  - test-transactions-and-rollback
+  - test-ordering-pagination-and-deletion
+  - test-invalid-stored-data
+  - test-technical-error-translation
+  - verify-cleanup-and-open-handles
+  - classify-evidence-honestly
+  prohibited_actions:
+  - use-repository-mock-as-proof
+  - use-inmemory-as-real-proof
+  - connect-to-production
+  - create-ad-hoc-schema-instead-of-migrations
+  - test-duplicate-with-only-exists-check
+  - assert-raw-prisma-error
+  - silently-map-unknown-status
+  - claim-blocked-test-passed
+  - leave-container-or-client-open
+  expected_output: expected/promotion-repository-adapter-tests-record.md
+edge_cases:
+- id: unknown-status
+  scenario: Stored row contains unknown status LEGACY_PENDING.
+  expected_behavior: incompatible-or-corrupt-record-not-default
+- id: concurrent-duplicate
+  scenario: Two transactions insert the same subscription/campaign pair.
+  expected_behavior: one-success-one-semantic-duplicate
+- id: outer-transaction
+  scenario: Two saves participate in one outer transaction and the second fails.
+  expected_behavior: both-rolled-back
+- id: implicit-order
+  scenario: Child rows are returned without ORDER BY.
+  expected_behavior: test-fails-until-explicit-ordering-preserves-contract
+- id: container-unavailable
+  scenario: Docker/Testcontainers cannot start.
+  expected_behavior: database-environment-blocked-not-passed
+- id: cleanup-failure
+  scenario: Schema drop fails after product assertion passes.
+  expected_behavior: report-cleanup-failure-and-open-handle-risk
+context_efficiency:
+- id: simple-roundtrip
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/real-persistence-and-isolation.md
+  - references/migrations-and-test-bootstrap.md
+  - references/round-trips-mapping-and-invalid-data.md
+  - references/failures-cleanup-and-flakiness.md
+  - references/repository-test-audit.md
+  must_not_load:
+  - references/constraints-transactions-and-concurrency.md
+  - references/queries-pagination-and-deletion.md
+  - evals/
+quality_rubric:
+  real_persistence_evidence: 5
+  environment_safety: 5
+  migration_fidelity: 5
+  contract_parity: 5
+  mapping_and_reconstitution: 5
+  constraint_and_concurrency_proof: 5
+  transaction_testing: 5
+  query_semantics: 5
+  invalid_data_and_error_translation: 5
+  cleanup_and_parallel_isolation: 5
+  honest_failure_classification: 5
+  boundary_purity: 5
+  context_efficiency: 4

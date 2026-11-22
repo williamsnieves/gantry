@@ -1,0 +1,103 @@
+skill: testing-frontend-visual-regressions
+version: 0.1.0
+passing_policy:
+  snapshot_every_component_by_default_allowed: 0
+  live_nondeterministic_fixture_allowed: 0
+  arbitrary_sleep_for_visual_stability_allowed: 0
+  blind_baseline_approval_allowed: 0
+  automatic_baseline_overwrite_on_failure_allowed: 0
+  excessive_threshold_used_to_hide_flake_allowed: 0
+  mask_region_containing_actual_visual_contract_allowed: 0
+  visual_test_as_accessibility_conformance_proof_allowed: 0
+  production_customer_data_in_screenshot_allowed: 0
+  new_visual_platform_without_approval_allowed: 0
+discovery:
+  positive:
+  - id: positive-responsive
+    prompt: Add visual regression coverage for this complex responsive dashboard in
+      light and dark themes.
+    expected: activate
+  - id: positive-design-system
+    prompt: Define a stable screenshot matrix for our shared Button and Dialog visual
+      variants.
+    expected: activate
+  - id: positive-document
+    prompt: Protect this document preview from pagination and font/layout visual regressions.
+    expected: activate
+  negative:
+  - id: negative-component-behavior
+    prompt: Test that clicking Save opens the confirmation dialog.
+    expected: do-not-activate
+    expected_alternative: testing-react-components
+  - id: negative-domain
+    prompt: Test the pricing calculation for this subscription.
+    expected: do-not-activate
+    expected_alternative: testing-frontend-domain-and-use-cases
+  - id: negative-e2e
+    prompt: Test the full signup and checkout journey across pages.
+    expected: do-not-activate
+    expected_alternative: testing-frontend-user-journeys
+procedure:
+- id: visual-regression-matrix
+  fixture: fixtures/visual-regression-matrix.md
+  required_steps:
+  - identify-visual-risk-and-confirm-visual-regression-is-justified
+  - reuse-existing-playwright-storybook-chromatic-percy-or-custom-infrastructure
+  - choose-smallest-valuable-component-or-page-surface
+  - stabilize-fixture-data-fonts-assets-time-locale-network-animation-caret-and-scroll
+  - select-meaningful-viewport-and-container-width-matrix
+  - select-supported-theme-matrix
+  - select-representative-visual-states-without-cartesian-explosion
+  - define-specific-chart-document-or-pixel-sensitive-rendering-controls-where-applicable
+  - establish-reviewed-baseline-and-minimal-diff-threshold
+  - define-intentional-vs-accidental-diff-triage
+  - preserve-expected-actual-diff-and-environment-artifacts
+  - audit-privacy-and-sensitive-screenshot-data
+  - separate-semantic-accessibility-browser-and-e2e-responsibilities
+  - audit-flake-overcoverage-and-baseline-maintenance-cost
+  - produce-visual-regression-testing-record
+  prohibited_actions:
+  - screenshot-all-components
+  - use-current-time-live-api-random-data
+  - wait-two-seconds-for-fonts
+  - test-only-common-device-presets
+  - capture-every-state-theme-size-cartesian-product
+  - allow-20-percent-diff-because-flaky
+  - mask-entire-dialog-content
+  - auto-update-baselines-on-ci-failure
+  - use-real-user-profile-data
+  - claim-screenshot-proves-keyboard-accessibility
+  expected_output: expected/visual-regression-matrix-record.md
+edge_cases:
+- id: design-system
+  scenario: Shared Button has 5 variants x 4 sizes x 2 themes x 5 states.
+  expected_behavior: select-representative-risk-based-matrix-not-200-screenshots
+- id: responsive
+  scenario: Card uses container query and looks different in sidebar vs main content
+    at same viewport.
+  expected_behavior: vary-container-width-not-only-viewport
+- id: theme
+  scenario: A semantic token change alters 80 dark-theme screenshots.
+  expected_behavior: treat-as-broad-intentional-change-requiring-collateral-review-not-blind-bulk-accept
+- id: chart
+  scenario: Chart animation starts at a random frame and produces flaky diffs.
+  expected_behavior: stabilize-data-dimensions-animation-before-adjusting-threshold
+- id: document
+  scenario: Document pagination differs because CI font was not loaded.
+  expected_behavior: make-font-environment-deterministic-and-wait-for-font-readiness
+- id: triage
+  scenario: Screenshot fails after CSS refactor with unexpected toolbar overlap.
+  expected_behavior: classify-as-accidental-regression-fix-code-and-keep-baseline
+quality_rubric:
+  scope_selection: 5
+  fixture_stability: 5
+  environment_stability: 5
+  viewport_and_container_matrix: 5
+  theme_and_state_matrix: 5
+  standard_priority_surface_coverage: 5
+  baseline_policy: 5
+  diff_threshold_and_mask_restraint: 5
+  triage_workflow: 5
+  failure_diagnostics_and_privacy: 5
+  test_layering_and_maintenance: 5
+  final_status: 5

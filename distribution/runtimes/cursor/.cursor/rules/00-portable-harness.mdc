@@ -1,0 +1,37 @@
+---
+description: Portable Loop Engineering Harness runtime invariants
+globs:
+alwaysApply: true
+---
+
+# Portable Software Engineering Harness — Cursor Adapter
+
+For meaningful implementation, remediation, migration, review, release, or pre-PR work, load `/harness-run`.
+
+Authoritative source:
+
+```text
+.harness/core/
+.harness/agents/
+.agents/skills/
+```
+
+`.cursor/` contains execution adapters only.
+
+Invariants:
+
+- Classify work mode, scope, and risk before selecting gates.
+- `change size != change risk`.
+- Run the smallest complete specialist set.
+- Never skip a materially REQUIRED gate.
+- Use `.cursor/agents/` for routed specialist work.
+- Review specialists are read-only.
+- All agents in one review wave inspect the same stable change identity.
+- Independent specialist reviews may run in parallel.
+- New material findings create dynamic routing triggers.
+- Reviewer does not run until all REQUIRED gates are terminal.
+- A specialist blocker cannot be averaged away.
+- Missing required evidence is not PASS.
+- After remediation, rerun only materially invalidated gates.
+- Only `PRE_PR_PASS` or `PRE_PR_PASS_WITH_CONDITIONS` permits PR transition.
+- Any material post-gate edit makes final readiness stale.

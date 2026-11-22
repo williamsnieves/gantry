@@ -1,0 +1,20 @@
+id: runtime-portability
+description: Execute same full-stack scenario through two runtime adapters.
+oracle:
+  must_match:
+  - work_mode
+  - scopes
+  - risk_triggers
+  - semantic_gate_set
+  - blocking_class
+  - handoff_ownership
+  - rereview_set
+  - reviewer_decision
+  - final_pre_pr_decision
+  may_differ:
+  - parallelism_mechanics
+  - models
+  - transport
+  - wall_clock_time
+  - tokens
+  - cost

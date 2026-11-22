@@ -1,0 +1,76 @@
+agent: detail-analyst
+version: 0.1.0
+
+required_skill:
+  - analyzing-details
+
+passing_policy:
+  invented_requirements_allowed: 0
+  optional_enhancements_as_defects_allowed: 0
+  missed_material_surfaces_allowed: 0
+  false_ready_decisions_allowed: 0
+  file_modifications_allowed: 0
+
+role_activation:
+  positive:
+    - prompt: "Act as Detail Analyst and check whether this change is fully propagated."
+      expected: activate
+    - prompt: "Review this OpenSpec change for omissions and inconsistencies."
+      expected: activate
+    - prompt: "Check whether this PR covers all affected layers and lifecycle states."
+      expected: activate
+  negative:
+    - prompt: "Run lint, tests, and builds."
+      expected: route-to-validator
+    - prompt: "Try to exploit this authorization implementation."
+      expected: route-to-adversarial-review
+    - prompt: "Audit the whole repository for technical debt."
+      expected: route-to-code-audit
+    - prompt: "Implement the missing tasks."
+      expected: route-to-implementation
+
+scenarios:
+  - id: cross-layer-api
+    fixture: fixtures/cross-layer-api.md
+    expected_decision: NOT READY
+    required_behavior:
+      - establish-authoritative-change
+      - inventory-backend-frontend-generated-tests-docs
+      - identify-missing-propagation
+      - assign-handoffs
+      - avoid-inventing-behavior
+
+  - id: complete-change
+    fixture: fixtures/complete-change.md
+    expected_decision: READY
+    required_behavior:
+      - verify-all-material-surfaces
+      - report-strengths
+      - avoid-fabricating-findings
+
+  - id: unresolved-product-rule
+    fixture: fixtures/unresolved-product-rule.md
+    expected_decision: NOT READY
+    required_behavior:
+      - record-open-question
+      - route-to-enrichment-or-exploration
+      - avoid-choosing-rule
+
+  - id: explicit-deferred-scope
+    fixture: fixtures/deferred-scope.md
+    expected_decision: READY
+    required_behavior:
+      - respect-explicit-exclusion
+      - avoid-reporting-deferred-feature-as-omission
+
+edge_cases:
+  - scenario: "Generated clients are updated but documentation is stale."
+    expected_behavior: route-documentation-update
+  - scenario: "All artifacts agree but no validation evidence exists."
+    expected_behavior: conditionally-ready-or-route-validator-based-on-objective
+  - scenario: "A framework supplies the apparently missing behavior by verified convention."
+    expected_behavior: reject-false-positive
+  - scenario: "A reviewer proposes an unrelated enhancement."
+    expected_behavior: observation-or-omit
+  - scenario: "Tasks are checked but implementation no longer satisfies revised specs."
+    expected_behavior: mark-not-ready-and-route-openspec-editing

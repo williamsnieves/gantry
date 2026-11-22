@@ -1,0 +1,114 @@
+skill: reviewing-backend-architecture
+version: 0.1.0
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  personal_preference_findings_allowed: 0
+  repository_wide_redesign_allowed: 0
+  code_review_duplication_allowed: 0
+  unjustified_abstraction_accepted_allowed: 0
+  migration_without_exit_path_allowed: 0
+  guessed_architecture_decision_allowed: 0
+  unavailable_evidence_reported_as_proof_allowed: 0
+discovery:
+  positive:
+  - id: positive-pr-architecture
+    prompt: Review the architecture of this backend PR, including ownership, ports,
+      transactions, and migration risk.
+    expected: activate
+  - id: positive-abstraction
+    prompt: Challenge whether these new ports, adapters, events, and factories are
+      justified.
+    expected: activate
+  - id: positive-brownfield
+    prompt: Review the brownfield migration architecture and temporary seams.
+    expected: activate
+  negative:
+  - id: negative-static-validation
+    prompt: Check import direction and detect controller-to-repository dependencies.
+    expected: do-not-activate
+    expected_alternative: validating-backend-architecture
+  - id: negative-code-review
+    prompt: Review this backend PR for bugs, security defects, and missing tests.
+    expected: do-not-activate
+    expected_alternative: reviewing-backend-code
+  - id: negative-refactor
+    prompt: Refactor the backend architecture.
+    expected: do-not-activate
+    expected_alternative: refactoring-backend-toward-hexagonal-architecture
+procedure:
+- id: promotion-architecture-review
+  fixture: fixtures/promotion-architecture-review.md
+  required_steps:
+  - confirm-behavior-scope-and-architecture
+  - inventory-new-and-modified-decisions
+  - review-module-and-layer-ownership
+  - review-domain-and-use-case-proportionality
+  - review-port-and-adapter-justification
+  - review-composition-and-lifecycle
+  - review-transaction-idempotency-and-partial-failure
+  - review-event-and-async-necessity
+  - review-migration-compatibility-and-reversibility
+  - review-testability-and-operability
+  - classify-drift-and-temporary-deviations
+  - avoid-code-review-duplication
+  - raise-unresolved-decisions-with-options
+  - make-architecture-review-decision
+  prohibited_actions:
+  - rewrite-code
+  - redesign-entire-repository
+  - report-formatting-or-naming-preference
+  - duplicate-every-code-review-finding
+  - accept-generic-port-without-boundary-value
+  - accept-event-bus-by-default
+  - accept-dual-write-without-reconciliation
+  - accept-temporary-seam-without-exit
+  - guess-partial-failure-policy
+  expected_output: expected/promotion-architecture-review-report.md
+edge_cases:
+- id: one-implementation-port
+  scenario: A provider port has one implementation but protects Application from SDK
+    semantics.
+  expected_behavior: do-not-reject-solely-because-one-implementation
+- id: generic-client-port
+  scenario: Application introduces GenericHttpClientPort used only to call one campaign
+    operation.
+  expected_behavior: report-abstraction-mirrors-technology-not-capability
+- id: event-for-local-flow
+  scenario: An event bus is introduced for a synchronous operation inside one module.
+  expected_behavior: challenge-event-necessity-and-operational-cost
+- id: temporary-facade-no-exit
+  scenario: Compatibility facade is called temporary but has no owner or removal condition.
+  expected_behavior: architectural-drift-finding
+- id: partial-failure-unresolved
+  scenario: Provider succeeds before persistence and no reconciliation policy exists.
+  expected_behavior: blocking-architecture-decision-with-options-not-guessed-answer
+- id: valid-static-invalid-concept
+  scenario: All imports point inward but Application owns provider retry protocol.
+  expected_behavior: report-conceptual-ownership-problem
+context_efficiency:
+- id: focused-architecture-pr
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/ownership-boundaries-and-proportionality.md
+  - references/ports-adapters-use-cases-and-domain.md
+  - references/transactions-idempotency-events-and-operability.md
+  - references/migration-reversibility-and-drift.md
+  - references/architecture-findings-and-decisions.md
+  must_not_load:
+  - evals/
+quality_rubric:
+  scope_and_behavior_understanding: 5
+  ownership_analysis: 5
+  abstraction_proportionality: 5
+  domain_and_application_design: 5
+  port_adapter_and_composition_analysis: 5
+  transaction_idempotency_and_partial_failure: 5
+  event_and_async_analysis: 5
+  migration_reversibility_and_drift: 5
+  testability_and_operability: 5
+  finding_quality: 5
+  decision_quality_and_non_speculation: 5
+  non_duplication_and_scope_control: 5
+  context_efficiency: 4

@@ -1,0 +1,21 @@
+routing_plan_version: 0.1.0
+harness_contract_version: 0.1.0
+change_identity:
+  type: commit|diff|openspec-change|working-tree
+  value: ''
+work_mode: IMPLEMENTATION
+scopes: []
+risk_triggers: []
+accepted_behavior_sources: []
+existing_gate_results: []
+agents:
+- agent: validator
+  applicability: REQUIRED|CONDITIONAL|NOT_APPLICABLE|NOT_TRIGGERED|ALREADY_SATISFIED|BLOCKED
+  reason: ''
+  trigger_source: ''
+  required_inputs: []
+  expected_output: ''
+  minimal_dependencies: []
+new_dynamic_triggers: []
+deferred_questions: []
+notes: []

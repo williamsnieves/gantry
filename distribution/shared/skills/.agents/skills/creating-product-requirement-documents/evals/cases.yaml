@@ -1,0 +1,123 @@
+skill: creating-product-requirement-documents
+version: 0.1.0
+passing_policy:
+  invent_product_requirements_allowed: 0
+  invent_success_metric_target_allowed: 0
+  technology_preference_as_requirement_allowed: 0
+  architecture_design_inside_prd_allowed: 0
+  unresolved_conflict_silently_resolved_allowed: 0
+  accepted_status_without_authority_allowed: 0
+  omit_non_goals_on_nontrivial_prd_allowed: 0
+  discard_discovery_provenance_allowed: 0
+  blocking_gap_hidden_allowed: 0
+  formal_nfr_target_invented_allowed: 0
+discovery:
+  positive:
+  - id: positive-greenfield
+    prompt: Turn this completed requirements elicitation record into a structured
+      PRD without choosing architecture.
+    expected: activate
+  - id: positive-platform
+    prompt: Create a PRD for this internal developer platform from the accepted discovery
+      evidence.
+    expected: activate
+  - id: positive-draft
+    prompt: Create a PRD draft but preserve the blocking questions and unresolved
+      success metrics.
+    expected: activate
+  negative:
+  - id: negative-discovery
+    prompt: We only have a vague idea. Help us discover the actual requirements.
+    expected: do-not-activate
+    expected_alternative: eliciting-software-requirements
+  - id: negative-fr
+    prompt: Turn this PRD into a formal functional requirements catalog.
+    expected: do-not-activate
+    expected_alternative: defining-functional-requirements
+  - id: negative-architecture
+    prompt: Choose the best architecture for this PRD.
+    expected: do-not-activate
+    expected_alternative: designing-system-architecture
+procedure:
+- id: support-saas-prd
+  fixture: fixtures/support-saas-discovery.md
+  required_steps:
+  - verify-discovery-readiness-and-set-prd-status
+  - preserve-source-provenance-and-uncertainty
+  - structure-context-problem-and-why-now
+  - define-outcome-oriented-goals
+  - include-explicit-non-goals-or-tbd
+  - include-relevant-stakeholders-actors-and-journeys
+  - organize-traceable-functional-requirements
+  - organize-nonfunctional-quality-expectations-without-inventing-targets
+  - preserve-security-privacy-accessibility-requirements-where-supported
+  - preserve-constraint-strength-and-separate-preferences
+  - include-assumptions-dependencies-risks-conflicts-and-open-questions
+  - include-supported-success-metrics-and-leave-unknown-targets-tbd
+  - write-observable-product-level-acceptance-criteria
+  - preserve-data-integration-operational-and-brownfield-context-when-relevant
+  - move-premature-technical-proposals-to-nonbinding-proposals-or-constraints
+  - create-traceability-appendix
+  - create-formal-requirements-and-architecture-handoff
+  - stop-before-architecture-selection
+  - produce-product-requirements-document
+  prohibited_actions:
+  - choose-microservices
+  - choose-kubernetes
+  - set-99-99-availability-without-source
+  - invent-30-percent-support-ticket-reduction
+  - mark-retention-conflict-resolved
+  - mark-prd-accepted-without-approval
+  - omit-voice-v1-non-goal
+  - convert-postgresql-preference-to-hard-constraint
+  - create-c4-diagram
+  - write-openspec-change
+  expected_output: expected/support-saas-prd.md
+edge_cases:
+- id: ambiguous-goal
+  scenario: Discovery says onboarding must feel instant but no metric or definition
+    exists.
+  expected_behavior: preserve-as-goal-or-quality-expectation-with-tbd-measurement-and-open-question
+- id: implementation-pollution
+  scenario: Discovery contains 'Use Kubernetes and microservices' with no authority.
+  expected_behavior: keep-as-nonbinding-proposed-solution-or-preference-not-product-requirement
+- id: missing-nongoal
+  scenario: Non-trivial initiative has no explicit exclusions.
+  expected_behavior: include-non-goals-tbd-and-open-scope-question-not-invent-exclusions
+- id: success-metric
+  scenario: Goal is reduce support burden but no target percentage exists.
+  expected_behavior: include-supported-metric-direction-with-target-tbd-or-open-question-not-invent-number
+- id: conflict
+  scenario: Product requests indefinite retention while privacy says no retention
+    policy is approved.
+  expected_behavior: keep-blocking-conflict-visible-and-set-prd-status-appropriately
+- id: internal-platform
+  scenario: Primary users are service teams and operators rather than end consumers.
+  expected_behavior: use-developer-operator-platform-outcomes-without-forcing-consumer-saas-personas
+context_efficiency:
+- id: normal-prd
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/prd-structure-status-and-product-architecture-boundary.md
+  - references/problem-goals-non-goals-and-product-outcomes.md
+  - references/actors-journeys-functional-and-nonfunctional-sections.md
+  - references/constraints-assumptions-dependencies-risks-and-open-questions.md
+  - references/success-metrics-acceptance-criteria-and-prioritization.md
+  must_not_load_unless_needed:
+  - references/data-integrations-operations-and-brownfield-prds.md
+  - references/provenance-traceability-versioning-and-approval.md
+  - evals/
+quality_rubric:
+  discovery_grounding_and_status: 5
+  problem_goals_nongoals: 5
+  actors_and_journeys: 5
+  functional_requirements: 5
+  nonfunctional_quality_expectations: 5
+  constraints_assumptions_dependencies: 5
+  risks_conflicts_questions: 5
+  success_metrics_acceptance_criteria: 5
+  data_integrations_operations_brownfield: 5
+  traceability_and_versioning: 5
+  product_architecture_boundary: 5
+  downstream_handoff: 5

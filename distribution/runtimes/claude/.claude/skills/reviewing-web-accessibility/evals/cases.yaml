@@ -1,0 +1,105 @@
+skill: reviewing-web-accessibility
+version: 0.1.0
+passing_policy:
+  scan_only_conformance_claim_allowed: 0
+  tool_warning_without_validation_as_confirmed_violation_allowed: 0
+  finding_without_user_impact_allowed: 0
+  finding_without_reproduction_allowed: 0
+  finding_without_verification_plan_allowed: 0
+  severity_based_only_on_code_smell_allowed: 0
+  focus_review_omitted_for_modal_allowed: 0
+  color_only_error_accepted_allowed: 0
+  placeholder_as_only_label_allowed: 0
+  formal_wcag_certification_claim_allowed: 0
+discovery:
+  positive:
+  - id: positive-review
+    prompt: Review this implemented page for web accessibility and produce severity-ranked
+      findings with fixes.
+    expected: activate
+  - id: positive-focus
+    prompt: Audit the keyboard and focus behavior of this existing Dialog implementation.
+    expected: activate
+  - id: positive-release
+    prompt: Perform a pre-release accessibility review of this React flow including
+      zoom, motion, labels, and screen-reader status.
+    expected: activate
+  negative:
+  - id: negative-design
+    prompt: Design the accessibility contract for a new page before implementation.
+    expected: do-not-activate
+    expected_alternative: designing-accessible-web-interfaces
+  - id: negative-form-design
+    prompt: Design accessible validation behavior for a new multi-step form.
+    expected: do-not-activate
+    expected_alternative: designing-accessible-forms
+  - id: negative-widget-integration
+    prompt: Integrate Radix Dialog into shared UI and preserve its focus behavior.
+    expected: do-not-activate
+    expected_alternative: integrating-headless-ui-primitives
+procedure:
+- id: account-settings-review
+  fixture: fixtures/account-settings-accessibility-review.md
+  required_steps:
+  - define-review-scope-target-themes-input-modes-and-evidence
+  - run-or-inspect-approved-automated-tooling-with-manual-validation
+  - review-keyboard-order-widget-keys-and-hidden-focusable-content
+  - review-focus-visibility-containment-restoration-and-obstruction
+  - review-semantics-headings-landmarks-controls-labels-and-aria
+  - review-color-only-information-and-measurable-contrast
+  - review-zoom-reflow-translation-and-page-overflow-in-browser
+  - review-reduced-motion-behavior
+  - measure-mobile-target-hit-areas
+  - review-error-form-and-dynamic-status-communication
+  - review-complex-widget-and-shared-primitive-regressions
+  - create-user-impact-reproduction-severity-fix-and-verification-for-each-finding
+  - separate-confirmed-findings-risks-false-positives-and-exceptions
+  - define-regression-prevention-for-material-defects
+  - produce-accessibility-review-record-and-release-assessment
+  prohibited_actions:
+  - declare-wcag-conformance-because-axe-passes
+  - copy-axe-warning-without-validation
+  - report-missing-outline-without-checking-visible-focus
+  - ignore-keyboard-path
+  - ignore-dark-theme-contrast
+  - ignore-zoom-reflow
+  - call-32px-icon-target-32px-without-measuring-hit-area
+  - report-screen-reader-status-without-evidence
+  - rewrite-entire-design-system-for-local-defect
+  - mark-fixed-before-verification
+  expected_output: expected/account-settings-accessibility-review-record.md
+edge_cases:
+- id: focus-trap
+  scenario: Keyboard focus escapes the open account-delete dialog and reaches page
+    controls behind it.
+  expected_behavior: high-severity-validated-finding-with-focus-containment-fix-and-browser-verification
+- id: color-only-error
+  scenario: Invalid field only gets a red border; no error text, aria-invalid, or
+    description is provided.
+  expected_behavior: validated-error-communication-finding-with-non-color-and-programmatic-remediation
+- id: missing-label
+  scenario: Email input uses placeholder 'Email' but has no associated label or accessible
+    name.
+  expected_behavior: high-or-contextual-severity-finding-placeholder-not-treated-as-label
+- id: reduced-motion
+  scenario: Success panel slides and scales even when prefers-reduced-motion is reduce.
+  expected_behavior: validate-motion-impact-and-recommend-project-consistent-reduced-motion-path
+- id: mobile-target
+  scenario: 24px icon button visually looks small, but actual button hit box is 48x48.
+  expected_behavior: do-not-report-target-size-failure-measure-actual-hit-area
+- id: screen-reader-status
+  scenario: Visual 'Saved' toast appears but is not exposed programmatically.
+  expected_behavior: status-communication-finding-with-live-region-or-equivalent-verification
+quality_rubric:
+  scope_and_target: 5
+  evidence_quality: 5
+  keyboard_and_focus: 5
+  semantics_and_labels: 5
+  contrast_zoom_reflow_motion: 5
+  touch_target_review: 5
+  errors_and_dynamic_status: 5
+  complex_widget_review: 5
+  severity_and_user_impact: 5
+  remediation_and_verification: 5
+  false_positive_and_scope_honesty: 5
+  final_assessment: 5

@@ -1,0 +1,30 @@
+id: schema-migration
+description: Brownfield schema migration with mixed-version deployment and backfill.
+input:
+  work_mode: MIGRATION
+  scopes:
+  - BACKEND
+  - DATABASE
+  - MIGRATION
+  - INFRASTRUCTURE
+  risk_triggers:
+  - ARCHITECTURE
+  - DATA_INTEGRITY
+  - MIGRATION
+  - COMPATIBILITY
+  - INFRASTRUCTURE
+oracle:
+  routing:
+    validator: REQUIRED
+    backend-code-review: REQUIRED
+    backend-architecture-review: REQUIRED
+    qa: REQUIRED
+    infrastructure: REQUIRED
+    security: CONDITIONAL
+    performance: CONDITIONAL
+    detail-analyst: REQUIRED
+    reviewer: REQUIRED
+critical_assertions:
+- mixed-version compatibility must be evaluated
+- rollback/forward-fix must reach Infrastructure
+- migration architecture cannot be reduced to code review only

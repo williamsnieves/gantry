@@ -1,0 +1,17 @@
+harness_version: 1.0.0
+project:
+  scope_profile: mixed
+  delivery_profile: standard
+routing:
+  scope_profile_is_advisory: true
+  risk_triggers_override_scope_profile: true
+  dynamic_routing: true
+execution:
+  default_review_mode: parallel_when_safe
+  review_agents_read_only: true
+  stable_snapshot_per_wave: true
+  minimal_rereview: true
+pre_pr:
+  enabled: true
+  allow_pass_with_conditions: true
+installed_runtimes: []

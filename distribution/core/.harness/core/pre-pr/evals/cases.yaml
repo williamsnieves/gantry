@@ -1,0 +1,64 @@
+artifact: pre-pr-flow
+version: 0.1.0
+must_preserve:
+- routing semantics
+- specialist decisions
+- read-only review independence
+- minimal safe re-review
+- strict blocker precedence
+- reviewer-before-final-gate
+- runtime portability
+cases:
+- id: parallel-independent-reviews
+  input: Stable full-stack change with backend code, frontend code, QA, security all
+    routed and no dependency between reviews.
+  expected: fan-out in parallel where runtime supports it
+- id: runtime-no-parallelism
+  input: Same route under runtime without concurrent subagents.
+  expected: same semantic gate set executed sequentially
+- id: validator-hard-fail
+  input: Build fails and frontend/backend application cannot be loaded reliably.
+  expected: default remediation before broad specialist fan-out
+- id: local-evidence-block
+  input: Browser E2E unavailable; backend Security and Code Review independent.
+  expected: continue independent branches; final Reviewer remains pending evidence
+- id: dynamic-security
+  input: Frontend Code Review discovers sensitive analytics payload.
+  expected: append Security gate, typed handoff, include in fan-in
+- id: security-remediation
+  input: Tenant auth fix after Code Review/Security/QA blockers.
+  expected_rerun:
+  - backend-code-review
+  - security
+  - qa
+  - validator
+  - reviewer
+  must_not_rerun_by_default:
+  - performance
+  - infrastructure
+- id: conditions
+  input: Reviewer ready with valid non-blocking conditions.
+  expected: PRE_PR_PASS_WITH_CONDITIONS
+- id: post-final-edit
+  input: File changes after PRE_PR_PASS.
+  expected: final gate stale; return to invalidation/routing
+- id: proven-blocker-plus-missing-evidence
+  input: Security changes required and Performance pending evidence.
+  expected_reviewer_class: NOT_READY_CHANGES_REQUIRED
+  principle: proven blocker precedence
+- id: omp-adapter
+  input: OMP executes review fan-out as swarm DAG.
+  expected: OMP DAG preserves portable dependencies, results, handoff and gate semantics
+quality_rubric:
+  routing_to_execution_continuity: 5
+  parallelism_safety: 5
+  ordering_dependency_accuracy: 5
+  blocking_semantics: 5
+  dynamic_activation: 5
+  remediation_loop: 5
+  minimal_rereview: 5
+  detail_analyst_timing: 5
+  reviewer_integration: 5
+  final_gate_integrity: 5
+  runtime_portability: 5
+  traceability: 5

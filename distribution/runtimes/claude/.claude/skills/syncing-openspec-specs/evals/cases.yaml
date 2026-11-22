@@ -1,0 +1,98 @@
+skill: syncing-openspec-specs
+version: 0.1.0
+
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  missing_deltas_allowed: 0
+  duplicate_requirements_allowed: 0
+  silent_conflicts_allowed: 0
+  validation_failures_allowed: 0
+  archive_actions_allowed: 0
+
+discovery:
+  positive:
+    - id: positive-sync
+      prompt: "Sync this completed change's delta specs into the main OpenSpec specs."
+      expected: activate
+    - id: positive-prearchive
+      prompt: "Reconcile the canonical specs before we archive the change."
+      expected: activate
+    - id: positive-drift
+      prompt: "The active change specs and main specs overlap; merge the approved behavior safely."
+      expected: activate
+  negative:
+    - id: negative-edit
+      prompt: "Rewrite the active change requirements because the product decision changed."
+      expected: do-not-activate
+      expected_alternative: editing-openspec-changes
+    - id: negative-archive
+      prompt: "Archive the completed OpenSpec change."
+      expected: do-not-activate
+    - id: negative-implement
+      prompt: "Implement the remaining tasks."
+      expected: do-not-activate
+
+procedure:
+  - id: mixed-deltas
+    fixture: fixtures/mixed-deltas.md
+    required_steps:
+      - verify-preconditions
+      - map-capabilities
+      - classify-operations
+      - preview-merge
+      - apply-sync
+      - validate-main-specs
+      - verify-traceability
+      - report
+    prohibited_actions:
+      - archive-change
+      - modify-production-code
+      - duplicate-existing-requirement
+    expected_output: expected/mixed-deltas.md
+
+  - id: repeated-sync
+    fixture: fixtures/already-synced.md
+    required_behavior:
+      - detect-equivalent-main-spec
+      - record-no-op
+      - preserve-idempotency
+
+edge_cases:
+  - id: stale-delta
+    scenario: "A newer approved change already modified the same main requirement."
+    expected_behavior: stop-and-resolve-conflict
+  - id: invalid-change
+    scenario: "The delta spec is invalid or contradicts the proposal."
+    expected_behavior: return-to-editing
+  - id: partial-removal
+    scenario: "A removal targets one scenario but the capability contains unrelated scenarios."
+    expected_behavior: remove-only-approved-target
+  - id: rename-with-drift
+    scenario: "A requirement was renamed in main specs and independently modified in the change."
+    expected_behavior: resolve-rename-and-semantic-conflict
+
+context_efficiency:
+  - id: standard-sync
+    always_loaded:
+      - SKILL.md
+    conditionally_loaded:
+      - references/sync-preconditions.md
+      - references/delta-merge-methodology.md
+      - references/traceability-and-idempotency.md
+      - references/sync-validation.md
+    must_not_load:
+      - references/conflict-resolution.md
+      - evals/
+
+quality_rubric:
+  precondition_accuracy: 5
+  delta_mapping: 5
+  merge_correctness: 5
+  unrelated_behavior_preservation: 5
+  conflict_handling: 5
+  idempotency: 5
+  traceability: 5
+  validation_evidence: 5
+  archival_boundary: 5
+  context_efficiency: 4

@@ -1,0 +1,104 @@
+skill: designing-frontend-dtos-and-view-data
+version: 0.1.0
+passing_policy:
+  reactnode_in_application_dto_allowed: 0
+  provider_sdk_type_in_application_dto_allowed: 0
+  transport_snake_case_leak_allowed: 0
+  http_response_in_application_dto_allowed: 0
+  css_or_icon_in_application_dto_allowed: 0
+  generic_nullable_state_bag_allowed: 0
+  localized_ui_date_in_application_by_default_allowed: 0
+  generic_base_dto_framework_allowed: 0
+  universal_mapper_framework_allowed: 0
+  silent_enum_cast_allowed: 0
+discovery:
+  positive:
+  - id: positive-api
+    prompt: Design the frontend Application DTO for this snake_case API response and
+      decide where display formatting belongs.
+    expected: activate
+  - id: positive-dashboard
+    prompt: Design a nested dashboard result that supports partial section failures
+      without a giant nullable DTO.
+    expected: activate
+  - id: positive-view-data
+    prompt: Separate this Application result from rendering-specific view data and
+      React component props.
+    expected: activate
+  negative:
+  - id: negative-use-case
+    prompt: Design the orchestration and ports for ApplyPromotion.
+    expected: do-not-activate
+    expected_alternative: designing-frontend-use-cases
+  - id: negative-domain
+    prompt: Model the Money Value Object and pricing invariant.
+    expected: do-not-activate
+    expected_alternative: modeling-frontend-domain
+  - id: negative-http
+    prompt: Implement the mapper from HTTP JSON in the repository adapter.
+    expected: do-not-activate
+    expected_alternative: implementing-frontend-repository-adapters
+procedure:
+- id: dashboard-boundaries
+  fixture: fixtures/dashboard-data-boundaries.md
+  required_steps:
+  - confirm-behavior-use-case-domain-provider-and-view-consumers
+  - classify-each-data-structure-by-boundary
+  - decide-whether-application-dto-provides-real-value
+  - map-provider-naming-types-and-enums-to-stable-semantics
+  - define-application-dto-or-explicit-result
+  - model-nullability-and-partial-success
+  - assign-date-number-and-localization-formatting
+  - design-presentation-owned-view-data
+  - keep-react-types-in-component-props-only
+  - validate-server-client-package-serialization
+  - assign-mapping-ownership-by-layer
+  - define-tests-at-owning-boundaries
+  - audit-mapping-ceremony-and-generic-dto-frameworks
+  - produce-dto-view-data-record
+  prohibited_actions:
+  - put-reactnode-in-dashboard-dto
+  - return-axios-response
+  - reuse-provider-snake-case-type-in-application
+  - add-css-class-to-application-dto
+  - localize-date-inside-use-case-without-policy
+  - make-all-dashboard-fields-optional
+  - silently-cast-provider-enum
+  - create-base-dto
+  - create-universal-mapper
+  - use-component-props-as-application-contract
+  expected_output: expected/dashboard-data-boundaries-record.md
+edge_cases:
+- id: snake-case
+  scenario: API returns user_id, display_name, and created_at.
+  expected_behavior: map-to-stable-application-naming-and-format-date-in-presentation
+- id: date
+  scenario: First React consumer wants '7 Aug 2026' from an ISO timestamp.
+  expected_behavior: keep-stable-date-in-application-and-localize-in-presentation
+- id: dashboard
+  scenario: Profile loads but recommendations can independently fail.
+  expected_behavior: explicit-partial-section-result-not-giant-nullable-bag
+- id: react-node
+  scenario: 'Application AlertDTO contains icon: ReactNode.'
+  expected_behavior: reject-react-leak-and-map-semantic-type-to-icon-in-presentation
+- id: discriminated
+  scenario: Apply promotion has applied, invalid, expired, forbidden, and unavailable
+    outcomes.
+  expected_behavior: explicit-discriminated-application-result
+- id: same-shape
+  scenario: Provider and Application objects have identical fields and provider independence
+    is not material.
+  expected_behavior: allow-no-separate-dto-or-structural-reuse-if-boundary-safe
+quality_rubric:
+  boundary_classification: 5
+  dto_value_and_restraint: 5
+  provider_decoupling: 5
+  application_results: 5
+  nullability_and_partial_data: 5
+  dates_numbers_and_enums: 5
+  view_data_and_formatting: 5
+  react_and_styling_separation: 5
+  serialization_and_package_safety: 5
+  mapping_ownership: 5
+  testing: 5
+  overmodeling_and_final_decision: 5

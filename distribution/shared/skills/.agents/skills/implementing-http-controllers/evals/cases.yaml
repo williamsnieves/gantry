@@ -1,0 +1,105 @@
+skill: implementing-http-controllers
+version: 0.1.0
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  business_logic_in_controller_allowed: 0
+  direct_repository_or_provider_calls_allowed: 0
+  domain_entity_transport_allowed: 0
+  technical_error_leakage_allowed: 0
+  multi_use_case_invocation_allowed: 0
+  invented_http_contract_allowed: 0
+discovery:
+  positive:
+  - id: positive-rest-controller
+    prompt: Implement the POST subscription promotion controller around the existing
+      ApplyPromotion Use Case.
+    expected: activate
+  - id: positive-thick-controller
+    prompt: Refactor this controller that calls Prisma and the provider SDK into a
+      thin HTTP adapter.
+    expected: activate
+  negative:
+  - id: negative-use-case
+    prompt: Design the ApplyPromotion Use Case.
+    expected: do-not-activate
+    expected_alternative: designing-application-use-cases
+  - id: negative-adapter
+    prompt: Implement the campaign provider SDK adapter.
+    expected: do-not-activate
+    expected_alternative: implementing-external-service-adapters
+  - id: negative-e2e-only
+    prompt: Create the full backend HTTP E2E suite.
+    expected: do-not-activate
+    expected_alternative: testing-backend-http-e2e
+procedure:
+- id: apply-promotion-controller
+  fixture: fixtures/apply-promotion-controller.md
+  required_steps:
+  - confirm-readiness
+  - define-rest-contract
+  - implement-transport-validation
+  - extract-trusted-context
+  - map-to-application-request
+  - invoke-one-use-case
+  - map-success-response
+  - translate-semantic-errors
+  - protect-technical-errors
+  - add-controller-and-contract-tests
+  - audit-thinness-and-boundaries
+  prohibited_actions:
+  - call-repository
+  - call-provider-adapter
+  - construct-promotion-entity
+  - duplicate-eligibility-rule
+  - call-two-use-cases
+  - return-error-message-directly
+  - return-domain-entity
+  - invent-route-or-status
+  expected_output: expected/apply-promotion-controller-report.md
+edge_cases:
+- id: bad-rest-url
+  scenario: New proposal uses POST /applyPromotion while accepted API is resource-oriented.
+  expected_behavior: use-accepted-resource-contract
+- id: domain-validation
+  scenario: Controller checks whether promotion is expired.
+  expected_behavior: remove-and-delegate-to-domain-use-case
+- id: technical-error
+  scenario: Prisma stack trace reaches controller.
+  expected_behavior: safe-generic-http-error
+- id: tenant-spoof
+  scenario: Body tenantId differs from trusted auth tenant.
+  expected_behavior: use-trusted-context-and-reject-or-ignore-per-policy
+- id: idempotency
+  scenario: Required idempotency header is missing.
+  expected_behavior: transport-validation-error-before-use-case
+- id: async-result
+  scenario: Use Case returns pending accepted result.
+  expected_behavior: map-to-accepted-202-contract
+context_efficiency:
+- id: simple-json-command
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/controller-readiness-and-rest-contract.md
+  - references/transport-validation-and-request-mapping.md
+  - references/response-and-error-mapping.md
+  - references/http-controller-testing.md
+  must_not_load:
+  - references/auth-context-and-security.md
+  - references/refactoring-thick-controllers.md
+  - evals/
+quality_rubric:
+  contract_fidelity: 5
+  transport_validation: 5
+  request_mapping: 5
+  auth_context: 5
+  single_use_case_invocation: 5
+  success_mapping: 5
+  error_safety: 5
+  controller_thinness: 5
+  security: 5
+  contract_testing: 5
+  boundary_purity: 5
+  non_speculation: 5
+  context_efficiency: 4

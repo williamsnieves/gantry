@@ -1,0 +1,19 @@
+after_validator:
+  parallel:
+  - backend-code-review
+  - backend-architecture-review
+  - frontend-code-review
+  - qa
+  - security
+  waiting:
+  - 'performance: missing measurements'
+  not_triggered:
+  - infrastructure
+dynamic: backend-architecture-review activates performance
+fan_in_requires:
+- backend-code-review
+- backend-architecture-review
+- frontend-code-review
+- qa
+- security
+- performance

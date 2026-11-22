@@ -1,0 +1,106 @@
+skill: reviewing-frontend-performance
+version: 0.1.0
+passing_policy:
+  performance_claim_without_evidence_allowed: 0
+  blanket_usememo_usecallback_allowed: 0
+  ignore_react_compiler_status_allowed: 0
+  report_dev_strict_mode_request_as_production_duplicate_allowed: 0
+  virtualize_small_list_without_measurement_allowed: 0
+  large_dependency_rejected_only_by_install_size_allowed: 0
+  route_bundle_review_using_only_total_app_bundle_allowed: 0
+  chart_algorithmic_scaling_ignored_allowed: 0
+  algorithmic_big_o_analysis_duplicated_instead_of_handoff_allowed: 0
+  before_after_under_different_conditions_allowed: 0
+discovery:
+  positive:
+  - id: positive-route
+    prompt: 'Review why this React route is slow: large route bundle, duplicated requests,
+      and high INP.'
+    expected: activate
+  - id: positive-list
+    prompt: Investigate this 50k-row frontend list for rendering, virtualization,
+      memory, and preprocessing performance.
+    expected: activate
+  - id: positive-chart
+    prompt: Review this expensive chart and determine whether the bottleneck is data
+      transformation, chart library load, or rendering.
+    expected: activate
+  negative:
+  - id: negative-bigo
+    prompt: What is the Big O of this nested users/permissions algorithm?
+    expected: do-not-activate
+    expected_alternative: analyzing-algorithmic-complexity
+  - id: negative-security
+    prompt: Review this frontend for XSS and token storage risks.
+    expected: do-not-activate
+    expected_alternative: reviewing-frontend-security
+  - id: negative-visual
+    prompt: Review screenshot diffs for this responsive layout.
+    expected: do-not-activate
+    expected_alternative: testing-frontend-visual-regressions
+procedure:
+- id: dashboard-performance
+  fixture: fixtures/dashboard-performance.md
+  required_steps:
+  - define-user-visible-symptom-target-device-network-dataset-and-production-build
+  - collect-or-request-cwv-browser-profiler-bundle-network-memory-evidence-as-relevant
+  - classify-primary-and-secondary-bottlenecks
+  - measure-rerenders-and-consider-react-compiler-status-before-manual-memoization
+  - measure-large-dependency-and-route-specific-bundle-contribution
+  - confirm-duplicated-requests-and-exclude-dev-strict-mode-retry-or-prefetch-false-positives
+  - measure-list-dom-render-scroll-memory-and-decide-virtualization-proportionally
+  - separate-chart-fetch-transform-library-load-layout-render-and-interaction-cost
+  - delegate-scaling-data-structure-analysis-to-analyzing-algorithmic-complexity
+  - prioritize-reduce-work-data-boundaries-splitting-dedup-cache-virtualization-before-microoptimization
+  - define-before-after-comparable-verification-and-rum-followup
+  - audit-correctness-accessibility-maintainability-and-overoptimization
+  - produce-performance-review-record
+  prohibited_actions:
+  - add-usememo-everywhere
+  - recommend-react-memo-without-profiler
+  - ignore-react-compiler
+  - call-strict-mode-dev-request-a-production-duplicate
+  - virtualize-20-rows
+  - remove-chart-library-just-because-node-modules-package-is-large
+  - judge-route-from-total-app-bundle-only
+  - solve-50k-times-50k-transform-only-with-usememo
+  - increase-caching-at-three-layers
+  - claim-improvement-from-one-incomparable-local-run
+  expected_output: expected/dashboard-performance-record.md
+edge_cases:
+- id: rerender
+  scenario: Profiler shows a component rerenders 20 times but total render time is
+    3 ms.
+  expected_behavior: do-not-prioritize-rerender-count-alone
+- id: dependency
+  scenario: A 400 KB accessible date-picker library is lazy-loaded only on a rare
+    admin route.
+  expected_behavior: evaluate-route-runtime-and-capability-value-not-package-size-alone
+- id: duplicate
+  scenario: Two requests appear only in React Strict Mode development; production
+    build makes one.
+  expected_behavior: classify-dev-only-not-production-performance-defect
+- id: list
+  scenario: A 50k-row list renders all rows and also does users.map plus permissions.find
+    for every row.
+  expected_behavior: combine-virtualization-with-algorithmic-complexity-handoff
+- id: route
+  scenario: Route gained 650 KB because chart editor and syntax highlighter are imported
+    in initial entry chunk but used after user action.
+  expected_behavior: measure-route-contribution-and-recommend-stable-lazy-feature-boundaries
+- id: chart
+  scenario: 100k SVG points plus O(n log n) preprocessing create a 900 ms long task.
+  expected_behavior: separate-transform-and-rendering-cost-invoke-algorithmic-analysis-and-consider-downsampling-render-technology
+quality_rubric:
+  evidence_and_reproduction: 5
+  cwv_interaction_long_tasks: 5
+  rendering_compiler_memoization: 5
+  bundle_and_dependency_analysis: 5
+  network_and_cache_ownership: 5
+  large_collection_and_memory: 5
+  chart_phase_analysis: 5
+  algorithmic_complexity_handoff: 5
+  architectural_prioritization: 5
+  before_after_verification: 5
+  correctness_accessibility_maintainability: 5
+  final_status: 5

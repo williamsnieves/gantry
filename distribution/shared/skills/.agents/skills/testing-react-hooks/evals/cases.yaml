@@ -1,0 +1,105 @@
+skill: testing-react-hooks
+version: 0.1.0
+passing_policy:
+  internal_setter_assertions_allowed: 0
+  reducer_action_assertions_allowed: 0
+  effect_count_assertions_allowed: 0
+  ref_assertions_allowed: 0
+  memoization_assertions_allowed: 0
+  server_state_library_internals_allowed: 0
+  arbitrary_sleep_allowed: 0
+  concrete_adapter_import_allowed: 0
+  global_factory_allowed: 0
+  duplicate_use_case_or_adapter_branches_allowed: 0
+discovery:
+  positive:
+  - id: positive-async
+    prompt: Implement tests for this React hook's async state, retry, cancellation,
+      and stale-response behavior.
+    expected: activate
+  - id: positive-optimistic
+    prompt: Test optimistic update, rollback, and cleanup for this reusable custom
+      hook.
+    expected: activate
+  - id: positive-wrapper
+    prompt: Test the feature semantics of this SWR wrapper without asserting SWR internals.
+    expected: activate
+  negative:
+  - id: negative-component
+    prompt: Test the visible form, keyboard, and focus behavior.
+    expected: do-not-activate
+    expected_alternative: testing-react-components
+  - id: negative-strategy
+    prompt: Plan which frontend tests should exist.
+    expected: do-not-activate
+    expected_alternative: planning-frontend-test-strategy
+  - id: negative-design
+    prompt: Design the custom hook API and state machine.
+    expected: do-not-activate
+    expected_alternative: designing-react-custom-hooks
+procedure:
+- id: promotion-hook-tests
+  fixture: fixtures/promotion-hook-testing.md
+  required_steps:
+  - confirm-hook-contract-strategy-and-independent-test-value
+  - map-public-states-inputs-and-commands
+  - select-semantic-dependency-doubles
+  - test-initial-async-success-and-stable-failure
+  - test-retry-and-reset-when-public
+  - test-cancellation-and-late-completion
+  - build-deterministic-out-of-order-race
+  - test-duplicate-command-policy
+  - test-optimistic-update-and-rollback-only-if-accepted
+  - test-cleanup-through-observable-resource-behavior
+  - test-feature-semantics-of-server-state-wrapper
+  - isolate-cache-handlers-timers-and-deferred-work
+  - remove-setter-reducer-effect-ref-memoization-and-library-internal-assertions
+  - escalate-non-hook-behavior
+  - run-focused-tests-and-record-evidence
+  prohibited_actions:
+  - assert-set-loading
+  - assert-dispatch-action
+  - assert-use-effect-called
+  - inspect-request-sequence-ref
+  - assert-use-callback-identity-without-contract
+  - assert-swr-cache-internals
+  - sleep-fixed-time
+  - import-production-http-repository
+  - call-global-factory
+  - duplicate-expired-business-rule-matrix
+  expected_output: expected/promotion-hook-test-record.md
+edge_cases:
+- id: async-load
+  scenario: Hook loads promotion and exposes pending then success.
+  expected_behavior: control-promise-and-assert-public-transition
+- id: retry
+  scenario: First attempt is unavailable and retry succeeds.
+  expected_behavior: assert-semantic-error-retry-command-and-success
+- id: stale
+  scenario: Request B resolves before request A.
+  expected_behavior: assert-latest-accepted-result-remains-after-a-resolves
+- id: optimistic
+  scenario: Accepted optimistic mutation fails.
+  expected_behavior: assert-optimistic-state-then-rollback-and-error
+- id: cleanup
+  scenario: Hook subscribes to an external source.
+  expected_behavior: assert-unsubscribe-and-no-late-update-not-effect-count
+- id: server-state
+  scenario: Hook wraps SWR with feature-semantic data and retry.
+  expected_behavior: assert-feature-api-not-swr-internals
+- id: trivial
+  scenario: Hook only exposes one local boolean toggle for one component.
+  expected_behavior: component-test-may-be-sufficient
+quality_rubric:
+  independent_contract_justification: 5
+  public_state_and_commands: 5
+  async_success_failure: 5
+  retry_reset: 5
+  cancellation_and_races: 5
+  optimistic_behavior: 5
+  cleanup_and_subscriptions: 5
+  dependency_injection: 5
+  server_state_wrapper_scope: 5
+  isolation_and_determinism: 5
+  anti_brittleness_and_regressions: 5
+  boundary_escalation_and_execution: 5

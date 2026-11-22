@@ -1,0 +1,110 @@
+skill: practicing-backend-tdd
+version: 0.1.0
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  multiple_active_cases_allowed: 0
+  invalid_red_allowed: 0
+  speculative_green_allowed: 0
+  refactor_while_red_allowed: 0
+  mock_boundary_proof_allowed: 0
+  unverified_exception_allowed: 0
+  fabricated_test_evidence_allowed: 0
+discovery:
+  positive:
+  - id: positive-domain-cycle
+    prompt: Drive the next Promotion Entity behavior through Reason, Red, Green, Refactor,
+      and Re-evaluate.
+    expected: activate
+  - id: positive-use-case-cycle
+    prompt: Implement this ApplyPromotion Use Case case with strict backend TDD.
+    expected: activate
+  - id: positive-regression
+    prompt: Reproduce this duplicate-application regression first and fix it with
+      TDD.
+    expected: activate
+  negative:
+  - id: negative-design-only
+    prompt: Design the repository port.
+    expected: do-not-activate
+    expected_alternative: designing-domain-repositories
+  - id: negative-full-suite
+    prompt: Create the complete backend testing architecture.
+    expected: do-not-activate
+    expected_alternative: focused-testing-skills
+  - id: negative-doc-only
+    prompt: Correct a typo in README.
+    expected: do-not-activate
+    expected_alternative: validation-first
+procedure:
+- id: promotion-redeem-cycle
+  fixture: fixtures/promotion-redeem-tdd.md
+  required_steps:
+  - identify-current-layer
+  - enumerate-cases
+  - select-one-active-case
+  - define-given-when-then
+  - choose-cheapest-valid-test
+  - write-and-run-red
+  - classify-red-quality
+  - implement-minimum-green
+  - run-focused-and-neighboring-tests
+  - refactor-only-while-green
+  - rerun-tests
+  - re-evaluate-layer-and-next-case
+  - record-evidence
+  prohibited_actions:
+  - activate-multiple-cases
+  - accept-test-setup-failure-as-red
+  - implement-all-pending-cases
+  - add-generic-state-machine
+  - refactor-while-red
+  - mock-promotion-entity
+  - claim-unrun-tests-pass
+  - move-to-http-before-domain-case-is-proven
+  expected_output: expected/promotion-redeem-tdd-record.md
+edge_cases:
+- id: test-already-green
+  scenario: The new test passes before production changes.
+  expected_behavior: inspect-existing-behavior-or-test-strength-not-force-red
+- id: wrong-failure
+  scenario: Red fails because fixture creation throws an unrelated error.
+  expected_behavior: repair-test-setup-before-green
+- id: compile-first
+  scenario: New method does not exist yet.
+  expected_behavior: allow-intended-compile-red-then-obtain-behavioral-evidence
+- id: config-only
+  scenario: A generated schema file is regenerated mechanically.
+  expected_behavior: validation-first-with-diff-and-command
+- id: provider-sandbox-blocked
+  scenario: External adapter sandbox is unavailable.
+  expected_behavior: record-blocked-real-boundary-and-run-truthful-lower-level-evidence
+- id: new-case-during-refactor
+  scenario: Refactor reveals a new rejection behavior.
+  expected_behavior: record-pending-and-start-new-red-later
+context_efficiency:
+- id: domain-unit-cycle
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/reason-and-case-selection.md
+  - references/red-quality.md
+  - references/green-and-refactor-discipline.md
+  - references/re-evaluation-and-layer-progression.md
+  - references/test-levels-and-doubles.md
+  must_not_load:
+  - references/exceptions-blockers-and-flakiness.md
+  - evals/
+quality_rubric:
+  case_selection: 5
+  observable_behavior: 5
+  test_level_selection: 5
+  red_quality: 5
+  green_minimality: 5
+  regression_safety: 5
+  refactor_discipline: 5
+  re_evaluation: 5
+  evidence_quality: 5
+  boundary_correctness: 5
+  honest_blocker_handling: 5
+  context_efficiency: 4

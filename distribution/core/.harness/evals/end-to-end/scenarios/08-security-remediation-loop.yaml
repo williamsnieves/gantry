@@ -1,0 +1,25 @@
+id: security-remediation-loop
+description: Tenant authorization bug is found by Code Review, Security, and QA; fixed
+  in second wave.
+wave_1:
+  backend-code-review: REQUEST_CHANGES
+  security: SECURITY_CHANGES_REQUIRED
+  qa: QA_CHANGES_REQUIRED
+  validator: PASS
+oracle:
+  root_cause: tenant authorization enforcement incomplete
+  wave_2_rerun:
+  - backend-code-review
+  - security
+  - qa
+  - validator
+  - detail-analyst
+  - reviewer
+  wave_2_do_not_rerun:
+  - performance
+  - infrastructure
+  final: PRE_PR_PASS
+critical_assertions:
+- preserve three specialist responsibilities
+- minimal re-review
+- one blocker cannot be averaged away

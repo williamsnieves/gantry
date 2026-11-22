@@ -1,0 +1,89 @@
+agent: backend-code-review
+version: 0.1.0
+required_skill:
+- reviewing-backend-code
+supporting_skills:
+- auditing-code
+- reviewing-adversarially
+- analyzing-details
+passing_policy:
+  implements_fixes_allowed: 0
+  invented_requirements_allowed: 0
+  style_preference_findings_allowed: 0
+  green_validator_means_approve_allowed: 0
+  architecture_review_duplication_allowed: 0
+  missing_evidence_as_pass_allowed: 0
+  unrelated_repository_debt_allowed: 0
+  security_handoff_removes_blocker_allowed: 0
+role_activation:
+  positive:
+  - prompt: Act as Backend Code Review and review this completed backend PR before
+      merge.
+    expected: activate
+  - prompt: Independently review this backend diff for correctness, security, data
+      integrity, compatibility and test evidence.
+    expected: activate
+  negative:
+  - prompt: Run lint, build and tests and tell me if everything passes.
+    expected: route-to-validator
+  - prompt: Review whether this new backend service boundary is the right architecture.
+    expected: route-to-backend-architecture-review
+  - prompt: Implement the missing backend changes.
+    expected: route-to-implementation
+scenarios:
+- id: green-tests-semantic-defect
+  fixture: fixtures/green-tests-semantic-defect.md
+  expected_decision: REQUEST_CHANGES
+  required_behavior:
+  - do-not-equate-green-validation-with-correctness
+  - identify-concrete-semantic-defect
+  - cite-trigger-and-impact
+  - request-changes
+- id: architecture-question
+  fixture: fixtures/architecture-question.md
+  expected_decision: APPROVE_WITH_CONDITIONS
+  required_behavior:
+  - separate-code-defects-from-architecture-question
+  - avoid-duplicating-full-architecture-review
+  - route-architecture-question
+  - preserve-bounded-condition
+- id: missing-required-evidence
+  fixture: fixtures/missing-required-evidence.md
+  expected_decision: BLOCKED_PENDING_EVIDENCE
+  required_behavior:
+  - identify-mandatory-evidence-gap
+  - route-to-validator
+  - avoid-false-approval
+- id: unresolved-business-decision
+  fixture: fixtures/unresolved-business-decision.md
+  expected_decision: BLOCKED_PENDING_DECISION
+  required_behavior:
+  - avoid-inventing-retry-behavior
+  - identify-authoritative-decision-gap
+  - route-to-product-or-architecture-owner
+edge_cases:
+- scenario: A critical cross-tenant authorization bug is found and also routed to
+    Security Agent.
+  expected_behavior: keep-code-review-blocking-finding-and-request-changes
+- scenario: The diff touches old ugly code but does not activate or worsen it.
+  expected_behavior: exclude-unrelated-preexisting-style-debt
+- scenario: Tests pass but they only assert mocks and do not prove persistence semantics.
+  expected_behavior: review-evidence-quality-and-report-material-gap-without-claiming-tests-failed
+- scenario: A new port appears technically valid but may be an unnecessary abstraction.
+  expected_behavior: route-proportionality-decision-to-backend-architecture-review-without-duplicating-review
+- scenario: One validation command was not run because required database service is
+    unavailable.
+  expected_behavior: do-not-mark-pass-and-route-missing-mechanical-evidence-to-validator
+quality_rubric:
+  scope_and_authoritative_basis: 5
+  use_of_primary_skill: 5
+  correctness_and_data_integrity: 5
+  backend_boundary_review: 5
+  security_and_tenancy: 5
+  migration_compatibility_idempotency: 5
+  test_and_validation_evidence: 5
+  finding_evidence_and_calibration: 5
+  role_boundary_discipline: 5
+  decision_accuracy: 5
+  handoff_quality: 5
+  no_write_no_scope_expansion: 5

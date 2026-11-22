@@ -1,0 +1,29 @@
+evaluation_run_version: 0.1.0
+scenario_id: ''
+runtime: portable-simulation
+adapter_version: ''
+input:
+  work_mode: ''
+  scopes: []
+  change_identity: ''
+  accepted_behavior: []
+  known_evidence: []
+actual:
+  risk_triggers: []
+  routing: {}
+  handoffs: []
+  review_waves: []
+  dynamic_triggers: []
+  rereview_sets: []
+  reviewer_decision: ''
+  final_pre_pr_decision: ''
+oracle:
+  risk_triggers: []
+  routing: {}
+  dynamic_triggers: []
+  rereview_sets: []
+  reviewer_decision: ''
+  final_pre_pr_decision: ''
+metrics: {}
+failures: []
+overall: PASS|PASS_WITH_IMPROVEMENTS|FAIL_UNSAFE|FAIL_INCOMPLETE

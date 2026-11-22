@@ -1,0 +1,19 @@
+handoff_protocol_version: 0.1.0
+handoff_id: HO-001
+change_identity:
+  type: commit|diff|openspec-change|working-tree
+  value: ''
+from: ''
+to: ''
+reason: ''
+trigger: ''
+scope: []
+source_findings: []
+authoritative_context: []
+evidence: []
+known_facts: []
+unknowns: []
+requested_action: ''
+expected_output: ''
+blocking_status: BLOCKING|NON_BLOCKING|CONDITIONAL|UNKNOWN_PENDING_RECEIVER
+reentry_condition: ''

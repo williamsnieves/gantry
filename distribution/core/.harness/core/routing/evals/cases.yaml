@@ -1,0 +1,95 @@
+artifact: harness-routing-and-handoffs
+version: 0.1.0
+principles:
+- smallest-complete-agent-set
+- risk-not-size
+- portable-core-runtime-adapters
+- no-invented-gates
+- typed-handoffs
+- dynamic-routing
+- specialist-ownership
+cases:
+- id: tiny-auth-change
+  input: One-line backend authorization predicate change in a multi-tenant endpoint.
+  must_route:
+  - validator
+  - backend-code-review
+  - qa
+  - security
+  - detail-analyst
+  - reviewer
+  must_not_reason: tiny-size-means-low-risk
+- id: large-css-generated
+  input: Large generated CSS artifact update with no behavior/profile/security/performance
+    trigger.
+  must_not_route_mechanically:
+  - security
+  - performance
+  - backend-architecture-review
+  principle: size-is-not-risk
+- id: architecture-only
+  input: Design architecture package, no implementation.
+  must_not_route:
+  - backend-code-review
+  - frontend-code-review
+  - validator
+  must_route_via_skills:
+  - designing-software-system
+  - validating-architecture-design
+- id: frontend-analytics
+  input: Frontend adds analytics SDK and user identifiers.
+  must_route:
+  - frontend-code-review
+  - qa
+  - security
+  security_trigger: privacy-analytics
+- id: schema-rollout
+  input: Backend schema migration with mixed-version deployment.
+  must_route:
+  - backend-code-review
+  - backend-architecture-review
+  - qa
+  - infrastructure
+  - validator
+  - reviewer
+- id: test-only
+  input: Only tests change to add missing race regression evidence.
+  must_route:
+  - qa
+  - validator
+  - reviewer
+  must_not_route_mechanically:
+  - frontend-architecture-review
+  - performance
+  - infrastructure
+- id: dynamic-security-escalation
+  input: Frontend Code Review discovers PII sent to analytics.
+  initial_security: NOT_TRIGGERED
+  dynamic_result: security becomes REQUIRED
+  must_record_trigger_source: true
+- id: runtime-portability
+  input: Same routing request executed under Claude Code and Oh My Pi adapters.
+  must_match:
+  - semantic agent set
+  - reasons
+  - handoff fields
+  may_differ:
+  - execution mechanics
+  - model selection
+  - parallelization
+handoff_quality:
+- receiver-known
+- trigger-explicit
+- scope-bounded
+- source-findings-linked
+- authoritative-context-included
+- evidence-included
+- unknowns-explicit
+- requested-action-specific
+- expected-output-specific
+- reentry-condition-specific
+out_of_scope_for_this_artifact:
+- full-parallelism-policy
+- global-review-ordering
+- global-blocking-policy
+- final-pre-pr-gate

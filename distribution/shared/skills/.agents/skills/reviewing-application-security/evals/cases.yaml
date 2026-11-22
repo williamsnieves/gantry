@@ -1,0 +1,107 @@
+skill: reviewing-application-security
+version: 0.1.0
+standards:
+  owasp_top_10: '2025'
+  cwe_top_25: '2025'
+  asvs_followup: 5.0.0
+passing_policy:
+  scanner_finding_auto_confirmed_allowed: 0
+  cwe_rank_used_as_severity_allowed: 0
+  owasp_category_used_without_concrete_weakness_allowed: 0
+  client_only_authorization_allowed: 0
+  raw_secret_in_browser_allowed: 0
+  fail_open_security_error_allowed: 0
+  root_cause_split_into_duplicate_findings_allowed: 0
+  asvs_conformance_claim_without_verification_allowed: 0
+  algorithmic_dos_ignored_allowed: 0
+  production_destructive_security_test_allowed: 0
+discovery:
+  positive:
+  - id: positive-fullstack
+    prompt: Review this implemented multi-tenant feature for OWASP/CWE security weaknesses
+      and remediation.
+    expected: activate
+  - id: positive-backend
+    prompt: Review this API for authorization, SSRF, injection, unsafe deserialization,
+      and resource exhaustion.
+    expected: activate
+  - id: positive-frontend
+    prompt: Review this frontend implementation for XSS, token exposure, redirects,
+      uploads, and third-party script risks.
+    expected: activate
+  negative:
+  - id: negative-stride
+    prompt: Threat model this architecture before implementation using STRIDE.
+    expected: do-not-activate
+    expected_alternative: threat-modeling-with-stride
+  - id: negative-asvs
+    prompt: Verify our implemented controls against OWASP ASVS.
+    expected: do-not-activate
+    expected_alternative: verifying-security-controls
+procedure:
+- id: multitenant-security-review
+  fixture: fixtures/multitenant-application-security.md
+  required_steps:
+  - define-review-scope-attack-surface-and-evidence
+  - validate-scanner-and-code-findings-manually
+  - identify-plausible-preconditions-attack-path-impact-and-root-cause
+  - map-precise-primary-cwe-and-related-cwes-only-when-supported
+  - map-primary-owasp-top10-2025-risk-category
+  - link-stride-threats-if-a-threat-model-exists
+  - review-authentication-authorization-multitenancy-and-resource-ownership
+  - review-injection-xss-ssrf-files-deserialization-csrf-cors-and-redirects-as-applicable
+  - review-secrets-crypto-supply-chain-integrity-exceptions-logging-and-resource-exhaustion
+  - handoff-computational-resource-risk-to-analyzing-algorithmic-complexity
+  - assign-severity-from-real-exploitability-impact-not-taxonomy-rank
+  - consolidate-duplicate-symptoms-into-root-cause-findings
+  - recommend-root-cause-remediation-and-defense-in-depth-separately
+  - define-verification-boundary-residual-risk-owner-and-asvs-followup
+  - produce-application-security-review-record
+  prohibited_actions:
+  - mark-sast-high-as-confirmed-without-validation
+  - use-cwe-top25-rank-as-finding-severity
+  - map-every-finding-to-many-owasp-categories
+  - trust-hidden-button-for-authorization
+  - treat-cors-as-authentication
+  - expose-server-secret-to-browser-env
+  - use-blacklist-as-primary-injection-fix
+  - log-full-jwt-for-audit
+  - call-planned-control-verified
+  - claim-asvs-conformance
+  expected_output: expected/multitenant-application-security-record.md
+edge_cases:
+- id: authorization
+  scenario: PATCH accepts orgId/subscriptionId from browser, checks admin role, but
+    never checks tenant membership/resource ownership.
+  expected_behavior: confirmed-broken-access-control-with-precise-cwe-639-or-862-based-on-root-cause-and-server-side-ownership-remediation
+- id: xss
+  scenario: dangerouslySetInnerHTML renders user-authored HTML after a proven allowlist
+    sanitizer.
+  expected_behavior: do-not-auto-confirm-xss-inspect-sanitizer-context-bypass-evidence-and-csp-defense-in-depth
+- id: secret
+  scenario: VITE_PAYMENT_WEBHOOK_SECRET is referenced in frontend build.
+  expected_behavior: confirmed-information-disclosure-secret-must-be-server-only
+- id: exception
+  scenario: authorization service failure catches exception and defaults canManage=true.
+  expected_behavior: high-or-critical-fail-open-exception-handling-plus-access-control-root-cause
+- id: regex
+  scenario: public attacker-controlled regex has nested quantifiers and no input/resource
+    limit.
+  expected_behavior: dos-resource-exhaustion-finding-with-cwe-770-if-supported-and-algorithmic-complexity-handoff
+- id: scanner
+  scenario: SAST reports SQL injection but query uses a parameterized API and user
+    input never reaches query syntax.
+  expected_behavior: false-positive-unless-additional-evidence-shows-an-injection-path
+quality_rubric:
+  scope_and_attack_surface: 5
+  evidence_and_exploit_path: 5
+  cwe_precision: 5
+  owasp_2025_classification: 5
+  access_control_auth_multitenancy: 5
+  input_output_injection_files: 5
+  secrets_crypto_supply_chain_integrity: 5
+  exceptions_logging_availability: 5
+  scanner_validation_and_duplicate_consolidation: 5
+  severity_remediation: 5
+  verification_residual_risk_asvs_handoff: 5
+  final_status: 5

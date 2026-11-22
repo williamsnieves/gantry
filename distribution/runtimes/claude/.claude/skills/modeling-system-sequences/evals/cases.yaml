@@ -1,0 +1,117 @@
+skill: modeling-system-sequences
+version: 0.1.0
+passing_policy:
+  invent_participant_allowed: 0
+  invent_endpoint_or_protocol_allowed: 0
+  invent_retry_policy_allowed: 0
+  invent_timeout_allowed: 0
+  invent_authorization_boundary_allowed: 0
+  frontend_visibility_as_authorization_allowed: 0
+  invent_idempotency_semantics_allowed: 0
+  invent_concurrency_winner_allowed: 0
+  architecture_conflict_silently_resolved_allowed: 0
+  sequence_as_process_or_deployment_diagram_allowed: 0
+discovery:
+  positive:
+  - id: positive-provider-sequence
+    prompt: Model the inbound provider interaction as a sequence including the happy
+      path and important failure behavior.
+    expected: activate
+  - id: positive-auth
+    prompt: Show the runtime sequence for a tenant-scoped protected operation, including
+      authorization.
+    expected: activate
+  - id: positive-concurrency
+    prompt: Create a sequence variant exposing a concurrent resolve/reassign race
+      but do not invent the winner.
+    expected: activate
+  negative:
+  - id: negative-process
+    prompt: Create a decision flowchart with approval branches.
+    expected: do-not-activate
+    expected_alternative: modeling-process-flows
+  - id: negative-c4
+    prompt: Show the static system/container/component architecture.
+    expected: do-not-activate
+    expected_alternative: modeling-c4-architecture
+  - id: negative-dfd
+    prompt: Map PII fields crossing trust boundaries.
+    expected: do-not-activate
+    expected_alternative: modeling-data-flows
+procedure:
+- id: support-platform-sequences
+  fixture: fixtures/support-platform-sequence-input.md
+  required_steps:
+  - establish-sequence-scope-and-accepted-c4-adr-participants
+  - select-bounded-runtime-scenarios
+  - model-inbound-email-happy-path-with-semantic-participant-interactions
+  - model-ai-suggestion-happy-path-and-provider-unavailable-manual-fallback
+  - model-tenant-scoped-authorization-at-authoritative-application-boundary
+  - preserve-unknown-provider-protocol-callback-polling-and-runtime-technologies-as-tbd
+  - model-retries-and-timeouts-only-if-authoritative-and-flag-gaps-otherwise
+  - model-concurrency-idempotency-duplicate-or-ordering-semantics-only-where-material-and-supported
+  - keep-storage-interactions-at-architectural-not-schema-level
+  - audit-sequence-order-against-process-and-state-models
+  - audit-participants-against-c4-and-adrs
+  - avoid-process-state-dfd-event-deployment-and-implementation-leakage
+  - trace-to-fr-usecase-process-state-quality-and-architecture
+  - produce-dfd-event-deployment-validation-handoffs
+  - produce-sequence-model-and-readiness
+  prohibited_actions:
+  - invent-http-post-endpoint
+  - invent-webhook
+  - invent-queue-or-broker
+  - invent-three-retries
+  - invent-five-second-timeout
+  - invent-idempotency-key
+  - choose-optimistic-locking
+  - put-kubernetes-pod-in-sequence
+  - create-business-decision-flowchart
+  - invent-separate-ingestion-service
+  expected_output: expected/support-platform-sequence-model.md
+edge_cases:
+- id: happy-path
+  scenario: Email Provider supplies inbound message; single Support Application accepts
+    it and persists it.
+  expected_behavior: model-provider-to-application-to-store-and-observable-conversation-availability-without-inventing-endpoint-or-protocol
+- id: failure
+  scenario: AI Provider is unavailable; manual reply must remain available.
+  expected_behavior: model-unavailable-alternative-and-manual-fallback-without-retry-timeout-or-circuit-breaker-invention
+- id: authorization
+  scenario: Agent requests tenant-scoped conversation data; accepted L3 model includes
+    Tenant Access component.
+  expected_behavior: show-authoritative-tenant-authorization-before-protected-data-return-and-not-frontend-only-gating
+- id: retry-timeout
+  scenario: Provider may fail, but no retry or timeout policy exists.
+  expected_behavior: flag-retry-and-timeout-gaps-if-material-rather-than-inventing-values
+- id: concurrency-idempotency
+  scenario: Resolve and reassign may race; duplicate provider delivery semantics are
+    undefined.
+  expected_behavior: surface-concurrency-and-idempotency-policy-gaps-without-locking-deduplication-or-winner
+context_efficiency:
+- id: standard-sequence-model
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/sequence-purpose-scope-participants-and-abstraction.md
+  - references/happy-path-alternatives-failures-and-degraded-mode.md
+  - references/retries-timeouts-authorization-and-tenant-scope.md
+  - references/concurrency-idempotency-duplicates-and-ordering.md
+  - references/traceability-alignment-and-sequence-audit.md
+  must_not_load_unless_needed:
+  - references/storage-provider-callback-audit-and-interaction-order.md
+  - references/sequence-vs-process-state-c4-dfd-event-and-deployment.md
+  - evals/
+quality_rubric:
+  scope_and_participants: 5
+  happy_path: 5
+  alternatives_and_failures: 5
+  retries_and_timeouts: 5
+  authorization_and_tenant_scope: 5
+  concurrency_idempotency_ordering: 5
+  storage_provider_and_interaction_order: 5
+  diagram_discipline: 5
+  architecture_process_state_alignment: 5
+  traceability: 5
+  no_model_or_implementation_leakage: 5
+  handoffs_and_readiness: 5

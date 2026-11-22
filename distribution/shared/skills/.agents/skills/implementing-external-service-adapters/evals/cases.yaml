@@ -1,0 +1,110 @@
+skill: implementing-external-service-adapters
+version: 0.1.0
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  provider_type_leakage_allowed: 0
+  raw_error_leakage_allowed: 0
+  unsafe_retry_allowed: 0
+  idempotency_key_regeneration_allowed: 0
+  credential_leakage_allowed: 0
+  mock_only_proof_allowed: 0
+  unapproved_fallback_allowed: 0
+discovery:
+  positive:
+  - id: positive-payment-adapter
+    prompt: Implement the Stripe adapter behind the accepted PaymentGateway port with
+      idempotency and sandbox tests.
+    expected: activate
+  - id: positive-notification-adapter
+    prompt: Implement the email provider adapter and map queued versus delivered semantics.
+    expected: activate
+  - id: positive-campaign-adapter
+    prompt: Wrap this campaign SDK behind the existing CampaignProvider port.
+    expected: activate
+  negative:
+  - id: negative-port-design
+    prompt: Design a provider-neutral PaymentGateway interface.
+    expected: do-not-activate
+    expected_alternative: designing-external-service-ports
+  - id: negative-repository
+    prompt: Implement a PostgreSQL repository adapter.
+    expected: do-not-activate
+    expected_alternative: implementing-repository-adapters
+  - id: negative-controller
+    prompt: Implement the webhook controller.
+    expected: do-not-activate
+    expected_alternative: implementing-http-controllers
+procedure:
+- id: campaign-sdk-adapter
+  fixture: fixtures/campaign-sdk-adapter.md
+  required_steps:
+  - confirm-readiness
+  - map-port-to-provider-contract
+  - implement-request-mapping
+  - implement-response-mapping
+  - translate-failures
+  - implement-timeout-retry-and-idempotency
+  - handle-ambiguous-outcomes
+  - secure-credentials-and-tenant-selection
+  - implement-observability-and-lifecycle
+  - add-mapping-protocol-and-sandbox-tests
+  - classify-blocked-evidence
+  - audit-boundaries
+  prohibited_actions:
+  - return-sdk-response
+  - expose-http-status
+  - pass-api-key-from-use-case
+  - retry-rejection
+  - generate-new-idempotency-key-per-attempt
+  - claim-timeout-is-definite-failure
+  - introduce-fallback
+  - mock-only-validation
+  expected_output: expected/campaign-sdk-adapter-report.md
+edge_cases:
+- id: duplicate
+  scenario: Provider returns duplicate for the same idempotency key.
+  expected_behavior: map-to-accepted-idempotent-success
+- id: timeout-after-acceptance
+  scenario: Connection times out after provider may have accepted the command.
+  expected_behavior: ambiguous-result-with-safe-retry-or-reconciliation
+- id: rate-limit
+  scenario: Provider returns rate limit with retry-after.
+  expected_behavior: bounded-policy-and-semantic-rate-limited
+- id: queued-email
+  scenario: Provider response only confirms queueing.
+  expected_behavior: map-to-queued-not-delivered
+- id: tenant-credential
+  scenario: Tenant maps to different provider account.
+  expected_behavior: resolve-in-infrastructure-without-credential-leakage
+- id: sandbox-unavailable
+  scenario: Provider sandbox is unavailable during CI.
+  expected_behavior: classify-blocked-and-preserve-other-test-evidence
+context_efficiency:
+- id: simple-clock-adapter
+  always_loaded:
+  - SKILL.md
+  conditionally_loaded:
+  - references/adapter-readiness-and-contract-mapping.md
+  - references/provider-request-response-mapping.md
+  - references/security-configuration-and-lifecycle.md
+  - references/adapter-testing-strategy.md
+  must_not_load:
+  - references/failure-timeout-retry-and-idempotency.md
+  - references/async-webhooks-and-reconciliation.md
+  - references/refactoring-provider-coupling.md
+  - evals/
+quality_rubric:
+  contract_fidelity: 5
+  request_mapping: 5
+  response_mapping: 5
+  failure_translation: 5
+  timeout_retry_idempotency: 5
+  ambiguous_outcome_handling: 5
+  security_configuration: 5
+  client_lifecycle: 5
+  observability: 5
+  realistic_testing: 5
+  boundary_purity: 5
+  non_speculation: 5
+  context_efficiency: 4

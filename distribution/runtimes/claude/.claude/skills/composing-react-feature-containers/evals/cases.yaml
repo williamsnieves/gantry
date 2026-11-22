@@ -1,0 +1,105 @@
+skill: composing-react-feature-containers
+version: 0.1.0
+passing_policy:
+  container_required_for_every_component_allowed: 0
+  concrete_adapter_instantiation_in_leaf_container_allowed: 0
+  business_rule_in_container_allowed: 0
+  provider_mapping_in_route_container_allowed: 0
+  server_state_copied_to_container_local_state_allowed: 0
+  server_only_dependency_in_client_component_allowed: 0
+  nonserializable_server_to_client_prop_allowed: 0
+  loader_and_client_duplicate_initial_fetch_allowed: 0
+  global_mutable_service_locator_in_tests_allowed: 0
+  generic_container_framework_allowed: 0
+discovery:
+  positive:
+  - id: positive-route
+    prompt: Compose this React route container so it obtains Use Cases, maps route
+      params, invokes the feature hook, and passes semantic props to the view.
+    expected: activate
+  - id: positive-next
+    prompt: Design the Next.js server/client split for this feature container without
+      leaking server-only dependencies.
+    expected: activate
+  - id: positive-modal
+    prompt: Decide whether this async modal needs a feature container or can remain
+      presentational.
+    expected: activate
+  negative:
+  - id: negative-deps
+    prompt: Construct the frontend Factory and dependency lifecycle for all Use Cases
+      and adapters.
+    expected: do-not-activate
+    expected_alternative: composing-frontend-dependencies
+  - id: negative-hook
+    prompt: Design the internal state and API of the custom React hook.
+    expected: do-not-activate
+    expected_alternative: designing-react-custom-hooks
+  - id: negative-server-state
+    prompt: Design SWR cache keys and invalidation.
+    expected: do-not-activate
+    expected_alternative: integrating-frontend-server-state
+procedure:
+- id: subscription-feature-container
+  fixture: fixtures/subscription-feature-container.md
+  required_steps:
+  - confirm-architecture-route-composition-hook-view-and-runtime
+  - decide-whether-container-is-justified-or-route-is-enough
+  - obtain-semantic-dependencies-from-approved-composition-boundary
+  - map-route-and-search-inputs-to-semantic-feature-inputs
+  - invoke-approved-hook-server-state-behavior-without-duplicate-state
+  - map-feature-state-and-commands-to-view-props
+  - decide-container-view-colocation-versus-separation
+  - keep-navigation-permission-loading-and-error-boundaries-proportionate
+  - evaluate-modal-feature-container
+  - reject-container-for-tiny-props-only-component
+  - define-nextjs-server-client-split-and-serialization
+  - define-react-router-loader-action-integration
+  - define-small-isolated-test-container-with-overrides
+  - audit-service-location-concrete-adapter-and-ceremonial-wrapper-patterns
+  - produce-container-composition-record
+  prohibited_actions:
+  - instantiate-http-repository-in-leaf-container
+  - put-promotion-business-rule-in-route
+  - pass-swrresponse-to-presentational-view
+  - copy-hook-state-with-useeffect
+  - create-badge-container
+  - pass-usecase-instance-from-server-to-client-props
+  - import-server-only-factory-in-client-component
+  - fetch-in-router-loader-and-again-immediately-in-client
+  - mutate-global-services-registry-in-tests
+  - create-withcontainer-framework
+  expected_output: expected/subscription-feature-container-record.md
+edge_cases:
+- id: route-container
+  scenario: Route needs subscriptionId, organizationId, Use Cases, server-state hook,
+    and navigation.
+  expected_behavior: route-or-feature-container-justified-with-semantic-input-and-dependency-binding
+- id: modal
+  scenario: Delete modal invokes a Use Case and has pending/error/retry behavior.
+  expected_behavior: modal-container-may-be-justified-view-remains-presentational
+- id: tiny
+  scenario: Badge receives label and variant props only.
+  expected_behavior: no-container-required
+- id: nextjs
+  scenario: Server page owns server-safe load; client child owns interactive mutation.
+  expected_behavior: explicit-serializable-server-client-split-with-no-server-dependency-leak
+- id: react-router
+  scenario: Loader parses route ID and calls LoadSubscription Use Case.
+  expected_behavior: valid-routing-adapter-no-provider-mapping-or-business-logic
+- id: test-container
+  scenario: Feature test needs router, isolated SWR cache, and fake Use Case.
+  expected_behavior: small-overrideable-test-container-no-global-factory-mutation
+quality_rubric:
+  container_justification: 5
+  composition_root_and_dependencies: 5
+  route_framework_input_mapping: 5
+  hook_and_server_state_binding: 5
+  view_contract_and_colocation: 5
+  navigation_permissions_errors_loading: 5
+  modal_and_tiny_component_proportionality: 5
+  nextjs_server_client_boundary: 5
+  react_router_loader_action: 5
+  test_container_isolation: 5
+  service_location_and_ceremony_restraint: 5
+  final_decision: 5

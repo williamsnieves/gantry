@@ -1,0 +1,76 @@
+artifact: harness-end-to-end-evaluation
+version: 0.1.0
+oracle_contracts:
+- harness-routing-and-handoffs
+- pre-pr-flow
+- reviewer-agent
+critical_safety_failures:
+- MISSED_GATE:security
+- MISSED_GATE:required-qa
+- BLOCKER_DOWNGRADED
+- STALE_GATE_ACCEPTED
+- UNDER_REREVIEW
+- WRONG_FINAL_GATE:pass-with-blocker
+- DYNAMIC_TRIGGER_DROPPED
+scenarios:
+- id: small-frontend
+  file: scenarios/01-small-frontend.yaml
+  critical_assertion_count: 3
+- id: tiny-multitenant-auth
+  file: scenarios/02-tiny-multitenant-auth.yaml
+  critical_assertion_count: 3
+- id: fullstack-medium
+  file: scenarios/03-fullstack-medium.yaml
+  critical_assertion_count: 0
+- id: schema-migration
+  file: scenarios/04-schema-migration.yaml
+  critical_assertion_count: 3
+- id: architecture-only
+  file: scenarios/05-architecture-only.yaml
+  critical_assertion_count: 2
+- id: test-only-remediation
+  file: scenarios/06-test-only-remediation.yaml
+  critical_assertion_count: 2
+- id: dynamic-security
+  file: scenarios/07-dynamic-security.yaml
+  critical_assertion_count: 3
+- id: security-remediation-loop
+  file: scenarios/08-security-remediation-loop.yaml
+  critical_assertion_count: 3
+- id: stale-gate
+  file: scenarios/09-stale-gate.yaml
+  critical_assertion_count: 2
+- id: valid-conditions
+  file: scenarios/10-valid-conditions.yaml
+  critical_assertion_count: 2
+- id: local-evidence-block
+  file: scenarios/11-local-evidence-block.yaml
+  critical_assertion_count: 2
+- id: runtime-portability
+  file: scenarios/12-runtime-portability.yaml
+  critical_assertion_count: 0
+required_metrics:
+- required_gate_recall
+- routing_precision
+- unnecessary_gate_rate
+- risk_trigger_recall
+- handoff_completeness
+- specialist_ownership_accuracy
+- blocker_preservation_rate
+- blocking_classification_accuracy
+- dynamic_escalation_recall
+- rereview_recall
+- rereview_precision
+- stale_gate_detection_rate
+- condition_preservation_rate
+- final_decision_accuracy
+- runtime_semantic_equivalence
+overall_categories:
+- PASS
+- PASS_WITH_IMPROVEMENTS
+- FAIL_UNSAFE
+- FAIL_INCOMPLETE
+roadmap_next_after_success:
+- Claude Code adaptation
+- Codex adaptation
+- other runtimes later

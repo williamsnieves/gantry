@@ -1,0 +1,18 @@
+change: Add regression coverage for previously fixed stale-response race; production
+  code unchanged.
+work_mode: REMEDIATION
+scopes:
+- FRONTEND
+- TEST_ONLY
+risk_triggers:
+- BEHAVIORAL
+routing:
+  validator: REQUIRED
+  frontend-code-review: NOT_TRIGGERED
+  frontend-architecture-review: NOT_TRIGGERED
+  qa: REQUIRED
+  performance: NOT_TRIGGERED
+  security: NOT_TRIGGERED
+  infrastructure: NOT_APPLICABLE
+  detail-analyst: CONDITIONAL
+  reviewer: REQUIRED

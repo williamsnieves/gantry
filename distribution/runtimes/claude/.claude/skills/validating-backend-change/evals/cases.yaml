@@ -1,0 +1,101 @@
+skill: validating-backend-change
+version: 0.1.0
+composition:
+- validating-changes
+passing_policy:
+  false_negatives_allowed: 0
+  false_positives_allowed: 0
+  invented_commands_allowed: 0
+  blocked_check_reported_as_pass_allowed: 0
+  suite_pass_assumed_acceptance_coverage_allowed: 0
+  mock_only_integration_evidence_allowed: 0
+  direct_controller_call_as_http_e2e_allowed: 0
+  flaky_retry_normalization_allowed: 0
+  stale_rerun_evidence_allowed: 0
+discovery:
+  positive:
+  - id: positive-pr-validation
+    prompt: Validate this backend PR and run the correct matrix for the layers it
+      changed.
+    expected: activate
+  - id: positive-release
+    prompt: Produce merge and release evidence for this backend vertical slice.
+    expected: activate
+  - id: positive-blockers
+    prompt: Separate failed, blocked, skipped, and unavailable backend checks.
+    expected: activate
+  negative:
+  - id: negative-review
+    prompt: Review the backend PR for bugs and design issues.
+    expected: do-not-activate
+    expected_alternative: reviewing-backend-code
+  - id: negative-architecture-only
+    prompt: Validate backend import direction and boundaries.
+    expected: do-not-activate
+    expected_alternative: validating-backend-architecture
+  - id: negative-implementation
+    prompt: Fix the failing backend tests.
+    expected: do-not-activate
+    expected_alternative: focused implementation/testing skill
+procedure:
+- id: promotion-change-validation
+  fixture: fixtures/promotion-change-validation.md
+  required_steps:
+  - read-spec-diff-rules-and-native-commands
+  - classify-changed-backend-layers
+  - map-acceptance-to-cheapest-reliable-tests
+  - build-proportional-validation-matrix
+  - run-static-type-and-build-checks
+  - run-domain-and-use-case-tests
+  - run-real-repository-and-migration-evidence
+  - run-provider-evidence-at-actual-level
+  - run-real-http-e2e
+  - run-architecture-validation
+  - classify-failures-blockers-skips-and-unavailable
+  - inspect-focused-skipped-and-flaky-tests
+  - record-current-rerun-evidence
+  - make-strict-validation-and-merge-decision
+  prohibited_actions:
+  - invent-command
+  - call-prisma-mock-integration
+  - call-controller-method-e2e
+  - call-local-mock-sandbox
+  - mark-missing-secret-pass
+  - claim-acceptance-covered-without-assertion
+  - ignore-only-or-skip
+  - retry-flaky-until-green
+  - use-old-green-run-after-code-change
+  - perform-code-review
+  expected_output: expected/promotion-change-validation-report.md
+edge_cases:
+- id: migration-change
+  scenario: Composite unique migration changed but only unit tests ran.
+  expected_behavior: not-ready-require-real-migration-and-concurrency-evidence
+- id: sandbox-secret-missing
+  scenario: Provider sandbox smoke is mandatory but CI secret is absent.
+  expected_behavior: blocked-credentials-not-passed
+- id: controller-direct
+  scenario: HTTP test invokes controller.execute directly.
+  expected_behavior: inconclusive-for-real-http-e2e
+- id: preexisting-lint
+  scenario: Lint failure reproduces unchanged on baseline.
+  expected_behavior: preexisting-separate-no-silent-scope-expansion
+- id: acceptance-gap
+  scenario: All suites pass but no assertion covers idempotent replay.
+  expected_behavior: not-covered-and-not-unconditional-validation
+- id: flaky-green
+  scenario: Test fails twice and passes on third retry.
+  expected_behavior: flaky-test-defect-not-passed
+quality_rubric:
+  changed_layer_accuracy: 5
+  native_command_discovery: 5
+  matrix_proportionality: 5
+  acceptance_traceability: 5
+  domain_application_evidence: 5
+  database_migration_evidence: 5
+  provider_evidence_honesty: 5
+  http_and_architecture_evidence: 5
+  status_and_failure_classification: 5
+  rerun_and_evidence_freshness: 5
+  merge_release_decision: 5
+  scope_and_non_duplication: 5

@@ -1,0 +1,105 @@
+skill: verifying-security-controls
+version: 0.1.0
+default_baseline:
+  name: OWASP ASVS
+  version: 5.0.0
+  exact_requirement_source_required: true
+passing_policy:
+  invent_asvs_ids_allowed: 0
+  planned_control_marked_pass_allowed: 0
+  not_verified_treated_as_pass_allowed: 0
+  risk_acceptance_changes_fail_to_pass_allowed: 0
+  na_without_rationale_allowed: 0
+  client_only_authorization_evidence_allowed: 0
+  application_wide_conformance_from_feature_scope_allowed: 0
+  provider_marketing_claim_as_only_evidence_allowed: 0
+  verification_percentage_called_percent_secure_allowed: 0
+  staging_config_assumed_equal_production_allowed: 0
+discovery:
+  positive:
+  - id: positive-asvs
+    prompt: Verify these implemented security controls against our selected OWASP
+      ASVS 5.0.0 requirements and produce evidence/status per control.
+    expected: activate
+  - id: positive-remediation
+    prompt: Verify that the security findings we fixed now have sufficient implementation
+      and negative-test evidence.
+    expected: activate
+  - id: positive-gate
+    prompt: Create a security control verification gate for this full-stack feature
+      with PASS/FAIL/N/A/NOT_VERIFIED evidence.
+    expected: activate
+  negative:
+  - id: negative-threat
+    prompt: Threat model this new design using STRIDE.
+    expected: do-not-activate
+    expected_alternative: threat-modeling-with-stride
+  - id: negative-review
+    prompt: Find OWASP/CWE vulnerabilities in this code.
+    expected: do-not-activate
+    expected_alternative: reviewing-application-security
+procedure:
+- id: subscription-security-controls
+  fixture: fixtures/subscription-security-controls.md
+  required_steps:
+  - load-exact-approved-control-baseline-version-and-requirement-source
+  - define-feature-scope-profile-tailoring-and-claim-boundary
+  - decide-applicability-before-verification
+  - link-stride-threats-and-security-findings-to-controls
+  - inspect-implementation-evidence
+  - collect-negative-positive-runtime-config-and-provider-evidence-as-appropriate
+  - assign-pass-fail-not-applicable-or-not-verified
+  - verify-authentication-authorization-multitenancy-validation-secrets-webhooks-files-logging-and-resource-controls-as-applicable
+  - separate-application-infrastructure-and-third-party-owned-evidence
+  - record-compensating-controls-and-risk-acceptance-without-changing-verification-status
+  - record-evidence-quality-freshness-environment-and-version
+  - define-remediation-and-regression-verification-for-failed-controls
+  - compute-verification-coverage-without-calling-it-percent-secure
+  - prevent-unsupported-asvs-conformance-claims
+  - produce-security-control-verification-record
+  prohibited_actions:
+  - invent-control-v5-3-2-from-memory
+  - pass-backlog-item
+  - pass-authorization-from-hidden-button
+  - mark-unknown-production-cors-pass-from-local-code
+  - mark-third-party-control-pass-from-marketing-page
+  - change-fail-to-pass-because-risk-accepted
+  - mark-file-controls-na-because-tests-are-hard
+  - call-80-percent-controls-80-percent-secure
+  - claim-entire-application-asvs-compliant-from-one-feature
+  - omit-evidence-date-environment
+  expected_output: expected/subscription-security-controls-record.md
+edge_cases:
+- id: planned
+  scenario: Webhook replay protection is in backlog but not implemented.
+  expected_behavior: applicable-control-is-fail-or-not-verified-based-on-known-state-never-pass
+- id: authorization
+  scenario: Code has server-side authorization and positive test but no wrong-tenant
+    negative test.
+  expected_behavior: not-verified-or-evidence-gap-for-tenant-isolation-until-negative-evidence-exists
+- id: risk-acceptance
+  scenario: Applicable control fails but security owner accepts risk for 30 days.
+  expected_behavior: verification-remains-fail-risk-treatment-recorded-separately
+- id: third-party
+  scenario: Provider states in marketing material that all data is encrypted.
+  expected_behavior: not-verified-until-approved-provider-contract-config-attestation-or-equivalent-evidence-exists
+- id: scope
+  scenario: Only subscription feature controls were assessed.
+  expected_behavior: claim-limited-to-feature-no-application-wide-asvs-conformance
+- id: baseline
+  scenario: Reviewer remembers an ASVS requirement but exact approved source/ID cannot
+    be loaded.
+  expected_behavior: control-baseline-source-required-do-not-invent-id-or-exact-wording
+quality_rubric:
+  baseline_scope_profile: 5
+  applicability: 5
+  evidence_quality: 5
+  status_precision: 5
+  threat_finding_traceability: 5
+  auth_authz_validation_controls: 5
+  secrets_crypto_files_webhooks_logging_resources: 5
+  infra_third_party_evidence: 5
+  compensating_risk_residual: 5
+  freshness_and_regression: 5
+  claim_boundary_and_metrics: 5
+  final_status: 5

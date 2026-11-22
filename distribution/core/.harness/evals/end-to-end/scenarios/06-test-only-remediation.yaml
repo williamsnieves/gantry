@@ -1,0 +1,22 @@
+id: test-only-remediation
+description: Production code unchanged; add regression test reproducing prior stale-response
+  race.
+input:
+  work_mode: REMEDIATION
+  scopes:
+  - FRONTEND
+  - TEST_ONLY
+  risk_triggers:
+  - BEHAVIORAL
+oracle:
+  routing:
+    qa: REQUIRED
+    validator: REQUIRED
+    reviewer: REQUIRED
+    frontend-code-review: NOT_TRIGGERED
+    frontend-architecture-review: NOT_TRIGGERED
+    performance: NOT_TRIGGERED
+    infrastructure: NOT_APPLICABLE
+critical_assertions:
+- must not rerun architecture by default
+- QA must verify original race mechanism

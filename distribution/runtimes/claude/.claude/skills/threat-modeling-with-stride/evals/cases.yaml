@@ -1,0 +1,97 @@
+skill: threat-modeling-with-stride
+version: 0.1.0
+passing_policy:
+  force_all_stride_categories_on_every_element_allowed: 0
+  threat_without_plausible_attack_path_allowed: 0
+  client_only_authorization_as_mitigation_allowed: 0
+  planned_control_marked_verified_allowed: 0
+  multi_tenant_resource_ownership_omitted_allowed: 0
+  third_party_trust_boundary_omitted_allowed: 0
+  algorithmic_dos_ignored_allowed: 0
+  duplicate_findings_for_same_root_cause_allowed: 0
+  mitigation_without_owner_or_verification_allowed: 0
+  residual_risk_omitted_allowed: 0
+discovery:
+  positive:
+    - id: positive-api
+      prompt: Threat model this new multi-tenant API and frontend flow using STRIDE before implementation.
+      expected: activate
+    - id: positive-webhook
+      prompt: Use STRIDE to analyze this provider webhook, queue, and backend processing architecture.
+      expected: activate
+    - id: positive-infra
+      prompt: Threat model the CI/CD and cloud IAM boundaries for this deployment flow.
+      expected: activate
+  negative:
+    - id: negative-code-review
+      prompt: Review this implemented React code for XSS, unsafe redirects, and token storage.
+      expected: do-not-activate
+      expected_alternative: reviewing-frontend-security / reviewing-application-security
+    - id: negative-asvs
+      prompt: Verify whether these implemented controls satisfy our ASVS requirements.
+      expected: do-not-activate
+      expected_alternative: verifying-security-controls
+    - id: negative-cwe
+      prompt: Classify this concrete code vulnerability by CWE.
+      expected: do-not-activate
+      expected_alternative: reviewing-application-security
+procedure:
+  - id: multitenant-subscription-flow
+    fixture: fixtures/multitenant-subscription-threat-model.md
+    required_steps:
+      - define-scope-assets-actors-entry-points-and-privileges
+      - map-data-flows-and-trust-boundaries
+      - record-security-assumptions
+      - apply-stride-to-plausible-flows-not-mechanically
+      - analyze-authentication-authorization-resource-ownership-and-multitenancy
+      - analyze-third-party-webhook-file-browser-and-infrastructure-boundaries
+      - analyze-dos-resource-limits-and-algorithmic-growth
+      - write-specific-attack-path-threat-statements
+      - distinguish-existing-planned-and-verified-controls
+      - derive-testable-mitigations-and-security-requirements
+      - assign-severity-owner-verification-and-residual-risk
+      - audit-overthreating-underthreating-and-duplicate-root-causes
+      - produce-stride-threat-model-record
+    prohibited_actions:
+      - list-stride-six-times-without-data-flow-analysis
+      - trust-org-id-from-browser
+      - treat-hidden-admin-button-as-authorization
+      - mark-planned-control-as-verified
+      - ignore-provider-webhook-signature-and-replay
+      - ignore-cross-tenant-cache-risk
+      - ignore-unbounded-upload-dos
+      - invent-cwe-ids-before-concrete-weakness-review
+      - omit-residual-risk
+    expected_output: expected/multitenant-subscription-threat-model-record.md
+edge_cases:
+  - id: tenant-eop
+    scenario: Authenticated tenant admin can change orgId and backend checks role but not ownership.
+    expected_behavior: tampering-plus-elevation-threat-with-server-side-resource-ownership-mitigation
+  - id: webhook
+    scenario: Payment webhook accepts unsigned JSON and has no replay/idempotency control.
+    expected_behavior: spoofing-tampering-replay-dos-analysis-with-signature-and-replay-controls
+  - id: repudiation
+    scenario: Admin changes roles and support impersonates users without a security audit trail.
+    expected_behavior: repudiation-threat-with-audit-requirement-without-secret-logging
+  - id: disclosure
+    scenario: Frontend receives provider webhook secret in a build-time environment variable.
+    expected_behavior: information-disclosure-threat-and-server-only-secret-handling
+  - id: dos
+    scenario: Public endpoint accepts unbounded attacker-controlled regex.
+    expected_behavior: dos-threat-plus-algorithmic-complexity-handoff
+  - id: cicd
+    scenario: Fork PR workflows can access long-lived production deploy credentials.
+    expected_behavior: ci-trust-secrets-elevation-analysis-with-least-privilege-isolated-deploy-identity
+quality_rubric:
+  scope_assets_actors: 5
+  entry_points_trust_boundaries_data_flows: 5
+  stride_threat_discovery: 5
+  authentication_authorization_multitenancy: 5
+  third_party_webhook_file_browser: 5
+  infrastructure_iam_cicd_secrets: 5
+  dos_and_algorithmic_handoff: 5
+  attack_path_specificity: 5
+  mitigation_quality_and_verification: 5
+  severity_ownership_residual_risk: 5
+  over_under_threating_restraint: 5
+  final_status: 5

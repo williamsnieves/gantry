@@ -1,0 +1,108 @@
+skill: migrating-to-frontend-vertical-slices
+version: 0.1.0
+passing_policy:
+  big_bang_rewrite_allowed: 0
+  move_files_without_behavior_protection_allowed: 0
+  move_all_components_horizontally_allowed: 0
+  shared_as_default_destination_allowed: 0
+  shared_imports_feature_allowed: 0
+  cross_feature_internal_imports_left_as_target_state_allowed: 0
+  service_to_repository_rename_without_boundary_change_allowed: 0
+  cycle_fixed_by_moving_everything_to_shared_allowed: 0
+  package_extraction_before_public_api_stable_allowed: 0
+  ceremonial_empty_layers_allowed: 0
+discovery:
+  positive:
+  - id: positive-flat
+    prompt: Migrate this React codebase from global components/hooks/services folders
+      toward feature vertical slices incrementally.
+    expected: activate
+  - id: positive-cycle
+    prompt: We have cross-feature imports and circular dependencies while moving subscriptions
+      and billing into business slices.
+    expected: activate
+  - id: positive-package
+    prompt: Decide whether this mature frontend feature should be extracted into a
+      monorepo package after vertical-slice migration.
+    expected: activate
+  negative:
+  - id: negative-new-feature
+    prompt: Plan vertical slices for a new frontend feature.
+    expected: do-not-activate
+    expected_alternative: planning-frontend-vertical-slices
+  - id: negative-refactor
+    prompt: Refactor this oversized React component and god hook.
+    expected: do-not-activate
+    expected_alternative: refactoring-react-features
+  - id: negative-review
+    prompt: Review whether this completed frontend PR respects our architecture.
+    expected: do-not-activate
+    expected_alternative: reviewing-frontend-architecture
+procedure:
+- id: subscriptions-migration
+  fixture: fixtures/legacy-frontend-migration.md
+  required_steps:
+  - confirm-selected-architecture-profile-and-repository-conventions
+  - map-current-technical-folders-capabilities-imports-contracts-and-tests
+  - select-one-cohesive-capability-migration-seam
+  - protect-user-visible-behavior-with-existing-or-characterization-evidence
+  - define-lightweight-target-slice-and-narrow-public-surface
+  - classify-global-components-hooks-services-utils-types-by-semantic-ownership
+  - redirect-cross-feature-consumers-to-public-contracts-or-composition-boundaries
+  - resolve-circular-dependencies-at-root-not-through-shared-dumping
+  - use-temporary-compatibility-seams-with-explicit-exit-conditions
+  - move-state-server-state-styles-and-tests-with-ownership-as-appropriate
+  - require-new-code-to-follow-target-architecture-during-migration
+  - assess-monorepo-package-readiness-only-after-boundary-stability
+  - validate-lint-typecheck-tests-build-and-architecture-after-each-step
+  - record-preexisting-debt-new-debt-and-temporary-deviations
+  - produce-frontend-vertical-slice-migration-record
+  prohibited_actions:
+  - move-all-components-first
+  - rename-services-to-repositories
+  - move-cycle-modules-to-shared
+  - export-feature-src-star
+  - create-empty-domain-application-infrastructure-folders
+  - extract-package-because-folder-is-large
+  - leave-permanent-old-path-reexports-without-exit
+  - let-new-feature-code-enter-global-services-folder
+  - combine-architecture-migration-with-unrelated-ui-redesign
+  - skip-architecture-validation
+  expected_output: expected/legacy-frontend-migration-record.md
+edge_cases:
+- id: global-component
+  scenario: Global components/SubscriptionUpgradeCard is only used by subscription
+    routes and contains subscription permission logic.
+  expected_behavior: move-to-subscriptions-feature-not-shared-ui
+- id: shared-hook
+  scenario: shared/hooks/useSubscriptionEligibility is used by two subscription screens
+    but no other capability.
+  expected_behavior: feature-owned-internal-hook-not-shared
+- id: cycle
+  scenario: subscriptions imports billing/internal/useInvoice and billing imports
+    subscriptions/internal/useSubscription.
+  expected_behavior: resolve-through-public-boundaries-composition-or-neutral-contract-not-shared-dumping
+- id: service
+  scenario: subscriptionService performs fetch, mapping, business validation, toast,
+    and navigation.
+  expected_behavior: classify-and-decompose-mixed-responsibilities-incrementally-not-mechanical-rename
+- id: package
+  scenario: Feature folder is 200 files but is tightly coupled to app router, env
+    config, and other feature internals.
+  expected_behavior: package-extraction-not-ready-despite-folder-size
+- id: simple-profile
+  scenario: Selected Profile A feature has little business logic.
+  expected_behavior: use-light-feature-components-hooks-api-tests-structure-not-ceremonial-domain-application-layers
+quality_rubric:
+  current_state_and_capability_mapping: 5
+  behavior_preservation: 5
+  target_slice_profile_fit: 5
+  public_surface_and_cross_feature_contracts: 5
+  global_components_services_hooks_ownership: 5
+  shared_boundary_quality: 5
+  cycle_resolution: 5
+  compatibility_and_incrementality: 5
+  package_extraction_readiness: 5
+  validation_and_debt: 5
+  no_big_bang_or_ceremonial_architecture: 5
+  final_status: 5

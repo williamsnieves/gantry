@@ -1,0 +1,24 @@
+id: tiny-multitenant-auth
+description: One-line backend tenant predicate change in a privileged mutation.
+input:
+  work_mode: IMPLEMENTATION
+  scopes:
+  - BACKEND
+  - API_CONTRACT
+  risk_triggers:
+  - BEHAVIORAL
+  - SECURITY
+  - DATA_INTEGRITY
+oracle:
+  routing:
+    validator: REQUIRED
+    backend-code-review: REQUIRED
+    backend-architecture-review: CONDITIONAL
+    qa: REQUIRED
+    security: REQUIRED
+    detail-analyst: REQUIRED
+    reviewer: REQUIRED
+critical_assertions:
+- size must not suppress Security
+- cross-tenant negative evidence belongs to QA/Security
+- frontend gates remain not applicable

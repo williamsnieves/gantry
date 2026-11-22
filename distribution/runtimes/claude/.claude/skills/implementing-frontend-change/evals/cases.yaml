@@ -1,0 +1,106 @@
+skill: implementing-frontend-change
+version: 0.1.0
+passing_policy:
+  embed_all_specialist_rules_allowed: 0
+  invoke_every_skill_mechanically_allowed: 0
+  implement_before_profile_when_profile_material_allowed: 0
+  parallelize_against_unresolved_contract_allowed: 0
+  silent_override_upstream_decision_allowed: 0
+  skip_skill_without_reason_allowed: 0
+  orphan_acceptance_criterion_allowed: 0
+  ignore_blocking_specialist_finding_allowed: 0
+  unbounded_brownfield_scope_growth_allowed: 0
+  claim_complete_before_required_validation_allowed: 0
+discovery:
+  positive:
+  - id: positive-feature
+    prompt: Implement this frontend feature end to end using our frontend engineering
+      harness and orchestrate the right skills.
+    expected: activate
+  - id: positive-story
+    prompt: Take this user story through architecture, implementation, tests, accessibility,
+      and review using our frontend skills.
+    expected: activate
+  - id: positive-bug
+    prompt: Implement this frontend bug fix; it touches API mapping, React Query,
+      UI, accessibility, and tests.
+    expected: activate
+  negative:
+  - id: negative-component
+    prompt: Design props for this React component.
+    expected: do-not-activate
+    expected_alternative: designing-react-components
+  - id: negative-fullstack
+    prompt: Plan a change that requires coordinated backend API and frontend implementation.
+    expected: do-not-activate
+    expected_alternative: preparing-full-stack-change
+  - id: negative-review
+    prompt: Review this completed full-stack change.
+    expected: do-not-activate
+    expected_alternative: reviewing-full-stack-change
+procedure:
+- id: subscription-upgrade-change
+  fixture: fixtures/subscription-upgrade-change.md
+  required_steps:
+  - classify-change-risk-scope-and-readiness
+  - delegate-applying-frontend-engineering-standard
+  - reuse-or-delegate-architecture-profile-classification
+  - delegate-vertical-slice-planning
+  - select-domain-application-dto-port-work-only-if-justified
+  - select-http-validation-repository-async-server-state-and-composition-work-only-if-required
+  - select-react-components-hooks-effects-containers-and-styling-work
+  - design-accessibility-before-final-review
+  - delegate-test-boundary-selection-to-planning-frontend-test-strategy
+  - trigger-performance-security-privacy-and-complexity-reviews-based-on-risk
+  - route-brownfield-refactor-or-migration-only-if-required
+  - construct-explicit-dependency-graph-and-bounded-handoffs
+  - maintain-decision-ledger-and-reopen-conflicts
+  - map-every-acceptance-criterion-to-implementation-and-evidence
+  - run-architecture-accessibility-and-required-specialist-validation
+  - produce-frontend-change-orchestration-record
+  prohibited_actions:
+  - copy-entire-security-performance-testing-standards-into-orchestrator
+  - invoke-all-frontend-skills
+  - create-domain-layer-for-simple-copy-change
+  - start-component-before-api-view-contract-is-resolved
+  - let-downstream-agent-change-profile-silently
+  - ignore-security-blocker-to-finish-ui
+  - add-unrelated-legacy-refactor
+  - run-e2e-for-every-acceptance-criterion
+  - mark-skipped-without-reason
+  - declare-complete-with-unmapped-acceptance-criterion
+  expected_output: expected/subscription-upgrade-change-orchestration.md
+edge_cases:
+- id: simple-ui
+  scenario: Change only modifies copy and spacing in an existing accessible component.
+  expected_behavior: select-small-minimal-skill-graph-and-skip-domain-infrastructure-security-e2e-with-reasons
+- id: complex-flow
+  scenario: Subscription upgrade adds API DTOs, pricing rules, React Query mutation,
+    payment redirect, analytics, and permission changes.
+  expected_behavior: select-domain-application-infrastructure-react-testing-security-privacy-and-review-skills-with-dependency-order
+- id: contract-block
+  scenario: Frontend implementation starts but backend response schema is unresolved.
+  expected_behavior: block-dependent-dto-adapter-ui-work-or-use-approved-contract-stub-not-let-agents-invent-incompatible-shapes
+- id: brownfield
+  scenario: Feature change touches a god hook with duplicated query state.
+  expected_behavior: route-scoped-refactor-to-refactoring-react-features-not-rewrite-entire-feature-tree
+- id: risk-trigger
+  scenario: Change adds user HTML rendering and 100k-row table.
+  expected_behavior: trigger-frontend-security-performance-and-algorithmic-complexity-as-relevant
+- id: decision-conflict
+  scenario: Profile B plan says repository adapter required, but downstream component
+    skill proposes direct fetch.
+  expected_behavior: reject-conflict-and-preserve-upstream-architecture-decision
+quality_rubric:
+  scope_risk_readiness: 5
+  standard_profile_slice_routing: 5
+  domain_application_selection: 5
+  infrastructure_react_styling_selection: 5
+  testing_accessibility: 5
+  risk_triggered_specialists: 5
+  dependency_graph_parallelism: 5
+  handoff_and_decision_ledger: 5
+  brownfield_scope_control: 5
+  acceptance_traceability: 5
+  validation_review_completion: 5
+  delegation_not_duplication: 5

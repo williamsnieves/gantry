@@ -1,0 +1,108 @@
+skill: modeling-frontend-domain
+version: 0.1.0
+passing_policy:
+  domain_required_for_every_feature_allowed: 0
+  backend_rule_duplication_for_symmetry_allowed: 0
+  react_in_domain_allowed: 0
+  browser_api_in_domain_allowed: 0
+  http_in_domain_allowed: 0
+  storage_library_in_domain_allowed: 0
+  application_or_infrastructure_import_in_domain_allowed: 0
+  passive_api_entity_allowed: 0
+  validation_free_value_object_allowed: 0
+  impure_domain_service_allowed: 0
+  endpoint_shaped_repository_port_allowed: 0
+  speculative_shared_domain_allowed: 0
+discovery:
+  positive:
+  - id: positive-offline
+    prompt: Decide whether this offline editor needs a frontend Domain model and model
+      its invariants.
+    expected: activate
+  - id: positive-local-rule
+    prompt: Model the pure client-side rules, entities, and Value Objects for this
+      rich local workflow.
+    expected: activate
+  - id: positive-no-domain
+    prompt: Determine whether this frontend feature actually needs Domain or whether
+      that would be overengineering.
+    expected: activate
+  negative:
+  - id: negative-use-case
+    prompt: Design the Use Case for submitting a payment.
+    expected: do-not-activate
+    expected_alternative: designing-frontend-use-cases
+  - id: negative-api-adapter
+    prompt: Map this API payload into application data.
+    expected: do-not-activate
+    expected_alternative: implementing-frontend-repository-adapters
+  - id: negative-display
+    prompt: Format this date and currency for a React card.
+    expected: do-not-activate
+    expected_alternative: presentation/component logic
+procedure:
+- id: offline-draft-domain
+  fixture: fixtures/offline-draft-domain.md
+  required_steps:
+  - confirm-behavior-profile-authority-offline-and-persistence
+  - separate-presentation-application-infrastructure-and-domain-concerns
+  - decide-domain-justification-before-modeling
+  - classify-frontend-vs-backend-authority
+  - identify-smallest-domain-concepts
+  - model-entities-only-with-meaningful-identity
+  - model-value-objects-with-value-equality-and-semantic-validation
+  - use-pure-domain-services-only-when-no-natural-owner
+  - define-semantic-domain-errors
+  - separate-offline-editor-model-from-storage-and-ui
+  - assign-optimistic-behavior-to-one-owner
+  - decide-domain-repository-port-ownership
+  - define-serialization-and-date-numeric-semantics
+  - plan-pure-domain-tests
+  - audit-overmodeling-and-shared-domain
+  - produce-domain-modeling-record
+  prohibited_actions:
+  - copy-backend-publish-authorization-rule-into-frontend
+  - import-react
+  - import-indexeddb-library
+  - store-provider-dto-in-entity
+  - make-every-api-object-an-entity
+  - create-value-object-with-no-validation-or-semantics
+  - create-domain-service-that-calls-repository
+  - create-repository-port-for-every-endpoint
+  - put-toolbar-open-state-in-domain
+  - move-single-consumer-concept-to-shared-domain
+  expected_output: expected/offline-draft-domain-record.md
+edge_cases:
+- id: pricing-preview
+  scenario: Frontend calculates a deterministic price preview but backend owns final
+    price.
+  expected_behavior: allow-preview-domain-semantics-with-backend-authority-explicit
+- id: display-transform
+  scenario: Component formats server timestamp into localized text.
+  expected_behavior: no-domain-required-presentation-concern
+- id: offline-entity
+  scenario: Draft can be created, edited, validated, and persisted offline.
+  expected_behavior: domain-likely-justified-independent-of-indexeddb
+- id: duplicated-backend-validation
+  scenario: Frontend copies server eligibility logic only to avoid request latency.
+  expected_behavior: reject-unless-accepted-local-feedback-or-offline-requirement-and-authority-governed
+- id: editor
+  scenario: Editor has semantic blocks and invariant-preserving commands plus DOM
+    selection.
+  expected_behavior: domain-for-semantic-document-model-dom-selection-remains-infrastructure-presentation
+- id: passive-api
+  scenario: Proposed Entity is identical to GET response and has no behavior.
+  expected_behavior: reject-entity-and-probably-domain
+quality_rubric:
+  domain_justification: 5
+  authority_boundary: 5
+  layer_separation: 5
+  entities: 5
+  value_objects: 5
+  domain_services_and_errors: 5
+  offline_editor_and_optimistic: 5
+  repository_ports: 5
+  serialization_and_semantics: 5
+  testing: 5
+  restraint_and_shared_domain: 5
+  final_decision: 5

@@ -1,0 +1,105 @@
+agent: frontend-code-review
+version: 0.1.0
+core_skills:
+- auditing-code
+- reviewing-adversarially
+- analyzing-details
+conditional_skills:
+- validating-frontend-architecture
+- testing-react-components
+- testing-react-hooks
+- testing-frontend-adapters
+- testing-frontend-user-journeys
+- reviewing-web-accessibility
+- reviewing-frontend-performance
+- reviewing-frontend-security
+- reviewing-frontend-privacy-and-analytics
+reserved_for_adjacent_agent:
+- reviewing-frontend-architecture
+passing_policy:
+  implements_fix_allowed: 0
+  invented_ux_requirement_allowed: 0
+  style_preference_finding_allowed: 0
+  missing_usememo_callback_finding_by_default_allowed: 0
+  green_validator_means_approve_allowed: 0
+  architecture_review_duplication_allowed: 0
+  missing_evidence_as_pass_allowed: 0
+  unrelated_frontend_debt_allowed: 0
+role_activation:
+  positive:
+  - prompt: Act as Frontend Code Review and inspect this React PR for concrete bugs,
+      races, accessibility, contract mapping and test quality.
+    expected: activate
+  - prompt: Review this completed frontend implementation from the user's behavior
+      perspective before merge.
+    expected: activate
+  negative:
+  - prompt: Review whether this feature's vertical-slice architecture and composition
+      boundaries are correct.
+    expected: route-to-frontend-architecture-review
+  - prompt: Run lint, typecheck, build and tests.
+    expected: route-to-validator
+  - prompt: Implement this React feature.
+    expected: route-to-frontend-implementation
+scenarios:
+- id: stale-search-race
+  fixture: fixtures/stale-search-race.md
+  expected_decision: REQUEST_CHANGES
+  required_behavior:
+  - identify-stale-response-race
+  - describe-concrete-user-trigger
+  - avoid-prescribing-specific-library
+  - require-race-regression-evidence
+- id: green-tests-inaccessible-action
+  fixture: fixtures/green-tests-inaccessible-action.md
+  expected_decision: REQUEST_CHANGES
+  required_behavior:
+  - do-not-equate-green-tests-with-accessibility
+  - identify-critical-keyboard-interaction-defect
+  - route-broader-a11y-review-only-if-needed
+- id: adapter-contract-mismatch
+  fixture: fixtures/adapter-contract-mismatch.md
+  expected_decision: REQUEST_CHANGES
+  required_behavior:
+  - inspect-external-mapping
+  - identify-null-enum-contract-mismatch
+  - require-adapter-level-evidence
+- id: architecture-only-concern
+  fixture: fixtures/architecture-only-concern.md
+  expected_decision: APPROVE_WITH_NON_BLOCKING_COMMENTS
+  required_behavior:
+  - do-not-duplicate-architecture-review
+  - route-structural-concern
+  - keep-current-code-decision-independent
+- id: missing-browser-evidence
+  fixture: fixtures/missing-browser-evidence.md
+  expected_decision: BLOCKED_PENDING_EVIDENCE
+  required_behavior:
+  - identify-policy-required-browser-evidence
+  - route-to-validator-or-qa
+  - avoid-false-approval
+edge_cases:
+- scenario: React Compiler is enabled and reviewer sees no useMemo/useCallback.
+  expected_behavior: do-not-report-missing-manual-memoization-without-concrete-evidence
+- scenario: An effect is correctly encapsulated in a reusable custom hook.
+  expected_behavior: do-not-flag-effect-in-hook-by-rule
+- scenario: Component is 300 lines but cohesive and behaviorally clear.
+  expected_behavior: do-not-report-size-alone-as-code-defect
+- scenario: A hook imports concrete adapter but current behavior is correct.
+  expected_behavior: route-structural-concern-to-frontend-architecture-review-not-request-changes-unless-policy-makes-it-blocking
+- scenario: A privacy leak sends email address to analytics and Security/Privacy agents
+    are also triggered.
+  expected_behavior: keep-concrete-code-review-blocker-and-route-specialist-review
+quality_rubric:
+  scope_and_behavior_basis: 5
+  react_state_effect_reasoning: 5
+  async_race_server_state: 5
+  forms_accessibility: 5
+  contract_adapter_mapping: 5
+  security_privacy: 5
+  performance_visual_proportionality: 5
+  test_evidence_quality: 5
+  role_boundary_discipline: 5
+  finding_evidence_calibration: 5
+  decision_accuracy: 5
+  handoff_no_write_discipline: 5

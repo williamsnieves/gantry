@@ -1,0 +1,108 @@
+agent: performance
+version: 0.1.0
+primary_skills:
+- reviewing-frontend-performance
+- analyzing-algorithmic-complexity
+supporting_skills:
+- auditing-code
+- reviewing-adversarially
+- analyzing-details
+passing_policy:
+  optimization_without_measurement_allowed: 0
+  invented_budget_allowed: 0
+  cache_by_default_allowed: 0
+  db_index_without_query_evidence_allowed: 0
+  manual_react_memoization_by_default_allowed: 0
+  big_o_alone_means_blocker_allowed: 0
+  green_benchmark_command_means_target_met_allowed: 0
+  infrastructure_change_without_bottleneck_evidence_allowed: 0
+  implements_fix_allowed: 0
+role_activation:
+  positive:
+  - prompt: Act as Performance Agent and determine why this route/endpoint regressed,
+      using measurements and profiling rather than code smell.
+    expected: activate
+  - prompt: Review whether this change meets its p95 latency, bundle, memory and capacity
+      budgets.
+    expected: activate
+  negative:
+  - prompt: Run the load-test command and tell me whether it exits successfully.
+    expected: route-to-validator
+  - prompt: Do these tests cover the important scenarios?
+    expected: route-to-qa
+  - prompt: Configure Kubernetes HPA and choose instance sizes.
+    expected: route-to-infrastructure
+scenarios:
+- id: frontend-compiler-memoization
+  fixture: fixtures/frontend-compiler-memoization.md
+  expected_decision: PERFORMANCE_REVIEW_NOT_REQUIRED
+  required_behavior:
+  - recognize-no-measured-symptom-or-budget-regression
+  - recognize-react-compiler-enabled
+  - do-not-recommend-manual-memoization
+- id: backend-n-plus-one
+  fixture: fixtures/backend-n-plus-one.md
+  expected_decision: PERFORMANCE_CHANGES_REQUIRED
+  required_behavior:
+  - use-query-count-and-latency-evidence
+  - classify-database-or-n-plus-one-bottleneck
+  - avoid-random-index-recommendation
+  - require-before-after-query-count-latency
+- id: quadratic-tiny-bound
+  fixture: fixtures/quadratic-tiny-bound.md
+  expected_decision: PERFORMANCE_APPROVED
+  required_behavior:
+  - delegate-or-apply-algorithmic-complexity-reasoning
+  - consider-realistic-input-bound
+  - do-not-block-only-for-o-n-squared
+- id: missing-load-evidence
+  fixture: fixtures/missing-load-evidence.md
+  expected_decision: BLOCKED_PENDING_EVIDENCE
+  required_behavior:
+  - require-representative-load-evidence
+  - do-not-claim-5k-rps-capacity-from-unit-benchmark
+  - route-execution-to-validator-or-infrastructure-environment
+- id: provider-dominates-latency
+  fixture: fixtures/provider-dominates-latency.md
+  expected_decision: PERFORMANCE_APPROVED_WITH_CONDITIONS
+  required_behavior:
+  - decompose-latency
+  - identify-provider-as-dominant-contributor
+  - avoid-local-microoptimization
+  - route-provider-architecture-or-slo-decision-if-needed
+- id: bundle-regression
+  fixture: fixtures/bundle-regression.md
+  expected_decision: PERFORMANCE_CHANGES_REQUIRED
+  required_behavior:
+  - use-bundle-and-route-load-evidence
+  - identify-new-dependency-contribution
+  - recommend-architectural-load-reduction-before-memoization
+  - verify-before-after-route-metric
+edge_cases:
+- scenario: A loop is O(n²) but n is hard-bounded to 10 and profiler shows negligible
+    cost.
+  expected_behavior: do-not-request-complex-rewrite
+- scenario: Endpoint is O(n) but performs one provider call per item.
+  expected_behavior: do-not-call-it-fast-from-big-o-and-classify-external-io-multiplicative-work
+- scenario: DB query is slow but no EXPLAIN/query plan or representative cardinality
+    is available.
+  expected_behavior: request-evidence-before-index-recommendation
+- scenario: Load test passes 5k RPS but p99 latency and error rate violate accepted
+    budget.
+  expected_behavior: performance-changes-required-despite-command-success
+- scenario: A cache would improve latency but accepted tenant-isolation semantics
+    are unclear.
+  expected_behavior: route-architecture-security-decision-and-do-not-prescribe-cache-unconditionally
+quality_rubric:
+  trigger_and_requirement_discipline: 5
+  measurement_quality_and_baseline: 5
+  bottleneck_classification: 5
+  frontend_performance_skill_usage: 5
+  backend_runtime_reasoning: 5
+  database_io_and_provider_reasoning: 5
+  cpu_memory_algorithmic_complexity: 5
+  concurrency_load_capacity: 5
+  optimization_proportionality: 5
+  role_boundary_discipline: 5
+  decision_and_finding_calibration: 5
+  before_after_handoff_no_write: 5

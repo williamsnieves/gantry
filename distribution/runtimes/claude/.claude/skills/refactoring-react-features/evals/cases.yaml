@@ -1,0 +1,109 @@
+skill: refactoring-react-features
+version: 0.1.0
+passing_policy:
+  split_component_by_line_count_only_allowed: 0
+  god_hook_merely_renamed_allowed: 0
+  direct_fetch_in_component_target_state_allowed: 0
+  service_wrapper_without_boundary_value_allowed: 0
+  shared_feature_semantics_allowed: 0
+  duplicated_server_state_local_mirror_allowed: 0
+  inaccessible_widget_fixed_with_tabindex_only_allowed: 0
+  manual_memoization_added_without_need_allowed: 0
+  behavior_change_mixed_into_refactor_allowed: 0
+  architecture_validation_skipped_allowed: 0
+discovery:
+  positive:
+  - id: positive-component
+    prompt: Refactor this oversized React feature component that fetches data, maps
+      DTOs, contains business rules, and renders several UI regions.
+    expected: activate
+  - id: positive-hook
+    prompt: Refactor this god hook and duplicated React Query/local async state while
+      preserving behavior.
+    expected: activate
+  - id: positive-widget
+    prompt: Refactor this inaccessible custom dropdown in an existing React feature
+      without changing product behavior.
+    expected: activate
+  negative:
+  - id: negative-greenfield
+    prompt: Design a new React custom hook for this new feature.
+    expected: do-not-activate
+    expected_alternative: designing-react-custom-hooks
+  - id: negative-migration
+    prompt: Migrate our entire frontend from global technical folders to vertical
+      slices.
+    expected: do-not-activate
+    expected_alternative: migrating-to-frontend-vertical-slices
+  - id: negative-review
+    prompt: Review this finished frontend PR for architecture violations.
+    expected: do-not-activate
+    expected_alternative: reviewing-frontend-architecture
+procedure:
+- id: subscription-feature-refactor
+  fixture: fixtures/subscription-feature-refactor.md
+  required_steps:
+  - confirm-selected-profile-behavior-tests-server-state-http-and-accessibility-conventions
+  - characterize-unprotected-user-visible-behavior-before-refactor
+  - inventory-rendering-react-state-server-state-application-business-mapping-infrastructure-navigation-analytics-effects-and-accessibility
+  - refactor-oversized-component-by-semantic-responsibilities-not-lines
+  - refactor-god-hook-into-coherent-react-behavior-and-application-boundaries
+  - move-direct-fetch-to-approved-infrastructure-server-state-boundary
+  - reduce-shared-abstraction-overreach-and-return-business-semantics-to-feature
+  - remove-duplicated-server-state-local-async-mirrors
+  - remove-effects-used-only-for-derivation-or-server-state-copying
+  - replace-inaccessible-custom-widget-with-native-design-system-or-headless-accessible-primitive
+  - preserve-race-cancellation-error-loading-and-public-contract-semantics
+  - avoid-manual-memoization-without-semantic-or-measured-need
+  - remove-obsolete-duplicate-code-after-consumers-migrate
+  - run-lint-typecheck-tests-build-accessibility-and-validating-frontend-architecture
+  - produce-react-feature-refactoring-record
+  prohibited_actions:
+  - split-every-50-lines
+  - create-use-subscription-page-everything-hook
+  - wrap-fetch-in-utils-and-call-it-repository
+  - copy-react-query-data-loading-error-to-use-state
+  - move-subscription-logic-into-shared-data-table
+  - add-usememo-usecallback-everywhere
+  - fix-custom-select-with-div-tabindex-only
+  - rewrite-visible-ui-during-refactor
+  - change-error-semantics
+  - leave-old-and-new-implementations-both-active
+  expected_output: expected/subscription-feature-refactor-record.md
+edge_cases:
+- id: large-cohesive
+  scenario: A 450-line component renders one cohesive read-only document with no business
+    logic, effects, or infrastructure access.
+  expected_behavior: do-not-split-by-line-count-alone
+- id: god-hook
+  scenario: One hook fetches subscriptions and invoices, opens three modals, navigates,
+    tracks analytics, builds DTOs, and exposes 18 setters.
+  expected_behavior: identify-mixed-responsibilities-and-split-or-move-according-to-ownership
+- id: fetch
+  scenario: Component uses fetch in useEffect despite project-standard React Query
+    plus HTTP client.
+  expected_behavior: move-request-lifecycle-to-selected-server-state-and-infrastructure-boundary
+- id: shared
+  scenario: shared/DataTable has subscriptionStatus, invoiceOverdue, and canCancelSubscription
+    props.
+  expected_behavior: keep-neutral-table-primitive-and-return-business-composition-to-features
+- id: async
+  scenario: Hook mirrors query.data/isLoading/error into local useState via Effect.
+  expected_behavior: remove-duplicate-owner-and-derive-feature-semantics-from-query-state
+- id: widget
+  scenario: Custom dropdown is a clickable div with mouse-only options and no roles/focus
+    handling.
+  expected_behavior: replace-with-native-or-established-accessible-select-listbox-combobox-based-on-product-contract
+quality_rubric:
+  behavior_preservation: 5
+  responsibility_inventory: 5
+  oversized_component: 5
+  god_hook: 5
+  direct_fetch_boundary: 5
+  shared_abstraction_reownership: 5
+  async_state_single_owner: 5
+  effects_and_race_semantics: 5
+  accessible_widget_refactor: 5
+  no_premature_abstraction_memoization: 5
+  validation_and_cleanup: 5
+  final_status: 5

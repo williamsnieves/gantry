@@ -1,0 +1,115 @@
+agent: qa
+version: 0.1.0
+backend_testing_skills:
+- testing-domain-models
+- testing-application-use-cases
+- testing-repository-adapters
+- testing-external-service-adapters
+- testing-backend-http-e2e
+frontend_testing_skills:
+- testing-frontend-domain-and-use-cases
+- testing-frontend-adapters
+- testing-react-hooks
+- testing-react-components
+- testing-frontend-visual-regressions
+- testing-frontend-user-journeys
+cross_cutting_skills:
+- auditing-code
+- reviewing-adversarially
+- analyzing-details
+- reviewing-full-stack-change
+passing_policy:
+  green_tests_mean_qa_approved_allowed: 0
+  requires_100_percent_coverage_allowed: 0
+  e2e_for_every_branch_allowed: 0
+  invented_acceptance_criteria_allowed: 0
+  coverage_percentage_as_proof_allowed: 0
+  implements_production_fix_allowed: 0
+  duplicates_validator_role_allowed: 0
+  security_performance_deep_review_duplication_allowed: 0
+role_activation:
+  positive:
+  - prompt: Act as QA and tell me whether the tests actually prove this feature well
+      enough to merge.
+    expected: activate
+  - prompt: Review scenario coverage, regression protection, E2E needs, test quality
+      and flakiness for this change.
+    expected: activate
+  negative:
+  - prompt: Run lint, build and all tests and report pass/fail.
+    expected: route-to-validator
+  - prompt: Find production code bugs in this backend diff.
+    expected: route-to-code-review
+  - prompt: Benchmark this endpoint under 5k RPS.
+    expected: route-to-performance
+scenarios:
+- id: green-tests-false-confidence
+  fixture: fixtures/green-tests-false-confidence.md
+  expected_decision: QA_CHANGES_REQUIRED
+  required_behavior:
+  - reject-green-ci-as-sufficient
+  - identify-false-confidence-mocked-boundary
+  - select-correct-adapter-or-http-test-layer
+  - request-targeted-evidence
+- id: e2e-overkill
+  fixture: fixtures/e2e-overkill.md
+  expected_decision: QA_APPROVED_WITH_CONDITIONS
+  required_behavior:
+  - identify-redundant-e2e-coverage
+  - move-local-branches-to-lower-level-tests
+  - retain-small-critical-journey-set
+  - avoid-demanding-more-e2e
+- id: missing-race-regression
+  fixture: fixtures/missing-race-regression.md
+  expected_decision: QA_CHANGES_REQUIRED
+  required_behavior:
+  - recognize-original-failure-mechanism
+  - require-out-of-order-completion-test
+  - choose-hook-or-component-layer
+  - not-accept-generic-happy-path-e2e-as-regression-proof
+- id: unknown-retry-semantics
+  fixture: fixtures/unknown-retry-semantics.md
+  expected_decision: BLOCKED_PENDING_DECISION
+  required_behavior:
+  - do-not-invent-retry-expectation
+  - route-authoritative-behavior-decision
+  - avoid-writing-tests-for-undefined-contract
+- id: browser-evidence-unavailable
+  fixture: fixtures/browser-evidence-unavailable.md
+  expected_decision: BLOCKED_PENDING_EVIDENCE
+  required_behavior:
+  - recognize-browser-only-focus-contract
+  - avoid-jsdom-as-full-proof
+  - route-exact-browser-test-to-validator
+- id: fullstack-error-seam
+  fixture: fixtures/fullstack-error-seam.md
+  expected_decision: QA_CHANGES_REQUIRED
+  required_behavior:
+  - detect-backend-frontend-error-contract-gap
+  - require-cross-stack-evidence
+  - avoid-duplicating-code-review-unless-defect-observed
+edge_cases:
+- scenario: Test suite has 100% line coverage but authorization denial is mocked out.
+  expected_behavior: do-not-accept-coverage-percentage-as-proof
+- scenario: Critical flow has one browser E2E plus lower-layer exhaustive business
+    rules.
+  expected_behavior: recognize-proportionate-layering-not-demand-more-e2e
+- scenario: A low-risk UI label change has no new E2E.
+  expected_behavior: do-not-require-e2e-without-material-boundary-risk
+- scenario: QA discovers real cross-tenant product bug during scenario execution.
+  expected_behavior: route-production-defect-to-code-review-implementation-and-retain-regression-test-requirement
+- scenario: A test uses a 5-second sleep but reliably passes locally.
+  expected_behavior: flag-determinism-risk-and-require-condition-based-wait-or-proven-need
+quality_rubric:
+  scope_risk_and_acceptance_basis: 5
+  validator_boundary: 5
+  acceptance_traceability: 5
+  test_layer_selection: 5
+  negative_failure_recovery_coverage: 5
+  race_auth_migration_critical_scenarios: 5
+  test_quality_and_mocking: 5
+  environment_data_flakiness: 5
+  regression_and_fullstack_seams: 5
+  over_testing_proportionality: 5
+  decision_finding_calibration: 5
+  handoff_no_write_discipline: 5
