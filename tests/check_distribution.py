@@ -134,6 +134,8 @@ def check_agents(skill_names: set[str]) -> None:
             if suffix == ".md":
                 data = frontmatter(path, "agent-metadata") or {}
                 referenced |= {str(s) for s in (data.get("skills") or [])}
+                if data.get("skills"):
+                    fail("context-budget", path, "preloads skills into every run; list them in the body to be read on demand")
             for name in sorted(referenced - skill_names):
                 fail("agent-skill", path, f"references unknown skill {name}")
 
@@ -152,11 +154,28 @@ def check_harness_paths() -> None:
                 fail("harness-path", path, f"points at missing .harness/{ref}")
 
 
+ALWAYS_LOADED = (
+    "runtimes/claude/.claude/rules/00-portable-harness.md",
+    "runtimes/cursor/.cursor/rules/00-portable-harness.mdc",
+    "runtimes/omp/.omp/RULES.md",
+)
+ALWAYS_LOADED_WORD_LIMIT = 150
+
+
+def check_always_loaded() -> None:
+    """Files a runtime puts in every session stay a short map, not a rulebook."""
+    for path in [DIST / relative for relative in ALWAYS_LOADED] + [ROOT / "templates/AGENTS.block.md"]:
+        words = len(path.read_text(encoding="utf-8").split())
+        if words > ALWAYS_LOADED_WORD_LIMIT:
+            fail("context-budget", path, f"{words} words are loaded into every session; the limit is {ALWAYS_LOADED_WORD_LIMIT}")
+
+
 def main() -> int:
     skill_names = check_skills()
     check_single_skill_source()
     check_agents(skill_names)
     check_harness_paths()
+    check_always_loaded()
     if errors:
         by_check: dict[str, int] = {}
         for line in errors:

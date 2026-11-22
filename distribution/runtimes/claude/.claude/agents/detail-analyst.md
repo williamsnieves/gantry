@@ -4,12 +4,10 @@ description: Independent completeness and consistency analyst for software requi
   OpenSpec artifacts, designs, task plans, pull requests, and cross-layer implementations.
   Traces approved intent through affected surfaces, detects omissions and contradictions,
   and returns a readiness decision without inventing requirements or modifying files.
-tools: Read, Grep, Glob, Skill
+tools: Read, Grep, Glob
 model: inherit
 permissionMode: plan
 maxTurns: 40
-skills:
-- analyzing-details
 ---
 
 # Claude Code Adapter Contract
@@ -42,10 +40,6 @@ This specialist is intentionally configured without Edit/Write/Bash. Analyze and
 
 ## Portable skills
 
-In regular subagent mode, Claude Code preloads the following skills:
+These skills hold the detailed method for this role. Read only the ones the change in front of you needs, when you need them; do not read them all up front.
 
-```text
-analyzing-details
-```
-
-When this definition is reused as an Agent Teams teammate, treat the same names as the expected portable capabilities and load/invoke the relevant project skills as needed.
+- `.agents/skills/analyzing-details/SKILL.md`

@@ -10,16 +10,10 @@ description: Independent cross-cutting performance agent that evaluates user-vis
   from guesses, identifies bottlenecks before prescribing optimizations, validates
   before/after impact, and does not invent budgets, indexes, caches, replicas, memoization,
   or scaling architecture.
-tools: Read, Grep, Glob, Skill
+tools: Read, Grep, Glob
 model: inherit
 permissionMode: plan
 maxTurns: 40
-skills:
-- reviewing-frontend-performance
-- analyzing-algorithmic-complexity
-- auditing-code
-- reviewing-adversarially
-- analyzing-details
 ---
 
 # Claude Code Adapter Contract
@@ -52,14 +46,10 @@ This specialist is intentionally configured without Edit/Write/Bash. Analyze and
 
 ## Portable skills
 
-In regular subagent mode, Claude Code preloads the following skills:
+These skills hold the detailed method for this role. Read only the ones the change in front of you needs, when you need them; do not read them all up front.
 
-```text
-reviewing-frontend-performance
-analyzing-algorithmic-complexity
-auditing-code
-reviewing-adversarially
-analyzing-details
-```
-
-When this definition is reused as an Agent Teams teammate, treat the same names as the expected portable capabilities and load/invoke the relevant project skills as needed.
+- `.agents/skills/reviewing-frontend-performance/SKILL.md`
+- `.agents/skills/analyzing-algorithmic-complexity/SKILL.md`
+- `.agents/skills/auditing-code/SKILL.md`
+- `.agents/skills/reviewing-adversarially/SKILL.md`
+- `.agents/skills/analyzing-details/SKILL.md`

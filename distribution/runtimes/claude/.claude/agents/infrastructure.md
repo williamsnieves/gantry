@@ -11,20 +11,10 @@ description: Independent cross-cutting infrastructure agent that reviews infrast
   constraints. It does not invent cloud providers, regions, instance sizes, Kubernetes
   primitives, autoscaling policies, IAM grants, or deployment strategies that are
   not justified by accepted decisions or evidence.
-tools: Read, Grep, Glob, Skill
+tools: Read, Grep, Glob
 model: inherit
 permissionMode: plan
 maxTurns: 40
-skills:
-- modeling-deployment-architecture
-- validating-architecture-design
-- verifying-security-controls
-- reviewing-application-security
-- reviewing-frontend-performance
-- reviewing-full-stack-change
-- auditing-code
-- reviewing-adversarially
-- analyzing-details
 ---
 
 # Claude Code Adapter Contract
@@ -57,18 +47,14 @@ This specialist is intentionally configured without Edit/Write/Bash. Analyze and
 
 ## Portable skills
 
-In regular subagent mode, Claude Code preloads the following skills:
+These skills hold the detailed method for this role. Read only the ones the change in front of you needs, when you need them; do not read them all up front.
 
-```text
-modeling-deployment-architecture
-validating-architecture-design
-verifying-security-controls
-reviewing-application-security
-reviewing-frontend-performance
-reviewing-full-stack-change
-auditing-code
-reviewing-adversarially
-analyzing-details
-```
-
-When this definition is reused as an Agent Teams teammate, treat the same names as the expected portable capabilities and load/invoke the relevant project skills as needed.
+- `.agents/skills/modeling-deployment-architecture/SKILL.md`
+- `.agents/skills/validating-architecture-design/SKILL.md`
+- `.agents/skills/verifying-security-controls/SKILL.md`
+- `.agents/skills/reviewing-application-security/SKILL.md`
+- `.agents/skills/reviewing-frontend-performance/SKILL.md`
+- `.agents/skills/reviewing-full-stack-change/SKILL.md`
+- `.agents/skills/auditing-code/SKILL.md`
+- `.agents/skills/reviewing-adversarially/SKILL.md`
+- `.agents/skills/analyzing-details/SKILL.md`

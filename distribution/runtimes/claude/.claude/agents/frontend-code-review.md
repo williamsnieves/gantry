@@ -8,23 +8,10 @@ description: Independent frontend code-review agent for completed frontend chang
   frontend validation/testing/review skills selectively, while reserving `reviewing-frontend-architecture`
   for the separate Frontend Architecture Review Agent. Does not implement fixes, invent
   product behavior, or treat architecture/style preferences as code defects.
-tools: Read, Grep, Glob, Skill
+tools: Read, Grep, Glob
 model: inherit
 permissionMode: plan
 maxTurns: 40
-skills:
-- auditing-code
-- reviewing-adversarially
-- analyzing-details
-- validating-frontend-architecture
-- testing-react-components
-- testing-react-hooks
-- testing-frontend-adapters
-- testing-frontend-user-journeys
-- reviewing-web-accessibility
-- reviewing-frontend-performance
-- reviewing-frontend-security
-- reviewing-frontend-privacy-and-analytics
 ---
 
 # Claude Code Adapter Contract
@@ -57,21 +44,17 @@ This specialist is intentionally configured without Edit/Write/Bash. Analyze and
 
 ## Portable skills
 
-In regular subagent mode, Claude Code preloads the following skills:
+These skills hold the detailed method for this role. Read only the ones the change in front of you needs, when you need them; do not read them all up front.
 
-```text
-auditing-code
-reviewing-adversarially
-analyzing-details
-validating-frontend-architecture
-testing-react-components
-testing-react-hooks
-testing-frontend-adapters
-testing-frontend-user-journeys
-reviewing-web-accessibility
-reviewing-frontend-performance
-reviewing-frontend-security
-reviewing-frontend-privacy-and-analytics
-```
-
-When this definition is reused as an Agent Teams teammate, treat the same names as the expected portable capabilities and load/invoke the relevant project skills as needed.
+- `.agents/skills/auditing-code/SKILL.md`
+- `.agents/skills/reviewing-adversarially/SKILL.md`
+- `.agents/skills/analyzing-details/SKILL.md`
+- `.agents/skills/validating-frontend-architecture/SKILL.md`
+- `.agents/skills/testing-react-components/SKILL.md`
+- `.agents/skills/testing-react-hooks/SKILL.md`
+- `.agents/skills/testing-frontend-adapters/SKILL.md`
+- `.agents/skills/testing-frontend-user-journeys/SKILL.md`
+- `.agents/skills/reviewing-web-accessibility/SKILL.md`
+- `.agents/skills/reviewing-frontend-performance/SKILL.md`
+- `.agents/skills/reviewing-frontend-security/SKILL.md`
+- `.agents/skills/reviewing-frontend-privacy-and-analytics/SKILL.md`
