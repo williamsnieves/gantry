@@ -30,7 +30,7 @@ AGENT_FILES = {
 }
 LOCAL_REF = re.compile(r"`((?:references|assets|scripts)/[^`\s]+)`")
 SKILL_PATH = re.compile(r"\.agents/skills/([a-z0-9-]+)/SKILL\.md")
-HARNESS_PATH = re.compile(r"\.harness/((?:core|agents|evals)/[A-Za-z0-9_./-]+\.[a-z]+)")
+HARNESS_PATH = re.compile(r"\.harness/((?:core|agents|evals|bin)/[A-Za-z0-9_./-]+\.[a-z]+)")
 MIN_DESCRIPTION_CHARS = 40
 
 errors: list[str] = []

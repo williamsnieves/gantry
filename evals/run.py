@@ -51,6 +51,7 @@ def run_claude(prompt: str, sandbox: Path, args: argparse.Namespace) -> dict:
         "--permission-mode", "acceptEdits",
         "--allowedTools", "Read", "Grep", "Glob", "Write", "Edit", "Skill",
         "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(ls:*)",
+        "Bash(python3 .harness/bin/route.py:*)",
         # Only the sandbox's own configuration: no user settings, memory, or MCP servers.
         "--setting-sources", "project",
         "--strict-mcp-config",

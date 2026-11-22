@@ -5,13 +5,7 @@ description: Run the portable software-engineering harness for the current chang
 
 # Harness Run
 
-Portable source of truth:
-
-```text
-.harness/core/routing/
-.harness/core/pre-pr/
-.harness/agents/
-```
+Routing is computed by `.harness/bin/route.py`; you classify the change, it decides the gates. The contracts for what happens after routing are in `.harness/core/pre-pr/` and `.harness/agents/`.
 
 ## Runtime mapping
 
@@ -27,14 +21,14 @@ Use the specialist agents and state directory of the runtime you are running in:
 
 ## Execution
 
-1. Establish the current change identity and accepted behavior.
-2. Apply the portable change classification, risk-trigger, and routing contracts.
-3. Write/update `routing-plan.yaml` in the state directory, following `.harness/core/routing/templates/routing-plan.template.yaml`.
+1. Inspect the current change and establish the accepted behavior.
+2. Run `python3 .harness/bin/route.py vocabulary` and classify the change: one work mode, every scope that applies, and every risk trigger the change causes, each with evidence from the change.
+3. Run `python3 .harness/bin/route.py plan --runtime <runtime> --work-mode <MODE> --scope <SCOPE> --trigger "<DIMENSION>=<evidence>"`, repeating `--scope` and `--trigger` as needed. It writes `routing-plan.yaml` in the state directory and prints the gates. Never write or edit the plan by hand: rerun the command when the classification or the change itself changes. If it adds a trigger from the changed files, keep it; use `--dismiss "<DIMENSION>=<reason>"` only when it clearly does not apply.
 4. Run Validator first when required.
 5. Launch the matching specialist agent for every routed gate whose prerequisites are ready. Keep each specialist read-only, give all agents in a wave the same stable change identity, and pass only bounded authoritative context and evidence.
 6. Run independent read-heavy reviews in parallel where the runtime supports it.
 7. Preserve every specialist's original decision and gate-result envelope.
-8. Convert new material findings into dynamic routing triggers and typed handoffs, and launch any newly required gate.
+8. When a specialist reports a new material trigger, rerun `route.py plan` with that trigger added, pass the finding on as a typed handoff, and launch any newly required gate.
 9. Do not run Reviewer until every REQUIRED routed gate is terminal.
 10. If remediation is required, return implementation to the parent/authorized worker; specialists remain reviewers.
 11. After remediation, rerun only materially invalidated gates plus required Validator checks.

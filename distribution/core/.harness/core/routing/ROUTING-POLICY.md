@@ -88,11 +88,15 @@ minimal_dependencies
 deferred_policy_questions
 ```
 
-Use:
+The plan is generated, not hand-written:
 
 ```text
-templates/routing-plan.template.yaml
+python3 .harness/bin/route.py vocabulary
+python3 .harness/bin/route.py plan --runtime <runtime> --work-mode <MODE> --scope <SCOPE> --trigger "<DIMENSION>=<evidence>"
+python3 .harness/bin/route.py check <plan>
 ```
+
+The agent classifies the change; `route.py` applies the rules in this document and writes the plan in the shape of `templates/routing-plan.template.yaml`. Where this document and `route.py` disagree, `route.py` is what runs: fix the disagreement rather than routing around it.
 
 ## Routing Algorithm
 
