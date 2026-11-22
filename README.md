@@ -63,7 +63,7 @@ Oh My Pi
 
 Codex, Cursor, OpenCode and OMP share one `.agents/skills/` installation.
 
-Claude receives its native `.claude/skills/` copy for maximum compatibility.
+Claude receives only the entry-point skills in `.claude/skills/`; its agents read the shared catalogue on demand.
 
 ## Typical setup
 

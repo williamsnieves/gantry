@@ -51,3 +51,28 @@ All six plans pass `route.py check`. No trial changed a file other than the plan
 **Classification still varies.** Scopes were under- or over-declared in four of the six plans (for example `TEST_ONLY` without `FRONTEND`, or `SECURITY` listed as a scope). None of these changed a gate decision in this run.
 
 One trial per scenario is still too few to say how repeatable either column is.
+
+# After moving context to on-demand
+
+Same six cases, runtime and model, one trial each, on 2026-11-22. Changes: Claude agents no longer preload skills, Claude receives only the two entry-point skills, and the always-loaded rules files are a short map.
+
+| Measure | With router | Context on demand |
+|---|---|---|
+| Scenarios passed | 5 of 6 | 5 of 6 |
+| Plans that follow the template | 6 of 6 | 6 of 6 |
+| Required gate missed | 0 | 0 |
+| Cost | $3.11 | $2.38 |
+| Wall time | 167 s | 204 s |
+| Cached input tokens read | 0.88 million | 0.75 million |
+
+Wall time went up while turns and tokens went down, so it is most likely variation between runs; one trial each cannot settle that.
+
+Always-on cost, measured with `evals/context_cost.py` (same trivial prompt in a bare and an installed copy of the fixture):
+
+| | Input tokens |
+|---|---|
+| Bare project | 20,076 |
+| Harness installed, before | 30,045 (9,969 added) |
+| Harness installed, after | 22,819 (2,743 added) |
+
+Skills preloaded into a Claude specialist before it reads any code, in words: qa 38,262 to 0, frontend-code-review 34,487 to 0, security 22,428 to 0, infrastructure 20,797 to 0. Each agent now lists the same skills by path and reads the ones a change needs. Whether specialists review as well with on-demand skills is not measured: these scenarios stop at routing.

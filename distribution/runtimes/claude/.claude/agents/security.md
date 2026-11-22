@@ -10,20 +10,10 @@ description: Independent cross-cutting security agent that composes architecture
   are in scope. It distinguishes threat, vulnerability, mitigation intent, implemented
   control, verification evidence, and residual risk; does not invent ASVS IDs, legal/privacy
   requirements, exploitability, risk acceptance, or control effectiveness.
-tools: Read, Grep, Glob, Skill
+tools: Read, Grep, Glob
 model: inherit
 permissionMode: plan
 maxTurns: 40
-skills:
-- threat-modeling-with-stride
-- reviewing-application-security
-- verifying-security-controls
-- reviewing-frontend-security
-- reviewing-frontend-privacy-and-analytics
-- auditing-code
-- reviewing-adversarially
-- analyzing-details
-- analyzing-algorithmic-complexity
 ---
 
 # Claude Code Adapter Contract
@@ -56,18 +46,14 @@ This specialist is intentionally configured without Edit/Write/Bash. Analyze and
 
 ## Portable skills
 
-In regular subagent mode, Claude Code preloads the following skills:
+These skills hold the detailed method for this role. Read only the ones the change in front of you needs, when you need them; do not read them all up front.
 
-```text
-threat-modeling-with-stride
-reviewing-application-security
-verifying-security-controls
-reviewing-frontend-security
-reviewing-frontend-privacy-and-analytics
-auditing-code
-reviewing-adversarially
-analyzing-details
-analyzing-algorithmic-complexity
-```
-
-When this definition is reused as an Agent Teams teammate, treat the same names as the expected portable capabilities and load/invoke the relevant project skills as needed.
+- `.agents/skills/threat-modeling-with-stride/SKILL.md`
+- `.agents/skills/reviewing-application-security/SKILL.md`
+- `.agents/skills/verifying-security-controls/SKILL.md`
+- `.agents/skills/reviewing-frontend-security/SKILL.md`
+- `.agents/skills/reviewing-frontend-privacy-and-analytics/SKILL.md`
+- `.agents/skills/auditing-code/SKILL.md`
+- `.agents/skills/reviewing-adversarially/SKILL.md`
+- `.agents/skills/analyzing-details/SKILL.md`
+- `.agents/skills/analyzing-algorithmic-complexity/SKILL.md`

@@ -60,21 +60,41 @@ assert (project / ".cursor/agents/reviewer.md").exists()
 assert (project / ".opencode/agents/reviewer.md").exists()
 assert (project / ".omp/agents/reviewer.md").exists()
 
-# Skills come from one source and are rendered per runtime.
+# The shared catalogue has compact descriptions; skills are read by path on demand.
 shared_skill = (project / ".agents/skills/auditing-code/SKILL.md").read_text()
-claude_skill = (project / ".claude/skills/auditing-code/SKILL.md").read_text()
-compact = "description: Portable engineering capability `auditing-code`."
-assert compact in shared_skill
-assert compact not in claude_skill
-assert shared_skill.split("\n---\n", 1)[1] == claude_skill.split("\n---\n", 1)[1]
-# Entry-point skills keep their full description and are runtime-neutral.
+assert "description: Portable engineering capability `auditing-code`." in shared_skill
+assert (project / ".agents/skills/auditing-code/README.md").exists()
+# A runtime with native discovery gets only the entry-point skills, so nothing else sits in context.
+assert sorted(p.name for p in (project / ".claude/skills").iterdir()) == ["harness-evaluate", "harness-run"]
 shared_run = (project / ".agents/skills/harness-run/SKILL.md").read_text()
 assert shared_run == (project / ".claude/skills/harness-run/SKILL.md").read_text()
-assert "Portable engineering capability" not in shared_run
-assert "Codex Adapter" not in shared_run
-# Asset files are copied alongside the rendered SKILL.md.
-assert (project / ".agents/skills/auditing-code/README.md").exists()
-assert (project / ".claude/skills/auditing-code/README.md").exists()
+assert "Portable engineering capability" not in shared_run and "Codex Adapter" not in shared_run
+# Claude agents preload nothing and point at skills that exist.
+qa_agent = (project / ".claude/agents/qa.md").read_text()
+assert "\nskills:" not in qa_agent.split("\n---\n")[0]
+assert "`.agents/skills/testing-react-components/SKILL.md`" in qa_agent
+
+# Upgrading removes files an earlier version shipped and this one does not, unless they were edited.
+state_file = project / ".harness/install-state.json"
+state = json.loads(state_file.read_text())
+import hashlib
+for name, body in (("old-skill", "old\n"), ("kept-skill", "old\n")):
+    stale = project / f".claude/skills/{name}/SKILL.md"
+    stale.parent.mkdir(parents=True)
+    stale.write_text(body)
+    state["managed_files"][f".claude/skills/{name}/SKILL.md"] = {
+        "owner": "runtime:claude", "sha256": hashlib.sha256(body.encode()).hexdigest()}
+state_file.write_text(json.dumps(state))
+(project / ".claude/skills/kept-skill/SKILL.md").write_text("edited by the user\n")
+dry = run("plan", "--runtime", "claude", "--project", str(project)).stdout
+assert "[DRY-RUN] remove: .claude/skills/old-skill/SKILL.md" in dry and (project / ".claude/skills/old-skill/SKILL.md").exists()
+out = run("install", "--runtime", "claude", "--project", str(project)).stdout
+assert not (project / ".claude/skills/old-skill").exists()
+assert "skip locally modified file: .claude/skills/kept-skill/SKILL.md" in out
+assert (project / ".claude/skills/kept-skill/SKILL.md").read_text() == "edited by the user\n"
+assert (project / ".codex/agents/reviewer.toml").exists()  # other runtimes are not pruned by a claude-only install
+run("install", "--runtime", "claude", "--force", "--project", str(project))  # --force drops the edited leftover too
+assert not (project / ".claude/skills/kept-skill").exists()
 
 # Guard hooks are merged into existing Claude settings without disturbing them.
 def claude_settings():

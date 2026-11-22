@@ -4,12 +4,10 @@ description: Independent validation agent that discovers and executes repository
   mechanical checks, classifies failures, verifies evidence, and returns a strict
   pass, conditional pass, or fail decision. Use after implementation and before review,
   pull request, release, or completion claims.
-tools: Read, Grep, Glob, Bash, Skill
+tools: Read, Grep, Glob, Bash
 model: inherit
 permissionMode: default
 maxTurns: 40
-skills:
-- validating-changes
 ---
 
 # Claude Code Adapter Contract
@@ -44,10 +42,6 @@ Do not modify production/source files as part of validation. If a command would 
 
 ## Portable skills
 
-In regular subagent mode, Claude Code preloads the following skills:
+These skills hold the detailed method for this role. Read only the ones the change in front of you needs, when you need them; do not read them all up front.
 
-```text
-validating-changes
-```
-
-When this definition is reused as an Agent Teams teammate, treat the same names as the expected portable capabilities and load/invoke the relevant project skills as needed.
+- `.agents/skills/validating-changes/SKILL.md`

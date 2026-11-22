@@ -1,44 +1,12 @@
 <!-- GANTRY:START -->
-# Gantry
+# Gantry harness
 
-This repository uses the portable Gantry harness.
+For meaningful implementation, remediation, migration, review or release work headed to a pull request, run the `harness-run` skill. Questions and exploration do not need it.
 
-Authoritative portable contracts:
+- Routing and the Final Pre-PR Gate are computed by `python3 .harness/bin/route.py`. Never write a routing plan or a gate record by hand.
+- Change size is not change risk: classify a change by what it touches, not by how many lines it has.
+- Specialist agents in `the runtime's agents directory` are read-only reviewers. They report; they do not implement fixes.
+- Do not edit `.harness/`, installed agent or skill files, or existing lint, type, test and CI configuration to make a check pass. Ask the user.
 
-```text
-.harness/core/
-.harness/agents/
-.harness/evals/
-```
-
-Portable Agent Skills:
-
-```text
-.agents/skills/
-```
-
-Runtime adapters may also install runtime-native agent/rule directories.
-
-Core invariants:
-
-- Classify work mode, scope, and material risk before selecting gates.
-- `change size != change risk`.
-- Run the smallest complete gate set.
-- Never skip a materially REQUIRED specialist gate.
-- Keep specialist ownership explicit.
-- Review agents do not implement fixes.
-- All reviewers in one wave inspect the same stable change identity.
-- New material risk becomes a dynamic routing trigger.
-- A specialist blocker cannot be averaged away.
-- Missing required evidence is not PASS.
-- After remediation, rerun only materially invalidated gates.
-- Reviewer runs after all REQUIRED specialist gates are terminal.
-- Only `PRE_PR_PASS` or `PRE_PR_PASS_WITH_CONDITIONS` permits transition to PR creation.
-- Any material post-gate edit invalidates final readiness.
-
-Project harness configuration:
-
-```text
-.harness/harness.config.yaml
-```
+Where things are: contracts in `.harness/core/` and `.harness/agents/`, skills in `.agents/skills/`, project settings in `.harness/harness.config.yaml`.
 <!-- GANTRY:END -->

@@ -31,10 +31,11 @@ ALIASES = {
 SCOPES = ("fullstack", "backend", "frontend", "architecture", "infrastructure", "mixed")
 PROFILES = ("lean", "standard", "strict")
 
-# Skills live once in distribution/shared and are rendered per runtime at install
-# time. Runtimes whose agents load skills by explicit path get a compact
-# description so the catalogue does not compete for implicit discovery; runtimes
-# with native skill discovery keep the full one.
+# Skills live once in distribution/shared and are rendered at install time. The
+# shared catalogue gets compact descriptions: specialist agents read a skill by
+# explicit path when a change needs it, so nothing competes for implicit
+# discovery or sits in context unused. A runtime with native skill discovery
+# receives only the entry-point skills, with their full description.
 ENTRYPOINT_SKILLS = ("harness-run", "harness-evaluate")
 COMPACT_DESCRIPTION = (
     "Portable engineering capability `{name}`. Use when the harness or a "
@@ -163,6 +164,7 @@ def managed_copy(src: Path, dst: Path, project: Path, state: dict, *, force: boo
                 f"Use --force only if the harness should own this path."
             )
 
+    state.setdefault("_written", set()).add(key)
     print(f"{'[DRY-RUN] ' if dry_run else ''}install {label}: {key}")
     if dry_run:
         return
@@ -185,10 +187,12 @@ def managed_tree(src_root: Path, dst_root: Path, project: Path, state: dict, *, 
 def skills_root() -> Path:
     return distribution_root() / "shared/skills/.agents/skills"
 
-def install_skills(dst_root: Path, project: Path, state: dict, *, compact: bool, force: bool, dry_run: bool, label: str):
+def install_skills(dst_root: Path, project: Path, state: dict, *, compact: bool, force: bool, dry_run: bool, label: str, only: tuple[str, ...] | None = None):
     src_root = skills_root()
     for src in iter_files(src_root):
         relative = src.relative_to(src_root)
+        if only is not None and relative.parts[0] not in only:
+            continue
         content = None
         if len(relative.parts) == 2 and relative.name == "SKILL.md":
             content = render_skill(src.read_text(encoding="utf-8"), relative.parts[0], compact=compact)
@@ -365,7 +369,7 @@ def install_runtime(runtime: str, project: Path, state: dict, *, force: bool, dr
     if runtime in NATIVE_SKILL_DIRS:
         install_skills(
             project / NATIVE_SKILL_DIRS[runtime], project, state,
-            compact=False, force=force, dry_run=dry_run, label=f"runtime:{runtime}",
+            compact=False, force=force, dry_run=dry_run, label=f"runtime:{runtime}", only=ENTRYPOINT_SKILLS,
         )
     if runtime in HOOK_SETTINGS:
         if hooks:
@@ -374,6 +378,15 @@ def install_runtime(runtime: str, project: Path, state: dict, *, force: bool, dr
             remove_hooks(runtime, project, dry_run=dry_run)
     if not dry_run and runtime not in state["runtimes"]:
         state["runtimes"].append(runtime)
+
+def prune_stale(project: Path, state: dict, runtimes: list[str], *, force: bool, dry_run: bool):
+    """Remove files an earlier version installed that this version no longer ships."""
+    written = state.pop("_written", set())
+    owners = {"shared-core", "shared-skills", *(f"runtime:{r}" for r in runtimes)}
+    for key, meta in list(state["managed_files"].items()):
+        if meta.get("owner") in owners and key not in written:
+            if remove_managed_file(project, key, meta, force=force, dry_run=dry_run) and not dry_run:
+                state["managed_files"].pop(key, None)
 
 def cmd_install(args):
     project = ensure_project(args.project)
@@ -388,6 +401,8 @@ def cmd_install(args):
     install_shared(project, state, force=args.force, dry_run=args.dry_run)
     for runtime in runtimes:
         install_runtime(runtime, project, state, force=args.force, dry_run=args.dry_run, hooks=not args.no_hooks)
+
+    prune_stale(project, state, runtimes, force=args.force, dry_run=args.dry_run)
 
     final_runtimes = sorted(set(state["runtimes"]) | set(runtimes), key=RUNTIMES.index)
     write_harness_config(
