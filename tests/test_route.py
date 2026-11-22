@@ -87,7 +87,7 @@ with tempfile.TemporaryDirectory() as tmp:
     plan = yaml.safe_load(plan_file.read_text())  # free text with a colon stays valid YAML
     assert plan == route.parse(plan_file.read_text())
     assert not scoring.validate_plan(plan), scoring.validate_plan(plan)
-    assert plan["change_identity"]["type"] == "working-tree" and plan["change_identity"]["changed_files"] == 1
+    assert plan["change_identity"]["type"] == "content" and plan["change_identity"]["changed_files"] == 1
     required = [e["agent"] for e in plan["agents"] if e["applicability"] == "REQUIRED"]
     assert required == ["validator", "backend-code-review", "qa", "security", "detail-analyst", "reviewer"], required
     by_agent = {e["agent"]: e for e in plan["agents"]}
@@ -140,6 +140,97 @@ with tempfile.TemporaryDirectory() as tmp:
                 ["--work-mode", "IMPLEMENTATION", "--scope", "BACKEND", "--trigger", "RISKY=x"],
                 ["--work-mode", "IMPLEMENTATION", "--scope", "BACKEND", "--trigger", "ARCHITECTURE@mobile=x"]):
         assert run("plan", "--runtime", "claude", *bad, cwd=project, expect=2).stderr.startswith("route.py: ")
+
+# The Final Pre-PR Gate is computed from recorded gate results, for the current change only.
+with tempfile.TemporaryDirectory() as tmp:
+    project = Path(tmp)
+    git(project, "init", "-q", "-b", "main")
+    (project / "src").mkdir()
+    (project / "src/app.ts").write_text("export const a = 1;\n")
+    (project / "eslint.config.js").write_text("export default [];\n")
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "base")
+    git(project, "checkout", "-q", "-b", "feature")
+    (project / "src/app.ts").write_text("export const a = 2;\n")
+    reports = project / ".harness/runtime/claude/artifacts"
+    reports.mkdir(parents=True)
+
+    def ready(expect):
+        out = run("ready", "--runtime", "claude", cwd=project, expect=0 if expect != "PRE_PR_BLOCKED" else 1).stdout
+        assert out.splitlines()[0] == expect, out
+        return out
+
+    def gate(agent, decision, *extra, expect=0):
+        (reports / f"{agent}-report.md").write_text(f"# {agent}\n{decision}\n")
+        return run("gate", "--runtime", "claude", "--agent", agent, "--decision", decision,
+                   "--report", f".harness/runtime/claude/artifacts/{agent}-report.md", *extra, cwd=project, expect=expect)
+
+    assert "no routing plan" in ready("PRE_PR_BLOCKED")
+    run("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND", "--trigger", "BEHAVIORAL=x", cwd=project)
+    required = ["validator", "backend-code-review", "qa", "detail-analyst", "reviewer"]
+    out = ready("PRE_PR_BLOCKED")
+    assert all(f"{agent}: required gate has no recorded result" in out for agent in required), out
+
+    # Missing evidence is not a pass; a gate result needs a real report and valid arguments.
+    run("gate", "--runtime", "claude", "--agent", "qa", "--decision", "PASS", cwd=project, expect=2)
+    run("gate", "--runtime", "claude", "--agent", "qa", "--decision", "PASS", "--report", "nope.md", cwd=project, expect=2)
+    gate("qa", "PASS_WITH_CONDITIONS", expect=2)
+    gate("qa", "PASS", "--condition", "x", expect=2)
+
+    for agent in required[:-1]:
+        gate(agent, "PASS")
+    assert "reviewer: required gate has no recorded result" in ready("PRE_PR_BLOCKED")
+    gate("reviewer", "PASS")
+    ready("PRE_PR_PASS")
+
+    # One blocker is not averaged away by four passes.
+    gate("qa", "CHANGES_REQUIRED")
+    assert "qa: CHANGES_REQUIRED" in ready("PRE_PR_BLOCKED")
+    gate("qa", "PASS_WITH_CONDITIONS", "--condition", "add a test for the empty title")
+    assert "condition: qa: add a test for the empty title" in ready("PRE_PR_PASS_WITH_CONDITIONS")
+    gate("qa", "PASS")
+
+    # Tampering with a report after it was recorded invalidates that gate.
+    (reports / "qa-report.md").write_text("rewritten\n")
+    assert "qa: report" in ready("PRE_PR_BLOCKED")
+    gate("qa", "PASS")
+    ready("PRE_PR_PASS")
+
+    # Committing the same content keeps the identity, so readiness survives the commit.
+    git(project, "add", "src")
+    git(project, "commit", "-q", "-m", "change")
+    ready("PRE_PR_PASS")
+
+    # Any edit after the gates makes readiness stale.
+    (project / "src/app.ts").write_text("export const a = 3;\n")
+    assert "edited after the routing plan" in ready("PRE_PR_BLOCKED")
+    run("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND", "--trigger", "BEHAVIORAL=x", cwd=project)
+    assert ready("PRE_PR_BLOCKED").count("result is stale") == 5
+    # Rerun the invalidated gates, carry the others forward with a reason.
+    for agent in ("validator", "backend-code-review", "qa"):
+        gate(agent, "PASS")
+    run("gate", "--runtime", "claude", "--agent", "detail-analyst", "--carry-forward", "no spec or doc touched", cwd=project)
+    run("gate", "--runtime", "claude", "--agent", "reviewer", "--carry-forward", "x", "--decision", "PASS", cwd=project, expect=2)
+    gate("reviewer", "PASS")
+    assert "detail-analyst: carried forward (no spec or doc touched)" in ready("PRE_PR_PASS_WITH_CONDITIONS")
+
+    # A change that edits the checks that judge it always carries a condition for a person.
+    (project / "eslint.config.js").write_text("export default [{ rules: {} }];\n")
+    run("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND", "--trigger", "BEHAVIORAL=x", cwd=project)
+    for agent in required:
+        gate(agent, "PASS")
+    assert "a person must review: eslint.config.js" in ready("PRE_PR_PASS_WITH_CONDITIONS")
+
+# Protected paths.
+for path, kind in ((".harness/core/routing/ROUTING-POLICY.md", "harness"), (".harness/bin/route.py", "harness"),
+                   ("./.claude/settings.json", "harness"), (".harness/runtime/claude/routing-plan.yaml", "harness"),
+                   (".harness/runtime/opencode/gates.json", "harness"), ("eslint.config.js", "quality-config"),
+                   ("apps/web/tsconfig.json", "quality-config"), (".github/workflows/ci.yml", "quality-config"),
+                   ("apps/api/vitest.config.ts", "quality-config"), (".prettierrc.json", "quality-config")):
+    assert (route.protection(path) or ("",))[0] == kind, path
+for path in ("src/app.ts", ".harness/runtime/claude/artifacts/qa-report.md", "package.json", "docs/eslint.md",
+             "apps/api/src/config.ts", ".claude/agents/qa.md"):
+    assert route.protection(path) is None, path
 
 # Works outside a git repository.
 with tempfile.TemporaryDirectory() as tmp:

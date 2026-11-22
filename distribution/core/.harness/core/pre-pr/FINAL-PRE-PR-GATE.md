@@ -11,6 +11,14 @@ reviewed change
 
 The final gate verifies execution integrity.
 
+## The gate is computed
+
+```text
+python3 .harness/bin/route.py ready --runtime <runtime>
+```
+
+It reads the routing plan and the results recorded with `route.py gate`, and applies the rules below to the current content of the change: a required gate with no result, a stale result, a changed report, or a blocking decision gives `PRE_PR_BLOCKED`. The agent does not declare the outcome.
+
 It does not replace Reviewer.
 
 ## Inputs

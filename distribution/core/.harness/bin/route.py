@@ -10,6 +10,8 @@ same plan out.
     python3 .harness/bin/route.py plan --runtime claude --work-mode IMPLEMENTATION \\
         --scope BACKEND --trigger "SECURITY=tenant predicate relaxed for support staff"
     python3 .harness/bin/route.py check .harness/runtime/claude/routing-plan.yaml
+    python3 .harness/bin/route.py gate --runtime claude --agent qa --decision PASS --report <file>
+    python3 .harness/bin/route.py ready --runtime claude
 
 Standard library only, so it runs in any project with Python 3.9+.
 """
@@ -138,6 +140,42 @@ PATH_SIGNALS = (
      or Path(p).name in ("Dockerfile", "docker-compose.yml", "docker-compose.yaml", ".gitlab-ci.yml", "Jenkinsfile")
      or p.startswith(("k8s/", "kubernetes/", "helm/", "terraform/", "infra/"))),
 )
+
+GATE_DECISIONS = ("PASS", "PASS_WITH_CONDITIONS", "CHANGES_REQUIRED", "BLOCKED")
+PASSING = ("PASS", "PASS_WITH_CONDITIONS")
+
+# Files that define how the project's work is judged. The harness's own files are
+# always protected from agent edits; quality configuration is protected unless the
+# delivery profile is lean.
+HARNESS_PROTECTED = (".harness/core/", ".harness/bin/", ".harness/agents/", ".harness/evals/")
+HARNESS_PROTECTED_FILES = (".harness/harness.config.yaml", ".harness/install-state.json", ".claude/settings.json")
+GENERATED_STATE = ("routing-plan.yaml", "gates.json")
+QUALITY_CONFIG_NAMES = (
+    ".eslintignore", ".prettierignore", "biome.json", "biome.jsonc", "ruff.toml", ".ruff.toml", ".flake8",
+    "mypy.ini", ".pylintrc", "tox.ini", "pytest.ini", ".pre-commit-config.yaml", ".gitlab-ci.yml", "Jenkinsfile",
+    ".golangci.yml", ".golangci.yaml", ".rubocop.yml", "lefthook.yml", ".editorconfig",
+)
+QUALITY_CONFIG_PREFIXES = (
+    "eslint.config.", ".eslintrc", ".prettierrc", "prettier.config.", "tsconfig", "jest.config.", "vitest.config.",
+    "playwright.config.", "cypress.config.", "stylelint.config.", ".stylelintrc",
+)
+QUALITY_CONFIG_DIRS = (".github/workflows/", ".husky/", ".circleci/")
+
+
+def protection(path: str) -> tuple[str, str] | None:
+    """Return (kind, why) if a project-relative path is protected, else None."""
+    path = path.replace("\\", "/")
+    if path.startswith("./"):
+        path = path[2:]
+    name = path.rsplit("/", 1)[-1]
+    if path.startswith(HARNESS_PROTECTED) or path in HARNESS_PROTECTED_FILES:
+        return "harness", "it is part of the harness that judges this work"
+    if path.startswith(".harness/runtime/") and name in GENERATED_STATE:
+        return "harness", "it is written only by .harness/bin/route.py"
+    if name in QUALITY_CONFIG_NAMES or name.startswith(QUALITY_CONFIG_PREFIXES) or path.startswith(QUALITY_CONFIG_DIRS):
+        return "quality-config", "it configures the checks (lint, types, tests, CI) that judge this work"
+    return None
+
 
 IMPLEMENTING = ("IMPLEMENTATION", "REMEDIATION", "MIGRATION", "RELEASE_ONLY")
 NO_CODE = ("DISCOVERY", "ARCHITECTURE_ONLY")
@@ -303,27 +341,47 @@ def is_harness_path(path: str) -> bool:
     return path.startswith(".harness/runtime/")
 
 
+def base_commit(root: Path) -> str | None:
+    """Where the change starts: the fork point from the default branch, else HEAD."""
+    head = (git(root, "rev-parse", "HEAD") or "").strip()
+    if not head:
+        return None
+    for ref in ("origin/HEAD", "origin/main", "origin/master", "main", "master"):
+        fork = (git(root, "merge-base", "HEAD", ref) or "").strip()
+        if fork and fork != head:
+            return fork
+    return head
+
+
 def change_identity(root: Path) -> tuple[dict, list[str]]:
-    """Identify the uncommitted change by a digest of its content, plus the changed paths."""
+    """Identify the change by a digest of the content of every file it touches.
+
+    The change is everything that differs from the base commit, committed or
+    not, plus untracked files. Committing the same content does not change the
+    identity; editing any file does.
+    """
     status = git(root, "status", "--porcelain", "--untracked-files=all")
     if status is None:
         return {"type": "unversioned", "value": "none"}, []
-    paths = []
-    for line in status.splitlines():
-        path = line[3:].split(" -> ")[-1].strip().strip('"')
-        if path and not is_harness_path(path):
-            paths.append(path)
-    paths.sort()
+    paths = {
+        line[3:].split(" -> ")[-1].strip().strip('"')
+        for line in status.splitlines() if line[:2] == "??"
+    }
+    base = base_commit(root)
+    if base:
+        paths |= set((git(root, "diff", "--name-only", base) or "").split("\n"))
+    else:  # no commits yet: everything staged is the change
+        paths |= set((git(root, "diff", "--name-only", "--cached") or "").split("\n"))
+    paths = sorted(p for p in paths if p and not is_harness_path(p))
     if not paths:
-        head = (git(root, "rev-parse", "HEAD") or "").strip()
-        committed = (git(root, "diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD") or "").split()
-        return {"type": "commit", "value": head or "none"}, sorted(committed)
+        return {"type": "clean", "value": base or "none"}, []
     digest = hashlib.sha256()
     for path in paths:
-        digest.update(path.encode())
+        digest.update(path.encode() + b"\0")
         file = root / path
         digest.update(file.read_bytes() if file.is_file() else b"<deleted>")
-    return {"type": "working-tree", "value": "sha256:" + digest.hexdigest()[:16]}, paths
+        digest.update(b"\0")
+    return {"type": "content", "value": "sha256:" + digest.hexdigest()[:16]}, paths
 
 
 def detect_signals(paths: list[str]) -> list[dict]:
@@ -571,6 +629,130 @@ def cmd_plan(args: argparse.Namespace) -> int:
     return 0
 
 
+def state_dir(root: Path, runtime: str) -> Path:
+    return root / ".harness/runtime" / runtime
+
+
+def load_gates(root: Path, runtime: str) -> dict:
+    path = state_dir(root, runtime) / "gates.json"
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8")).get("gates", {})
+    except (json.JSONDecodeError, AttributeError):
+        raise RouteError(f"{path} is not readable; it is written only by `route.py gate`") from None
+
+
+def save_gates(root: Path, runtime: str, gates: dict) -> None:
+    path = state_dir(root, runtime) / "gates.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"gates": gates}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def cmd_gate(args: argparse.Namespace) -> int:
+    root = Path(args.project).resolve()
+    identity, _ = change_identity(root)
+    gates = load_gates(root, args.runtime)
+    if args.carry_forward:
+        previous = gates.get(args.agent)
+        if not previous or previous["decision"] not in PASSING:
+            raise RouteError(f"{args.agent} has no passing result to carry forward; run the gate instead")
+        if args.decision or args.report or args.condition:
+            raise RouteError("--carry-forward keeps the recorded decision; do not combine it with --decision, --report or --condition")
+        if previous["change_identity"] == identity["value"]:
+            print(f"{args.agent}: already recorded for the current change")
+            return 0
+        previous.setdefault("carried_forward", []).append({"from": previous["change_identity"], "reason": args.carry_forward})
+        previous["change_identity"] = identity["value"]
+        save_gates(root, args.runtime, gates)
+        print(f"{args.agent}: {previous['decision']} carried forward to {identity['value']}")
+        return 0
+    if not args.decision:
+        raise RouteError(f"--decision is required. Known: {', '.join(GATE_DECISIONS)}")
+    if not args.report:
+        raise RouteError("--report is required: a gate result without its report is not evidence")
+    report = (root / args.report) if not Path(args.report).is_absolute() else Path(args.report)
+    if not report.is_file() or not report.read_text(encoding="utf-8", errors="replace").strip():
+        raise RouteError(f"report {args.report} does not exist or is empty")
+    conditions = [c.strip() for c in args.condition or [] if c.strip()]
+    if args.decision == "PASS_WITH_CONDITIONS" and not conditions:
+        raise RouteError("PASS_WITH_CONDITIONS needs at least one --condition")
+    if args.decision == "PASS" and conditions:
+        raise RouteError("PASS takes no --condition; use PASS_WITH_CONDITIONS")
+    try:
+        shown = report.resolve().relative_to(root).as_posix()
+    except ValueError:
+        shown = str(report)
+    gates[args.agent] = {
+        "decision": args.decision,
+        "change_identity": identity["value"],
+        "report": shown,
+        "report_sha256": hashlib.sha256(report.read_bytes()).hexdigest()[:16],
+        "conditions": conditions,
+    }
+    save_gates(root, args.runtime, gates)
+    print(f"{args.agent}: {args.decision} recorded for {identity['value']}")
+    return 0
+
+
+def readiness(root: Path, runtime: str) -> tuple[str, list[str], list[str]]:
+    """Return (status, blockers, conditions) for the Final Pre-PR Gate.
+
+    Precedence: a changes-required or blocked gate, then a missing or stale
+    required gate, then conditions, then pass. Nothing is averaged.
+    """
+    plan_path = state_dir(root, runtime) / "routing-plan.yaml"
+    if not plan_path.exists():
+        return "PRE_PR_BLOCKED", ["no routing plan; run `route.py plan` for this change"], []
+    try:
+        plan = parse(plan_path.read_text(encoding="utf-8"))
+    except RouteError as error:
+        return "PRE_PR_BLOCKED", [f"routing plan was not generated by route.py ({error})"], []
+    problems = validate(plan)
+    if problems:
+        return "PRE_PR_BLOCKED", [f"routing plan is invalid: {problem}" for problem in problems], []
+    identity, paths = change_identity(root)
+    if plan["change_identity"]["value"] != identity["value"]:
+        return "PRE_PR_BLOCKED", [
+            "the change was edited after the routing plan was written; rerun `route.py plan`, then rerun the gates "
+            "the edit invalidates and carry the others forward with `route.py gate --carry-forward`"
+        ], []
+    gates = load_gates(root, runtime)
+    blockers, missing, conditions = [], [], []
+    for entry in plan["agents"]:
+        if entry["applicability"] != "REQUIRED":
+            continue
+        agent, result = entry["agent"], gates.get(entry["agent"])
+        if result is None:
+            missing.append(f"{agent}: required gate has no recorded result")
+        elif result["change_identity"] != identity["value"]:
+            missing.append(f"{agent}: result is stale, it was recorded for an earlier version of the change")
+        elif result["decision"] not in PASSING:
+            blockers.append(f"{agent}: {result['decision']} (see {result['report']})")
+        else:
+            report = root / result["report"]
+            if not report.is_file() or hashlib.sha256(report.read_bytes()).hexdigest()[:16] != result["report_sha256"]:
+                missing.append(f"{agent}: report {result['report']} is missing or was changed after the result was recorded")
+            conditions += [f"{agent}: {condition}" for condition in result["conditions"]]
+            conditions += [f"{agent}: carried forward ({c['reason']})" for c in result.get("carried_forward", [])]
+    judged = sorted(p for p in paths if (protection(p) or ("", ""))[0] == "quality-config")
+    if judged:
+        conditions.append("the change edits the checks that judge it; a person must review: " + ", ".join(judged))
+    if blockers or missing:
+        return "PRE_PR_BLOCKED", blockers + missing, conditions
+    return ("PRE_PR_PASS_WITH_CONDITIONS" if conditions else "PRE_PR_PASS"), [], conditions
+
+
+def cmd_ready(args: argparse.Namespace) -> int:
+    status, blockers, conditions = readiness(Path(args.project).resolve(), args.runtime)
+    print(status)
+    for blocker in blockers:
+        print(f"  blocker: {blocker}")
+    for condition in conditions:
+        print(f"  condition: {condition}")
+    return 1 if status == "PRE_PR_BLOCKED" else 0
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     path = Path(args.plan)
     if not path.exists():
@@ -613,6 +795,22 @@ def main(argv: list[str] | None = None) -> int:
     check = sub.add_parser("check", help="Validate a routing plan")
     check.add_argument("plan")
     check.set_defaults(func=cmd_check)
+
+    gate = sub.add_parser("gate", help="Record a gate result for the current change")
+    gate.add_argument("--runtime", required=True, choices=RUNTIMES)
+    gate.add_argument("--agent", required=True, choices=AGENTS)
+    gate.add_argument("--decision", choices=GATE_DECISIONS)
+    gate.add_argument("--report", help="the specialist's report file")
+    gate.add_argument("--condition", action="append", help="repeatable; required for PASS_WITH_CONDITIONS")
+    gate.add_argument("--carry-forward", metavar="REASON",
+                      help="keep a passing result after an edit that does not invalidate it, with the reason")
+    gate.add_argument("--project", default=".")
+    gate.set_defaults(func=cmd_gate)
+
+    ready = sub.add_parser("ready", help="Final Pre-PR Gate: is every required gate passed for the current change?")
+    ready.add_argument("--runtime", required=True, choices=RUNTIMES)
+    ready.add_argument("--project", default=".")
+    ready.set_defaults(func=cmd_ready)
 
     args = parser.parse_args(argv)
     try:
