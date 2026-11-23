@@ -43,7 +43,7 @@ CHANGE_NOTE = "The change is already in this repository's working tree as uncomm
 NO_CHANGE_NOTE = "There are no code changes in the working tree for this request.\n"
 
 
-def run_claude(prompt: str, sandbox: Path, args: argparse.Namespace) -> dict:
+def run_claude(prompt: str, sandbox: Path, args: argparse.Namespace, extra_tools: tuple[str, ...] = ()) -> dict:
     """Run Claude Code headless in the sandbox and return normalised metrics."""
     command = [
         "claude", "-p", prompt,
@@ -52,6 +52,7 @@ def run_claude(prompt: str, sandbox: Path, args: argparse.Namespace) -> dict:
         "--allowedTools", "Read", "Grep", "Glob", "Write", "Edit", "Skill",
         "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(ls:*)",
         "Bash(python3 .harness/bin/route.py:*)",
+        *extra_tools,
         # Only the sandbox's own configuration: no user settings, memory, or MCP servers.
         "--setting-sources", "project",
         "--strict-mcp-config",

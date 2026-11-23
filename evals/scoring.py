@@ -224,3 +224,49 @@ def consistency(scores: list[dict]) -> dict:
         "distinct_decisions": len(set(signatures)),
         "agreement": round(most_common / len(signatures), 3) if signatures else None,
     }
+
+
+NON_PASSING = ("CHANGES_REQUIRED", "BLOCKED")
+
+
+def score_review(defect: dict | None, required: list[str], gates: dict, reports: dict[str, str], status: str) -> dict:
+    """Score a full review run: did the routed gates run, and did they judge the change correctly.
+
+    `gates` is {agent: {"decision": ..., "current": bool}} and `reports` is
+    {agent: report text}. With a planted defect the run passes when a gate that
+    demands changes names the defect and the final gate is blocked. Without one
+    (a control) it passes when no gate demands changes.
+
+    A report counts as naming the defect when it matches every evidence pattern.
+    That is a text match, so read the saved reports before trusting a close call.
+    """
+    import re
+
+    recorded = [agent for agent in required if gates.get(agent, {}).get("current")]
+    not_run = [agent for agent in required if agent not in recorded]
+    rejecting = sorted(agent for agent in recorded if gates[agent]["decision"] in NON_PASSING)
+    result: dict = {
+        "status": status,
+        "required": len(required),
+        "recorded": len(recorded),
+        "gates_not_run": not_run,
+        "rejecting": rejecting,
+    }
+    failures = []
+    if not required:
+        failures.append("no routing plan with required gates")
+    elif not_run:
+        failures.append("gates not run: " + ", ".join(not_run))
+    if defect:
+        patterns = [re.compile(pattern, re.I) for pattern in defect["evidence"]]
+        named = sorted(agent for agent, text in reports.items() if all(p.search(text) for p in patterns))
+        found_by = [agent for agent in rejecting if agent in named]
+        result.update(found_by=found_by, mentioned_by=named)
+        if not found_by:
+            failures.append("defect mentioned but no gate demanded changes for it" if named else "defect not found")
+        elif status != "PRE_PR_BLOCKED":
+            failures.append(f"defect found but the final gate is {status}")
+    elif rejecting:
+        failures.append("false alarm: " + ", ".join(rejecting))
+    result.update(passed=not failures, failure="; ".join(failures) or None)
+    return result
