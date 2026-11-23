@@ -76,3 +76,16 @@ Always-on cost, measured with `evals/context_cost.py` (same trivial prompt in a 
 | Harness installed, after | 22,819 (2,743 added) |
 
 Skills preloaded into a Claude specialist before it reads any code, in words: qa 38,262 to 0, frontend-code-review 34,487 to 0, security 22,428 to 0, infrastructure 20,797 to 0. Each agent now lists the same skills by path and reads the ones a change needs. Whether specialists review as well with on-demand skills is not measured: these scenarios stop at routing.
+
+# After narrowing the Security trigger
+
+The trigger vocabulary and the `fullstack-medium` oracle disagreed (see above). The vocabulary was changed: Security is triggered by a change to how access is decided, by something newly exposed, or by newly handled sensitive data, and not merely by code that runs behind authentication or reads tenant-scoped data.
+
+Two trials each of the two cases this affects, on 2026-11-22:
+
+| Scenario | Expected | Trial 1 | Trial 2 |
+|---|---|---|---|
+| fullstack-medium (new filter on a tenant-scoped list) | Security not required | pass | pass |
+| tiny-multitenant-auth (one line relaxing tenant isolation) | Security required | pass | pass |
+
+Both scenarios reached the same routing decision in both trials. The other four cases were not rerun; their last result is 4 of 4 passing, so the expected total is 6 of 6, not yet measured in a single run.

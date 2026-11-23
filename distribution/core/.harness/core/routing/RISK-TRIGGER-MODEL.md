@@ -69,23 +69,37 @@ Activates relevant Architecture Review.
 
 ### SECURITY
 
+The change alters how the system decides who may do what:
+
 ```text
-authn/authz
-multi-tenancy
-privilege
+authentication or authorization logic
+tenant-isolation rule
+privilege or role
+```
+
+or it opens something new:
+
+```text
 public entry point
-sensitive/personal data
-secret
 webhook
 file upload/download
-user-generated HTML
 redirect/callback
 third-party script/provider
-IAM/network
-analytics/privacy
+rendering of user-generated HTML
+IAM/network exposure
+```
+
+or it newly stores, logs or sends:
+
+```text
+sensitive/personal data
+secret
+analytics/privacy-relevant data
 ```
 
 Activates Security unless an explicit specialist policy says review not required.
+
+Do not activate merely because the code runs behind authentication or reads tenant-scoped data. A validated parameter added to an existing protected endpoint, with its access rules unchanged, is not a Security trigger. A one-line change to the access rule itself is.
 
 ### DATA_INTEGRITY
 
