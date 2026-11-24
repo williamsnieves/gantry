@@ -107,4 +107,16 @@ What this shows:
 - A full review is expensive: about $6 and 8 to 9 minutes for a six-file change, and about 14,600 words of reports across both runs. In the leak case six gates reported the same defect independently.
 - QA noted that its contract cites `references/qa-decision-policy.md`, which is not installed. Seven agent contracts cite `references/` files that do not exist (nine files in total).
 
-Not measured: repeatability, a subtler defect that only one specialist is placed to see, and the corrected control.
+Not measured: repeatability, and a subtler defect that only one specialist is placed to see.
+
+## Corrected control
+
+Rerun on 2026-11-24 with the corrected control (scope stated in the request, controller and client tests added), after the dead citations in the agent contracts were removed. One trial.
+
+| Case | Gates run | Final gate | Outcome | Cost | Wall time |
+|---|---|---|---|---|---|
+| severity-filter-clean (control) | 6 of 6 | `PRE_PR_PASS_WITH_CONDITIONS` | No gate demanded changes | $5.56 | 402 s |
+
+Detail Analyst passed outright. The other five gates passed with conditions, and every condition is the same one: run tests, typecheck and lint where dependencies are installed, because the sandbox cannot. No project file was edited.
+
+With the first run, that is one defect found out of one and one control passed out of one. Two trials show the flow discriminates between these two changes; they are not a detection rate or a false-alarm rate.
