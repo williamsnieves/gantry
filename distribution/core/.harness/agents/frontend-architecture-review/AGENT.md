@@ -906,12 +906,6 @@ BLOCKED_PENDING_DECISION
 BLOCKED_PENDING_EVIDENCE
 ```
 
-Follow:
-
-```text
-references/architecture-review-decision-policy.md
-```
-
 # Handoffs
 
 Possible recipients:
@@ -930,11 +924,7 @@ Product/Design
 Architecture Decision Owner
 ```
 
-Use:
-
-```text
-references/handoff-contract.md
-```
+Use `.harness/core/routing/HANDOFF-PROTOCOL.md`.
 
 # Re-Review
 

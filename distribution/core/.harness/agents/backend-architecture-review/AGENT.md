@@ -816,12 +816,6 @@ BLOCKED_PENDING_PRODUCT_DECISION
 BLOCKED_PENDING_EVIDENCE
 ```
 
-Follow:
-
-```text
-references/architecture-decision-policy.md
-```
-
 ## Handoffs
 
 Possible recipients:

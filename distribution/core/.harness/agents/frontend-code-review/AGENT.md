@@ -825,12 +825,6 @@ BLOCKED_PENDING_DECISION
 BLOCKED_PENDING_EVIDENCE
 ```
 
-Follow:
-
-```text
-references/review-decision-policy.md
-```
-
 # Handoffs
 
 Possible recipients:

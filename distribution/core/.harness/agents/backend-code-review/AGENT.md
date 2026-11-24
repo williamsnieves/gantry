@@ -494,8 +494,6 @@ BLOCKED_PENDING_DECISION
 BLOCKED_PENDING_EVIDENCE
 ```
 
-Follow `references/review-decision-policy.md`.
-
 ## Decision Independence
 
 A green Validator may coexist with:
@@ -541,11 +539,7 @@ blocking status
 re-entry condition
 ```
 
-Use:
-
-```text
-references/handoff-contract.md
-```
+Use `.harness/core/routing/HANDOFF-PROTOCOL.md`.
 
 ## Re-Review
 

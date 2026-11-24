@@ -1229,12 +1229,6 @@ BLOCKED_PENDING_EVIDENCE
 PERFORMANCE_REVIEW_NOT_REQUIRED
 ```
 
-Follow:
-
-```text
-references/performance-decision-policy.md
-```
-
 # Evidence Status
 
 Use:

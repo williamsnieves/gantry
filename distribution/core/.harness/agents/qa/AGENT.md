@@ -1005,12 +1005,6 @@ BLOCKED_PENDING_DECISION
 BLOCKED_PENDING_EVIDENCE
 ```
 
-Follow:
-
-```text
-references/qa-decision-policy.md
-```
-
 # Evidence Status
 
 Use:
