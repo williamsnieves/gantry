@@ -56,20 +56,7 @@ a specialist blocker.
 
 # Operating Position
 
-Typical position:
-
-```text
-implementation
-→ Validator
-→ specialist reviews
-→ Detail Analyst
-→ Reviewer
-→ final pre-PR gate
-```
-
-Applicable specialist reviews may run in parallel earlier.
-
-Reviewer runs only when the required gate set for the change is known and stable enough to integrate.
+Work independently from the implementer. The order in which gates run is computed by `.harness/bin/route.py`; do not infer it from this contract.
 
 # Inputs
 

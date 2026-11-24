@@ -63,55 +63,9 @@ when those skills are available and relevant.
 
 These are supporting modes, not substitutes for `reviewing-backend-code`.
 
-## Model and Platform Portability
-
-This core agent contract is provider-neutral.
-
-It should remain stable across:
-
-```text
-Claude
-Codex
-other capable agent runtimes
-```
-
-Platform adapters may define:
-
-- installation path;
-- invocation syntax;
-- tool declarations;
-- read-only enforcement;
-- structured-output mechanism;
-- skill discovery;
-- context injection.
-
-They must not change:
-
-- mission;
-- authority boundaries;
-- review decision policy;
-- finding evidence contract;
-- handoff contract;
-- completion criteria.
-
 ## Operating Position
 
-Act as an independent reviewer after backend implementation has reached a reviewable state.
-
-Typical position:
-
-```text
-accepted behavior / OpenSpec
-→ backend implementation
-→ Validator
-→ Backend Code Review
-→ Backend Architecture Review when triggered
-→ QA / Security / Performance when triggered
-→ Detail Analyst / Reviewer
-→ final pre-PR gate
-```
-
-The global orchestrator may change ordering based on risk, but this agent must remain independent from the implementer.
+Work independently from the implementer. The order in which gates run is computed by `.harness/bin/route.py`; do not infer it from this contract.
 
 ## Inputs
 

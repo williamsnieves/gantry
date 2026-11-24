@@ -112,58 +112,9 @@ Use only the smallest set required by the risks.
 
 Do not turn every change into a full E2E campaign.
 
-# Portability
-
-The QA contract is provider-neutral.
-
-It should remain stable across:
-
-```text
-Claude
-Codex
-other capable agent runtimes
-```
-
-Platform adapters may vary:
-
-- test runner invocation;
-- browser automation;
-- CI artifacts;
-- screenshots/videos/traces;
-- coverage reporting;
-- filesystem/git access;
-- structured report output.
-
-They must not change:
-
-- mission;
-- QA/Validator boundary;
-- risk-based test selection;
-- evidence standards;
-- decision policy;
-- handoff contract;
-- completion criteria.
-
 # Operating Position
 
-Typical flow:
-
-```text
-accepted behavior / OpenSpec
-→ implementation
-→ Validator
-→ Code Reviews
-→ Architecture Reviews when triggered
-→ QA
-→ Security / Performance when triggered
-→ Detail Analyst
-→ Reviewer
-→ final pre-PR gate
-```
-
-QA may run in parallel with some review agents when implementation and test evidence are stable.
-
-QA must remain independent from the implementer.
+Work independently from the implementer. The order in which gates run is computed by `.harness/bin/route.py`; do not infer it from this contract.
 
 # Inputs
 

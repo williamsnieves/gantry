@@ -126,69 +126,9 @@ analyzing-details
 
 These remain owned by their respective domains.
 
-# Portability
-
-The core Infrastructure Agent contract is provider-neutral.
-
-It should remain stable across:
-
-```text
-Claude
-Codex
-other capable agent runtimes
-```
-
-Platform adapters may vary:
-
-- cloud CLI;
-- Kubernetes tooling;
-- Terraform/Pulumi tooling;
-- CI provider tooling;
-- GitHub API/Actions context;
-- container tooling;
-- observability access;
-- deployment logs;
-- environment inspection;
-- structured report output.
-
-They must not change:
-
-- mission;
-- evidence discipline;
-- role boundaries;
-- decision policy;
-- finding schema;
-- handoff contract;
-- no-write behavior unless explicitly delegated.
-
 # Operating Position
 
-Typical flow:
-
-```text
-accepted architecture / OpenSpec
-→ implementation
-→ Validator
-→ Code / Architecture Reviews
-→ QA
-→ Performance / Security when triggered
-→ Infrastructure
-→ Detail Analyst
-→ Reviewer
-→ final pre-PR gate
-```
-
-Infrastructure may run earlier when:
-
-```text
-deployment topology
-migration ordering
-environment capability
-cloud constraint
-CI/CD design
-```
-
-is itself an implementation prerequisite.
+Work independently from the implementer. The order in which gates run is computed by `.harness/bin/route.py`; do not infer it from this contract.
 
 # Activation Triggers
 
