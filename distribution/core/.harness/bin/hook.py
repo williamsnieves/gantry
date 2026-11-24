@@ -4,7 +4,8 @@
 Reads the hook event as JSON on stdin and denies three things:
 
 1. Edits to the harness's own files, and to routing state that only
-   route.py may write.
+   route.py may write. A specialist agent may write one file, its own
+   report, and nobody else may write that report.
 2. Edits to existing quality configuration (lint, types, tests, CI), so a
    failing check is fixed in the code rather than by weakening the check.
 3. `gh pr create` before the Final Pre-PR Gate passes for the current change,
@@ -33,6 +34,7 @@ import route  # noqa: E402
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
 PR_CREATE = re.compile(r"(^|[\s;&|(])gh\s+pr\s+create\b")
 NO_VERIFY = re.compile(r"(^|\s)--no-verify\b")
+REPORT = re.compile(r"\.harness/runtime/([a-z]+)/artifacts/([a-z-]+)-report\.md")
 ASK_USER = "If the change is really needed, stop and ask the user to make it or to approve it; do not work around this."
 
 
@@ -74,6 +76,21 @@ def decide(event: dict, root: Path, runtime: str) -> str | None:
         path = relative(root, raw) if raw else None
         if not path:
             return None
+        agent = event.get("agent_type")
+        if agent in route.AGENTS:
+            own = f".harness/runtime/{runtime}/artifacts/{agent}-report.md"
+            if path == own:
+                return None
+            return (
+                f"Gantry: {agent} reviews the change and does not edit files. The only file it may write is its report, {own}. "
+                f"Put what you found in the report; the lead decides what happens next."
+            )
+        report = REPORT.fullmatch(path)
+        if report and report.group(1) == runtime and report.group(2) in route.AGENTS:
+            return (
+                f"Gantry: {path} is written only by the {report.group(2)} agent, so a report is exactly what the reviewer said. "
+                f"Launch {report.group(2)} again if the report is missing or wrong. {ASK_USER}"
+            )
         protected = route.protection(path)
         if protected is None and path in managed_files(root):
             protected = ("harness", "it was installed by the harness")
