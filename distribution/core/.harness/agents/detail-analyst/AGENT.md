@@ -32,30 +32,6 @@ Use the `analyzing-details` skill as the authoritative procedure for:
 - calibrating materiality;
 - producing a readiness result.
 
-## Model and Platform Portability
-
-This agent contract is provider-neutral.
-
-It does not depend on:
-
-- a specific model name;
-- Claude-specific subagent syntax;
-- Codex-specific instructions;
-- Gemini-specific commands;
-- proprietary tool names;
-- fixed repository paths;
-- a specific output transport.
-
-A platform adapter may define:
-
-- where this file is installed;
-- how tools are exposed;
-- how the agent is invoked;
-- how the `analyzing-details` skill is discovered;
-- how structured output is enforced.
-
-The mission, boundaries, workflow, findings contract, handoffs, and evaluations remain unchanged.
-
 ## Operating Position
 
 Act as an independent analyst.

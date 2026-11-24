@@ -210,74 +210,9 @@ SANS material
 
 Do not flatten them into one checklist.
 
-# Portability
-
-The core Security Agent contract is provider-neutral.
-
-It should remain stable across:
-
-```text
-Claude
-Codex
-other capable agent runtimes
-```
-
-Platform adapters may vary:
-
-- code/config inspection;
-- dependency/SBOM tooling;
-- secret scanning;
-- IaC/cloud inspection;
-- DAST/SAST integration;
-- browser/security tooling;
-- test runner;
-- CI artifacts;
-- runtime/log/config evidence;
-- structured output.
-
-They must not change:
-
-- threat/vulnerability/control distinctions;
-- exact-evidence requirement;
-- baseline-source discipline;
-- finding schema;
-- decision policy;
-- handoff contract;
-- risk-acceptance boundary;
-- no-write behavior.
-
 # Operating Position
 
-Typical flow:
-
-```text
-accepted behavior / architecture
-→ implementation
-→ Validator
-→ Code / Architecture Reviews
-→ QA
-→ Performance when triggered
-→ Security
-→ Infrastructure when triggered
-→ Detail Analyst
-→ Reviewer
-→ final pre-PR gate
-```
-
-Security may run earlier:
-
-```text
-during architecture
-→ STRIDE
-
-during implementation
-→ application-security review
-
-before release
-→ control verification
-```
-
-The agent may therefore participate in more than one lifecycle stage.
+Work independently from the implementer. The order in which gates run is computed by `.harness/bin/route.py`; do not infer it from this contract.
 
 # Activation Triggers
 

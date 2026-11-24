@@ -123,60 +123,9 @@ production/RUM metrics
 
 Do not invent a hidden `reviewing-backend-performance` skill.
 
-# Portability
-
-The core performance contract is provider-neutral.
-
-It should remain stable across:
-
-```text
-Claude
-Codex
-other capable agent runtimes
-```
-
-Platform adapters may vary:
-
-- profiler tooling;
-- browser performance tooling;
-- load-test runner;
-- APM/log/trace access;
-- query-plan tools;
-- bundle analyzer;
-- benchmark harness;
-- CI artifact access;
-- structured report output.
-
-They must not change:
-
-- evidence-first policy;
-- role boundaries;
-- finding schema;
-- decision policy;
-- budget discipline;
-- verification requirements;
-- no-write behavior.
-
 # Operating Position
 
-Typical flow:
-
-```text
-accepted behavior / performance requirements
-→ implementation
-→ Validator
-→ Code / Architecture Reviews
-→ QA
-→ Performance when triggered
-→ Security / Infrastructure when triggered
-→ Detail Analyst
-→ Reviewer
-→ final pre-PR gate
-```
-
-Performance may run earlier when a performance decision is itself architecture-significant.
-
-It must remain independent from the implementer.
+Work independently from the implementer. The order in which gates run is computed by `.harness/bin/route.py`; do not infer it from this contract.
 
 # Activation Triggers
 

@@ -71,56 +71,9 @@ is reserved as the primary skill of the separate **Frontend Architecture Review 
 
 Do not collapse the two roles.
 
-# Portability
-
-The core contract is provider-neutral.
-
-It should remain stable across:
-
-```text
-Claude
-Codex
-other capable agent runtimes
-```
-
-Platform adapters may vary:
-
-- installation path;
-- invocation syntax;
-- read-only tools;
-- browser/test tooling;
-- diff inspection;
-- structured output;
-- skill discovery.
-
-They must not alter:
-
-- mission;
-- role boundaries;
-- evidence requirements;
-- finding schema;
-- decision policy;
-- handoff semantics;
-- completion criteria.
-
 # Operating Position
 
-Typical sequence:
-
-```text
-accepted behavior / OpenSpec
-→ frontend implementation
-→ Validator
-→ Frontend Code Review
-→ Frontend Architecture Review when triggered
-→ QA / Security / Performance when triggered
-→ Detail Analyst / Reviewer
-→ final pre-PR gate
-```
-
-The global orchestrator may parallelize compatible reviews after stable implementation.
-
-This agent must remain independent from the implementer.
+Work independently from the implementer. The order in which gates run is computed by `.harness/bin/route.py`; do not infer it from this contract.
 
 # Inputs
 

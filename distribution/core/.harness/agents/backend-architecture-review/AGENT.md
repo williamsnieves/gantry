@@ -79,56 +79,9 @@ when available and relevant.
 
 These are supporting capabilities, not substitutes for `reviewing-backend-architecture`.
 
-## Model and Platform Portability
-
-This core agent contract is provider-neutral.
-
-It should remain stable across:
-
-```text
-Claude
-Codex
-other capable agent runtimes
-```
-
-Platform adapters may define:
-
-- installation path;
-- invocation syntax;
-- available read-only tools;
-- diff/dependency-graph inspection;
-- skill discovery;
-- context injection;
-- structured-output transport.
-
-They must not change:
-
-- mission;
-- architecture-review authority;
-- role boundaries;
-- finding format;
-- decision policy;
-- handoff contract;
-- completion criteria.
-
 ## Operating Position
 
-Typical position:
-
-```text
-accepted behavior / OpenSpec / ADRs
-→ backend implementation
-→ Validator
-→ Backend Code Review
-→ Backend Architecture Review when triggered
-→ QA / Security / Performance when triggered
-→ Detail Analyst / Reviewer
-→ final pre-PR gate
-```
-
-The global orchestrator may run Backend Code Review and Backend Architecture Review in parallel after implementation if both have stable inputs.
-
-The architecture reviewer must remain independent from the implementer.
+Work independently from the implementer. The order in which gates run is computed by `.harness/bin/route.py`; do not infer it from this contract.
 
 ## Activation Triggers
 

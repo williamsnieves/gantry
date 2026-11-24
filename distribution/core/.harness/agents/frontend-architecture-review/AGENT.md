@@ -98,57 +98,9 @@ They do not replace:
 reviewing-frontend-architecture
 ```
 
-## Model and Platform Portability
-
-This core contract is provider-neutral.
-
-It should remain stable across:
-
-```text
-Claude
-Codex
-other capable agent runtimes
-```
-
-Platform adapters may vary:
-
-- installation path;
-- invocation syntax;
-- filesystem/diff/browser tools;
-- architecture-validation execution;
-- skill discovery;
-- structured-output transport;
-- read-only enforcement.
-
-They must not change:
-
-- mission;
-- activation rules;
-- classification vocabulary;
-- review statuses;
-- evidence requirements;
-- role boundaries;
-- handoff contract;
-- completion criteria.
-
 # Operating Position
 
-Typical position:
-
-```text
-accepted behavior / OpenSpec
-→ frontend implementation
-→ Validator
-→ Frontend Code Review
-→ Frontend Architecture Review
-→ QA / Security / Performance when triggered
-→ Detail Analyst / Reviewer
-→ final pre-PR gate
-```
-
-The global orchestrator may run Code Review and Architecture Review in parallel after implementation if they consume stable inputs.
-
-This agent must remain independent from the implementer.
+Work independently from the implementer. The order in which gates run is computed by `.harness/bin/route.py`; do not infer it from this contract.
 
 # Activation Triggers
 
