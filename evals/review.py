@@ -31,6 +31,7 @@ sys.path.insert(0, str(ROOT / "distribution/core/.harness/bin"))
 import route  # noqa: E402
 import run  # noqa: E402
 import scoring  # noqa: E402
+import tracing  # noqa: E402
 
 CASES = ROOT / "evals/review-cases"
 # Specialists are launched as subagents; the name of that tool differs between Claude Code versions.
@@ -84,7 +85,11 @@ def run_trial(case_dir: Path, case: dict, args: argparse.Namespace, parent: Path
     if args.dry_run:
         record.update(dry_run=True, sandbox=str(sandbox), prompt=prompt)
         return record
-    record["metrics"] = run.DRIVERS[args.runtime](prompt, sandbox, args, SUBAGENT_TOOLS)
+    trace_file = out / f"{case_dir.name}-{trial}-trace.jsonl"
+    record["metrics"] = run.DRIVERS[args.runtime](prompt, sandbox, args, SUBAGENT_TOOLS, trace_file)
+    if trace_file.exists():
+        events = [json.loads(line) for line in trace_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+        record["trace"] = tracing.summarise(events, sandbox)
     required, gates, reports, status, blockers = collect(sandbox, args.runtime)
     record.update(gates=gates, blockers=blockers, side_effects=run.side_effects(sandbox, case_dir / "files"))
     for agent, text in reports.items():
@@ -108,6 +113,10 @@ def print_report(records: list[dict]) -> None:
               f"{s['recorded']}/{s['required']:<5} {s['status']:28} {cost:>7} {str(m.get('wall_seconds') or '-'):>6}  {detail}")
         if r.get("side_effects"):
             print(f"{'':30} project files changed during a review-only run: {', '.join(r['side_effects'])}")
+    for r in records:
+        if r.get("trace"):
+            print(f"\n{r['case']} trial {r['trial']}: what each agent read")
+            tracing.print_summary(r["trace"])
     defects = [r for r in records if r["has_defect"]]
     controls = [r for r in records if not r["has_defect"]]
     print()
