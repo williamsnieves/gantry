@@ -80,6 +80,8 @@ A trial asks the runtime to take the change through `harness-run` up to `route.p
 
 Naming the defect is decided by a text match on the report. The reports are saved next to `results.json`: read them before trusting a close call.
 
+Each trial also records every event of the run in `<case>-<trial>-trace.jsonl` and prints, per agent, how many requests it made, how full its context got, and how many words it read of each kind of file (agent contracts, skills, harness core, project code, run state), with the heaviest files listed. Use it to decide what to trim: `evals/tracing.py` holds the summary and is covered by the scoring tests.
+
 The sandbox has no dependencies installed, so the agents cannot run tests. The trial measures review by reading, not by execution.
 
 A trial launches one agent per routed gate and costs several times a routing trial.

@@ -120,3 +120,36 @@ Rerun on 2026-11-24 with the corrected control (scope stated in the request, con
 Detail Analyst passed outright. The other five gates passed with conditions, and every condition is the same one: run tests, typecheck and lint where dependencies are installed, because the sandbox cannot. No project file was edited.
 
 With the first run, that is one defect found out of one and one control passed out of one. Two trials show the flow discriminates between these two changes; they are not a detection rate or a false-alarm rate.
+
+# What a review reads
+
+Measured on 2026-11-24 with the trace added to `evals/review.py`, on the planted-leak case, one trial. The runtime's default model was `claude-opus-5-5` for this run; the earlier review runs used `claude-fable-5-2`, so its cost ($3.20) and time (508 s) are not comparable with theirs. The defect was found again: six of seven gates demanded changes, and Frontend Code Review passed with conditions.
+
+| Agent | Requests | Largest prompt (tokens) | Prompt tokens, all requests | Files read |
+|---|---|---|---|---|
+| lead | 21 | 87,827 | 1,081,860 | 0 |
+| qa | 8 | 29,513 | 183,668 | 13 |
+| detail-analyst | 7 | 39,720 | 167,621 | 21 |
+| validator | 7 | 19,436 | 103,704 | 0 (used the shell) |
+| reviewer | 4 | 38,718 | 100,599 | 11 |
+| security | 4 | 25,235 | 74,574 | 10 |
+| frontend-code-review | 4 | 21,935 | 64,524 | 8 |
+| backend-code-review | 3 | 16,563 | 37,035 | 6 |
+
+Words read with the Read tool, by kind of file:
+
+| Kind | Words |
+|---|---|
+| Agent contracts | 13,252 |
+| Reports of other gates | 11,871 |
+| Project code | 5,260 |
+| Skills | 634 |
+
+What this shows:
+
+- The lead is where the tokens go: 60% of all prompt tokens. Every specialist returns its report to the lead, the lead writes it to disk word for word (seven writes of 650 to 1,400 words), and the report then stays in the lead's context, which grew from 24,500 to 87,800 tokens.
+- Skills are almost never read. Six of seven specialists read none, although each contract names a skill as its authoritative procedure. The defect was found without them.
+- Agent contracts are the largest thing read, two and a half times the project code under review.
+- Detail Analyst and Reviewer reread every other gate's report in full.
+
+One trial, one easy defect: this says where the weight is, not what can be removed safely.
