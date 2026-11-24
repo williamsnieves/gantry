@@ -45,6 +45,8 @@ Do not redefine the role, decision vocabulary, severity, gate semantics, ownersh
 
 Save your full report with the Write tool at `.harness/runtime/claude/artifacts/infrastructure-report.md`. That is the only file you may write; a hook denies any other edit. Analyze and report; do not change the repository.
 
+Keep the report proportionate to what you found. Lead with the decision, then each finding with its evidence, then conditions and handoffs. Leave out any section of the report template that has nothing to report, and do not describe what you checked and found correct beyond one line. A change with no findings needs a report of a few lines.
+
 Then reply to the lead with a short summary only, not the report:
 
 - your decision, in your contract's vocabulary;

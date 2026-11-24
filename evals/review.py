@@ -44,7 +44,7 @@ Use the harness-run skill to take this change through every routed gate, up to a
 
 This is a review-only run:
 - Do not modify any project file and do not fix anything. If a gate requires changes, record that result and still run the remaining routed gates.
-- Dependencies are not installed here, so tests, lint and type checks cannot be executed. That is a known limit of this environment, not a finding about the change; judge the change by reading it.
+- Dependencies are not installed here, so tests, lint and type checks cannot be executed. The project owner accepts that for this run: a check that could not be executed is recorded as a condition, not as a failed or blocked gate, and the change is judged by reading it. Tell every specialist this when you launch it.
 - Finish by running `python3 .harness/bin/route.py ready --runtime {runtime}` and report what it prints. Do not create a pull request.
 """
 
