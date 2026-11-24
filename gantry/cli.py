@@ -48,6 +48,8 @@ NATIVE_SKILL_DIRS = {"claude": ".claude/skills"}
 # before the Final Pre-PR Gate passes. See distribution/core/.harness/bin/hook.py.
 HOOK_MARKER = ".harness/bin/hook.py"
 HOOK_SETTINGS = {"claude": ".claude/settings.json"}
+# Runtimes whose specialists write their own report, which only a hook can confine to that file.
+AGENT_DIRS = {"claude": ".claude/agents"}
 HOOK_MATCHERS = ("Edit|Write|MultiEdit|NotebookEdit", "Bash")
 HOOK_DISCLOSURE = """Hooks registered in {path} (skip with --no-hooks):
   - deny agent edits to harness files and to routing state written by route.py
@@ -360,12 +362,20 @@ def install_shared(project: Path, state: dict, *, force: bool, dry_run: bool):
     if not dry_run:
         state["shared_installed"] = True
 
+def read_only_agent(text: str) -> str:
+    """Agent definition without write access, for installs where no hook limits what it may write."""
+    text = re.sub(r"^(tools: .*?), Write$", r"\1", text, count=1, flags=re.M)
+    return re.sub(r"^permissionMode: acceptEdits$", "permissionMode: plan", text, count=1, flags=re.M)
+
 def install_runtime(runtime: str, project: Path, state: dict, *, force: bool, dry_run: bool, hooks: bool = True):
     overlay = distribution_root() / "runtimes" / runtime
-    managed_tree(
-        overlay, project, project, state,
-        force=force, dry_run=dry_run, label=f"runtime:{runtime}"
-    )
+    agents_dir = overlay / AGENT_DIRS[runtime] if runtime in AGENT_DIRS else None
+    for src in iter_files(overlay):
+        content = None
+        if not hooks and agents_dir and src.parent == agents_dir:
+            content = read_only_agent(src.read_text(encoding="utf-8"))
+        managed_copy(src, project / src.relative_to(overlay), project, state,
+                     force=force, dry_run=dry_run, label=f"runtime:{runtime}", content=content)
     if runtime in NATIVE_SKILL_DIRS:
         install_skills(
             project / NATIVE_SKILL_DIRS[runtime], project, state,

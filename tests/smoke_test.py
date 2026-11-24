@@ -114,11 +114,16 @@ run("install", "--runtime", "claude", "--no-hooks", "--project", str(project))
 assert harness_hooks() == [] if "PreToolUse" in claude_settings()["hooks"] else True
 assert ".harness/bin/hook.py" not in (project / ".claude/settings.json").read_text()
 assert "gates are advisory only" in run("doctor", "--project", str(project)).stdout
+# Without a hook to confine it, a specialist is installed without write access.
+qa_agent = (project / ".claude/agents/qa.md").read_text()
+assert "tools: Read, Grep, Glob\n" in qa_agent and "permissionMode: plan\n" in qa_agent
 # Reinstalling over an unmodified install is idempotent.
 run("install", "--runtime", "all", "--scope", "fullstack", "--profile", "standard", "--project", str(project))
 run("status", "--project", str(project))
 
 assert len(harness_hooks()) == 2  # the reinstall registered them once, not twice
+qa_agent = (project / ".claude/agents/qa.md").read_text()
+assert "tools: Read, Grep, Glob, Write\n" in qa_agent and "permissionMode: acceptEdits\n" in qa_agent
 
 # Remove one runtime; shared stays.
 run("uninstall", "--runtime", "cursor", "--project", str(project))

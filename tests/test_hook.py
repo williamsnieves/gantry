@@ -62,7 +62,26 @@ with tempfile.TemporaryDirectory() as tmp:
     # Ordinary work is untouched.
     allowed("Edit", file_path=str(project / "src/app.ts"))
     allowed("Write", file_path="src/new.ts")
-    allowed("Write", file_path=str(project / ".harness/runtime/claude/artifacts/qa-report.md"))
+    allowed("Write", file_path=str(project / ".harness/runtime/claude/artifacts/notes.md"))
+
+    # A specialist may write its own report and nothing else; nobody else may write that report.
+    def as_agent(agent, path, tool="Write"):
+        payload = json.dumps({"hook_event_name": "PreToolUse", "tool_name": tool, "agent_type": agent,
+                              "tool_input": {"file_path": str(project / path)}, "cwd": str(project)})
+        return hook(tool, raw=payload)[0]
+
+    qa_report = ".harness/runtime/claude/artifacts/qa-report.md"
+    assert as_agent("qa", qa_report) is None
+    for path in ("src/app.ts", ".harness/runtime/claude/artifacts/security-report.md", "notes.md"):
+        reason = as_agent("qa", path)
+        assert reason and "qa reviews the change and does not edit files" in reason and qa_report in reason, (path, reason)
+    assert "does not edit files" in as_agent("reviewer", "src/app.ts", tool="Edit")
+    for writer in (None, "general-purpose", "security"):
+        reason = as_agent(writer, qa_report)
+        assert reason and ("written only by the qa agent" in reason or "does not edit files" in reason), (writer, reason)
+    assert "written only by the qa agent" in denied("Write", file_path=str(project / qa_report))
+    # An agent that is not a harness specialist follows the ordinary rules.
+    assert as_agent("general-purpose", "src/app.ts") is None
     allowed("Edit", file_path="/somewhere/else/eslint.config.js")
     allowed("Bash", command="npm test && git commit -m 'x' && git push")
     allowed("Read", file_path=str(project / ".harness/bin/route.py"))
