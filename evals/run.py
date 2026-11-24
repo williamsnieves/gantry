@@ -43,11 +43,15 @@ CHANGE_NOTE = "The change is already in this repository's working tree as uncomm
 NO_CHANGE_NOTE = "There are no code changes in the working tree for this request.\n"
 
 
-def run_claude(prompt: str, sandbox: Path, args: argparse.Namespace, extra_tools: tuple[str, ...] = ()) -> dict:
-    """Run Claude Code headless in the sandbox and return normalised metrics."""
+def run_claude(prompt: str, sandbox: Path, args: argparse.Namespace, extra_tools: tuple[str, ...] = (),
+               trace: Path | None = None) -> dict:
+    """Run Claude Code headless in the sandbox and return normalised metrics.
+
+    With `trace`, every event of the run is written there as JSON lines.
+    """
     command = [
         "claude", "-p", prompt,
-        "--output-format", "json",
+        *(("--output-format", "stream-json", "--verbose") if trace else ("--output-format", "json")),
         "--permission-mode", "acceptEdits",
         "--allowedTools", "Read", "Grep", "Glob", "Write", "Edit", "Skill",
         "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(ls:*)",
@@ -69,8 +73,13 @@ def run_claude(prompt: str, sandbox: Path, args: argparse.Namespace, extra_tools
         return {"error": f"timed out after {args.timeout}s", "wall_seconds": round(time.monotonic() - started, 1)}
     wall = round(time.monotonic() - started, 1)
     try:
-        payload = json.loads(proc.stdout)
-    except json.JSONDecodeError:
+        if trace:
+            trace.write_text(proc.stdout, encoding="utf-8")
+            events = [json.loads(line) for line in proc.stdout.splitlines() if line.strip()]
+            payload = next(event for event in reversed(events) if event.get("type") == "result")
+        else:
+            payload = json.loads(proc.stdout)
+    except (json.JSONDecodeError, StopIteration):
         return {"error": f"exit {proc.returncode}: {(proc.stderr or proc.stdout).strip()[:500]}", "wall_seconds": wall}
     usage = payload.get("usage") or {}
     metrics = {

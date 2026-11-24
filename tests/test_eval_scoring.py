@@ -145,4 +145,35 @@ alarm = scoring.score_review(None, REQUIRED, ran(qa="BLOCKED"), {}, "PRE_PR_BLOC
 assert not alarm["passed"] and alarm["failure"] == "false alarm: qa", alarm
 assert not scoring.score_review(None, [], {}, {}, "PRE_PR_BLOCKED")["passed"]
 
+# Trace summary: attribute requests and reads to the agent that made them.
+import tempfile
+import tracing
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    for name, text in ((".harness/agents/qa/AGENT.md", "one two three\nfour five\n"), ("src/a.ts", "x y\n")):
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text(text)
+    usage = lambda prompt, out: {"input_tokens": 1, "cache_read_input_tokens": prompt - 1, "output_tokens": out}
+    say = lambda mid, parent, use, content: {"type": "assistant", "parent_tool_use_id": parent,
+                                              "message": {"id": mid, "usage": use, "content": content}}
+    read = lambda path, **more: {"type": "tool_use", "id": "r", "name": "Read", "input": {"file_path": path, **more}}
+    events = [
+        say("m1", None, usage(100, 5), [{"type": "tool_use", "id": "launch", "name": "Agent", "input": {"subagent_type": "qa"}}]),
+        say("m2", "launch", usage(300, 7), [read(str(root / ".harness/agents/qa/AGENT.md"))]),
+        # The same message repeated for a second content block must not be counted twice.
+        say("m2", "launch", usage(300, 7), [read("src/a.ts")]),
+        say("m3", "launch", usage(500, 9), [read(".harness/agents/qa/AGENT.md", offset=2, limit=1)]),
+        say("m4", None, usage(150, 2), [{"type": "text", "text": "done"}]),
+        {"type": "result", "total_cost_usd": 1.0},
+    ]
+    traced = tracing.summarise(events, root)
+    qa, lead = traced["agents"]["qa"], traced["agents"]["lead"]
+    assert (qa["launches"], qa["requests"], qa["context_peak"], qa["prompt_tokens"]) == (1, 2, 500, 800), qa
+    assert qa["words_read"] == {"agent-contract": 7, "project": 2} and qa["reads"] == 3, qa
+    assert (lead["requests"], lead["prompt_tokens"], lead["tool_calls"]) == (2, 250, {"Agent": 1}), lead
+    assert list(traced["files"]) == [".harness/agents/qa/AGENT.md", "src/a.ts"], traced["files"]
+    assert traced["files"][".harness/agents/qa/AGENT.md"] == {"category": "agent-contract", "reads": 2, "words": 7, "agents": ["qa"]}
+    assert tracing.category(".agents/skills/x/SKILL.md") == "skill" and tracing.category(".harness/runtime/claude/a.md") == "run-state"
+
 print("EVAL SCORING TESTS: PASS")
