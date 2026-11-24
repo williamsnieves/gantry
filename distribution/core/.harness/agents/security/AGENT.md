@@ -1059,12 +1059,6 @@ SECURITY_BLOCKED_PENDING_EVIDENCE
 SECURITY_REVIEW_NOT_REQUIRED
 ```
 
-Follow:
-
-```text
-references/security-decision-policy.md
-```
-
 # Security Evidence Status
 
 Use:

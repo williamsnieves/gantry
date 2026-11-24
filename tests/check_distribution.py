@@ -154,6 +154,22 @@ def check_harness_paths() -> None:
                 fail("harness-path", path, f"points at missing .harness/{ref}")
 
 
+AGENT_LOCAL_REF = re.compile(r"(?<![\w./-])((?:references|assets|scripts|evals|skills)/[A-Za-z0-9_./-]+\.[a-z]+)")
+
+
+def check_agent_contracts() -> None:
+    """Every file an agent contract cites must be installed with it."""
+    for agent in sorted(p for p in (CORE / "agents").iterdir() if p.is_dir()):
+        for path in sorted(agent.rglob("*.md")):
+            text = path.read_text(encoding="utf-8")
+            for ref in sorted(set(AGENT_LOCAL_REF.findall(text))):
+                if not (agent / ref).exists() and not (path.parent / ref).exists():
+                    fail("agent-contract", path, f"cites missing {ref}")
+            for ref in sorted(set(HARNESS_PATH.findall(text))):
+                if not (CORE / ref).exists():
+                    fail("agent-contract", path, f"points at missing .harness/{ref}")
+
+
 ALWAYS_LOADED = (
     "runtimes/claude/.claude/rules/00-portable-harness.md",
     "runtimes/cursor/.cursor/rules/00-portable-harness.mdc",
@@ -175,6 +191,7 @@ def main() -> int:
     check_single_skill_source()
     check_agents(skill_names)
     check_harness_paths()
+    check_agent_contracts()
     check_always_loaded()
     if errors:
         by_check: dict[str, int] = {}
