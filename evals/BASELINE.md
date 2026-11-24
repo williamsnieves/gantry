@@ -171,3 +171,24 @@ Measured on 2026-11-24, both cases, one trial each, `claude-fable-5-2`. On Claud
 An earlier attempt without the proportionate-report rule was worse than the baseline: $7.23 and $7.72, reports of about 2,400 words each because specialists filled the whole template, and the leak run reached its spending cap before the Reviewer ran. In that attempt the Validator also blocked the control because checks cannot be executed in the sandbox; the eval prompt now tells the lead to pass that limit on to every specialist.
 
 One trial per case. The difference between before and after is within what a second trial could move; it shows the change is not worse, not how much better it is.
+
+# Where the money goes
+
+Read on 2026-11-24 from the traces and billing figures of the two runs above; no new review run.
+
+Share of the bill by kind of token, derived from the usage the runtime reports (a cache read billed at a tenth of an input token, a cache write at 1.25 or 2 times, an output token at 5 times; both runs fit those ratios to within 1%):
+
+| Kind | Control | Leak |
+|---|---|---|
+| Output tokens, all agents | 36% | 37% |
+| Cache writes by specialists (what they read for the first time) | 32% | 33% |
+| Cache writes by the lead | 14% | 12% |
+| Cache reads, all agents | 18% | 18% |
+
+- The lead is not the main cost. It makes 18 to 19 requests and holds most of the prompt tokens, but nearly all of them are cache reads. Its reads and writes together are about a quarter of the bill. The table of prompt tokens per agent overstates it, because it counts a cached token the same as a new one.
+- The lead's request count is structural: one request per specialist that returns (to record the gate), plus the plan and the final gate. Two requests are wasted on reading the diff twice; that is under 1% of the bill.
+- The harness adds about 2,400 tokens to the lead's starting context (agent list, rules, `AGENTS.md`), measured by starting a session in the sandbox with and without them. The other 21,700 tokens are the runtime's own. The 110 skills cost nothing at the start: only two are registered with Claude Code.
+- Each specialist starts at 6,500 to 8,000 tokens and writes 20,000 to 35,000 tokens to the cache over its run. Agent contracts are about a tenth of that, around 3% of the bill.
+- What is left is the number of specialists. A specialist costs roughly $0.50 to $0.75, and in the leak case six of seven reported the same defect.
+
+Output tokens per agent are not available: the stream reports them only partially.
