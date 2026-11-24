@@ -153,3 +153,21 @@ What this shows:
 - Detail Analyst and Reviewer reread every other gate's report in full.
 
 One trial, one easy defect: this says where the weight is, not what can be removed safely.
+
+# Specialists write their own report
+
+Measured on 2026-11-24, both cases, one trial each, `claude-fable-5-2`. On Claude Code each specialist saves its report under `.harness/runtime/claude/artifacts/` and replies to the lead with the decision, the conditions and the path; the hook confines a specialist to its own report file. The specialist is also told to keep the report proportionate and to omit empty template sections.
+
+| Case | Before | After |
+|---|---|---|
+| severity-filter-clean (control) | $5.56, 402 s, 6 of 6, `PRE_PR_PASS_WITH_CONDITIONS` | $4.37, 331 s, 6 of 6, `PRE_PR_PASS_WITH_CONDITIONS` |
+| severity-filter-tenant-leak | $6.59, 485 s, 7 of 7, `PRE_PR_BLOCKED` | $5.31, 364 s, 7 of 7, `PRE_PR_BLOCKED` |
+
+- Cost fell by about a fifth and wall time by about a fifth to a quarter, with the same verdicts. In the leak case the same six gates named the defect; Frontend Code Review passed with conditions, as before.
+- Every report was written by its specialist; the lead wrote none. Reports were 270 to 927 words in the control (3,945 in total) and 633 to 1,263 in the leak case (6,286 in total).
+- The lead is still the largest consumer: 18 and 19 requests, 780,691 and 848,608 prompt tokens, with a largest prompt of about 60,000 tokens (87,827 in the earlier instrumented run, which used a different model).
+- Agent contracts remain the largest thing read (11,176 and 13,910 words). In the leak case six specialists read the Validator report.
+
+An earlier attempt without the proportionate-report rule was worse than the baseline: $7.23 and $7.72, reports of about 2,400 words each because specialists filled the whole template, and the leak run reached its spending cap before the Reviewer ran. In that attempt the Validator also blocked the control because checks cannot be executed in the sandbox; the eval prompt now tells the lead to pass that limit on to every specialist.
+
+One trial per case. The difference between before and after is within what a second trial could move; it shows the change is not worse, not how much better it is.
