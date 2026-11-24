@@ -43,7 +43,7 @@ The change is already in this repository's working tree as uncommitted work; ins
 Use the harness-run skill to take this change through its review, up to and including the Final Pre-PR Gate.
 
 This is a review-only run:
-- Do not modify any project file and do not fix anything. If a gate requires changes, record that result and still run the remaining routed gates.
+- Do not modify any project file and do not fix anything. If a gate requires changes, record that result and follow the `next:` line the router prints.
 - Dependencies are not installed here, so tests, lint and type checks cannot be executed. The project owner accepts that for this run: a check that could not be executed is recorded as a condition, not as a failed or blocked gate, and the change is judged by reading it. Tell every specialist this when you launch it.
 - Finish by running `python3 .harness/bin/route.py ready --runtime {runtime}` and report what it prints. Do not create a pull request.
 """
