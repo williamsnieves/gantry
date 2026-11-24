@@ -40,7 +40,7 @@ SUBAGENT_TOOLS = ("Agent", "Task")
 PROMPT = """{request}
 The change is already in this repository's working tree as uncommitted work; inspect it with git.
 
-Use the harness-run skill to take this change through every routed gate, up to and including the Final Pre-PR Gate.
+Use the harness-run skill to take this change through its review, up to and including the Final Pre-PR Gate.
 
 This is a review-only run:
 - Do not modify any project file and do not fix anything. If a gate requires changes, record that result and still run the remaining routed gates.

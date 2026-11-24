@@ -171,6 +171,23 @@ with tempfile.TemporaryDirectory() as tmp:
     out = ready("PRE_PR_BLOCKED")
     assert all(f"{agent}: required gate has no recorded result" in out for agent in required), out
 
+    # The router names the stage to run next and stops the review at the first stage that does not pass.
+    following = lambda: run("next", "--runtime", "claude", cwd=project).stdout.strip()
+    assert following() == "next: run validator", following()
+    out = gate("validator", "CHANGES_REQUIRED").stdout
+    assert "next: stop. validator did not pass; do not run backend-code-review, qa, detail-analyst, reviewer" in out, out
+    out = ready("PRE_PR_BLOCKED")
+    assert "validator: CHANGES_REQUIRED" in out and "qa: not run, the review stopped when validator did not pass" in out, out
+    assert "next: run backend-code-review, qa" in gate("validator", "PASS").stdout
+    # A stage is finished before it stops: the specialists were launched together.
+    assert "next: run qa" in gate("backend-code-review", "BLOCKED").stdout
+    out = gate("qa", "PASS").stdout
+    assert "next: stop. backend-code-review did not pass; do not run detail-analyst, reviewer" in out, out
+    assert "next: run detail-analyst" in gate("backend-code-review", "PASS").stdout
+    assert "next: run reviewer" in gate("detail-analyst", "PASS").stdout
+    assert "next: run `route.py ready --runtime claude`" in gate("reviewer", "PASS").stdout
+    (project / ".harness/runtime/claude/gates.json").unlink()
+
     # Missing evidence is not a pass; a gate result needs a real report and valid arguments.
     run("gate", "--runtime", "claude", "--agent", "qa", "--decision", "PASS", cwd=project, expect=2)
     run("gate", "--runtime", "claude", "--agent", "qa", "--decision", "PASS", "--report", "nope.md", cwd=project, expect=2)

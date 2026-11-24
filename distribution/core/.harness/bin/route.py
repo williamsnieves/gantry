@@ -629,6 +629,8 @@ def cmd_plan(args: argparse.Namespace) -> int:
             print(f"Added from the changed files: {trigger['dimension']} ({trigger['evidence']})")
     for entry in plan["agents"]:
         print(f"  {entry['applicability']:15} {entry['agent']:30} {entry['reason']}")
+    if not args.out:
+        print(describe_next(root, args.runtime))
     return 0
 
 
@@ -652,6 +654,54 @@ def save_gates(root: Path, runtime: str, gates: dict) -> None:
     path.write_text(json.dumps({"gates": gates}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def next_step(root: Path, runtime: str) -> tuple[str, list[str], list[str]]:
+    """What to do after the results recorded so far: ("RUN", agents, []), ("STOP", rejecting, not run) or ("READY", [], []).
+
+    Gates run in stages: Validator, the specialists, Detail Analyst, Reviewer.
+    A stage that ends with a gate demanding changes stops the review, because
+    the later stages would judge a change that has to be edited anyway.
+    """
+    plan_path = state_dir(root, runtime) / "routing-plan.yaml"
+    if not plan_path.exists():
+        return "READY", [], []
+    try:
+        plan = parse(plan_path.read_text(encoding="utf-8"))
+    except RouteError:
+        return "READY", [], []
+    required = [e["agent"] for e in plan.get("agents", []) if e.get("applicability") == "REQUIRED"]
+    identity, _ = change_identity(root)
+    gates = load_gates(root, runtime)
+    current = {a: r["decision"] for a, r in gates.items() if r.get("change_identity") == identity["value"]}
+    groups = [
+        [a for a in required if a == "validator"],
+        [a for a in required if a in SPECIALISTS],
+        [a for a in required if a == "detail-analyst"],
+        [a for a in required if a == "reviewer"],
+    ]
+    stages = [group for group in groups if group]
+    for index, stage in enumerate(stages):
+        pending = [a for a in stage if a not in current]
+        if pending:
+            return "RUN", pending, []
+        rejecting = [a for a in stage if current[a] not in PASSING]
+        if rejecting:
+            later = [a for group in stages[index + 1:] for a in group if a not in current]
+            return "STOP", rejecting, later
+    return "READY", [], []
+
+
+def describe_next(root: Path, runtime: str) -> str:
+    kind, agents, skipped = next_step(root, runtime)
+    if kind == "RUN":
+        return "next: run " + ", ".join(agents)
+    if kind == "STOP":
+        text = "next: stop. " + ", ".join(agents) + " did not pass"
+        if skipped:
+            text += "; do not run " + ", ".join(skipped) + " until the change is fixed"
+        return text + f". Run `route.py ready --runtime {runtime}` and report the blockers."
+    return f"next: run `route.py ready --runtime {runtime}`"
+
+
 def cmd_gate(args: argparse.Namespace) -> int:
     root = Path(args.project).resolve()
     identity, _ = change_identity(root)
@@ -669,6 +719,7 @@ def cmd_gate(args: argparse.Namespace) -> int:
         previous["change_identity"] = identity["value"]
         save_gates(root, args.runtime, gates)
         print(f"{args.agent}: {previous['decision']} carried forward to {identity['value']}")
+        print(describe_next(root, args.runtime))
         return 0
     if not args.decision:
         raise RouteError(f"--decision is required. Known: {', '.join(GATE_DECISIONS)}")
@@ -695,6 +746,7 @@ def cmd_gate(args: argparse.Namespace) -> int:
     }
     save_gates(root, args.runtime, gates)
     print(f"{args.agent}: {args.decision} recorded for {identity['value']}")
+    print(describe_next(root, args.runtime))
     return 0
 
 
@@ -721,12 +773,15 @@ def readiness(root: Path, runtime: str) -> tuple[str, list[str], list[str]]:
             "the edit invalidates and carry the others forward with `route.py gate --carry-forward`"
         ], []
     gates = load_gates(root, runtime)
+    kind, rejecting, skipped = next_step(root, runtime)
     blockers, missing, conditions = [], [], []
     for entry in plan["agents"]:
         if entry["applicability"] != "REQUIRED":
             continue
         agent, result = entry["agent"], gates.get(entry["agent"])
-        if result is None:
+        if kind == "STOP" and agent in skipped:
+            missing.append(f"{agent}: not run, the review stopped when {', '.join(rejecting)} did not pass")
+        elif result is None:
             missing.append(f"{agent}: required gate has no recorded result")
         elif result["change_identity"] != identity["value"]:
             missing.append(f"{agent}: result is stale, it was recorded for an earlier version of the change")
@@ -814,6 +869,11 @@ def main(argv: list[str] | None = None) -> int:
     ready.add_argument("--runtime", required=True, choices=RUNTIMES)
     ready.add_argument("--project", default=".")
     ready.set_defaults(func=cmd_ready)
+
+    following = sub.add_parser("next", help="Which gates to run now, given the results recorded so far")
+    following.add_argument("--runtime", required=True, choices=RUNTIMES)
+    following.add_argument("--project", default=".")
+    following.set_defaults(func=lambda a: print(describe_next(Path(a.project).resolve(), a.runtime)) or 0)
 
     args = parser.parse_args(argv)
     try:
