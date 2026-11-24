@@ -54,9 +54,35 @@ Covered: the six static-routing scenarios (01 to 06), on Claude Code.
 
 Not covered yet:
 
-- Scenarios 07 to 12 (dynamic escalation, remediation loops, stale gates, conditions, missing evidence, portability). They need a multi-step run with specialist agents, not a single routing decision.
-- Whether the gates, once routed, find real defects.
+- Scenarios 07 to 12 (dynamic escalation, remediation loops, stale gates, conditions, missing evidence, portability). They need a multi-step run with remediation, not a single routing decision.
 - Other runtimes. Adding one means adding a driver function to `DRIVERS` in `run.py`.
+
+## Review quality
+
+`run.py` measures which gates are routed. `review.py` measures whether those gates, once run, judge the change correctly.
+
+```bash
+python3 evals/review.py --runtime claude                                      # every case, one trial each
+python3 evals/review.py --runtime claude --case severity-filter-tenant-leak   # one case
+python3 evals/review.py --runtime claude --dry-run                            # build sandboxes, call nothing
+```
+
+Each directory under `evals/review-cases/` is a change to the fixture. It is either correct (a control, `defect: null`) or carries one planted defect, described in `case.yaml` with the patterns a report must match to count as naming it.
+
+A trial asks the runtime to take the change through `harness-run` up to `route.py ready` without fixing anything. It then reads the gate ledger and the reports.
+
+| Measure | Meaning |
+|---|---|
+| Result, defect case | Pass when a gate that demands changes names the defect and the final gate is `PRE_PR_BLOCKED`. |
+| Result, control | Pass when no gate demands changes. A gate that does is a false alarm. |
+| Gates | Required gates with a result recorded for the current change, out of those routed. A gate that did not run fails the trial. |
+| Side effects | Project files changed during a review-only run. |
+
+Naming the defect is decided by a text match on the report. The reports are saved next to `results.json`: read them before trusting a close call.
+
+The sandbox has no dependencies installed, so the agents cannot run tests. The trial measures review by reading, not by execution.
+
+A trial launches one agent per routed gate and costs several times a routing trial.
 
 ## Tests
 

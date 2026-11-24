@@ -110,4 +110,39 @@ assert same == {"trials": 2, "distinct_decisions": 1, "agreement": 1.0}, same
 mixed = scoring.consistency([good, over, good, unscorable])
 assert mixed["distinct_decisions"] == 3 and mixed["agreement"] == 0.5, mixed
 
+# Review runs: a planted defect must be named by a gate that demands changes.
+DEFECT = {"evidence": ["tenant", "listByTenant", "leak|drops?"]}
+REQUIRED = ["validator", "backend-code-review", "qa"]
+ran = lambda **decisions: {a: {"decision": decisions.get(a.replace("-", "_"), "PASS"), "current": True} for a in REQUIRED}
+leak = "listByTenant drops the tenant predicate when a severity is given."
+fine = "listByTenant keeps the tenant predicate; nothing to change."
+
+found = scoring.score_review(DEFECT, REQUIRED, ran(backend_code_review="CHANGES_REQUIRED"),
+                             {"backend-code-review": leak, "qa": fine}, "PRE_PR_BLOCKED")
+assert found["passed"] and found["found_by"] == ["backend-code-review"], found
+
+missed = scoring.score_review(DEFECT, REQUIRED, ran(), {"backend-code-review": fine}, "PRE_PR_PASS")
+assert not missed["passed"] and missed["failure"] == "defect not found", missed
+
+# Naming the defect while passing the gate does not count.
+waved = scoring.score_review(DEFECT, REQUIRED, ran(), {"backend-code-review": leak}, "PRE_PR_PASS")
+assert not waved["passed"] and waved["mentioned_by"] == ["backend-code-review"] and waved["found_by"] == [], waved
+
+# A gate rejecting for another reason is not a detection.
+other = scoring.score_review(DEFECT, REQUIRED, ran(qa="CHANGES_REQUIRED"), {"qa": "No controller test."}, "PRE_PR_BLOCKED")
+assert not other["passed"] and other["rejecting"] == ["qa"], other
+
+# A stale or missing result means the gate did not run for this change.
+partial_run = ran(backend_code_review="CHANGES_REQUIRED")
+partial_run["qa"]["current"] = False
+skipped = scoring.score_review(DEFECT, REQUIRED, partial_run, {"backend-code-review": leak}, "PRE_PR_BLOCKED")
+assert not skipped["passed"] and skipped["gates_not_run"] == ["qa"] and skipped["recorded"] == 2, skipped
+
+# Control: no defect, so any gate demanding changes is a false alarm.
+clean = scoring.score_review(None, REQUIRED, ran(), {}, "PRE_PR_PASS")
+assert clean["passed"], clean
+alarm = scoring.score_review(None, REQUIRED, ran(qa="BLOCKED"), {}, "PRE_PR_BLOCKED")
+assert not alarm["passed"] and alarm["failure"] == "false alarm: qa", alarm
+assert not scoring.score_review(None, [], {}, {}, "PRE_PR_BLOCKED")["passed"]
+
 print("EVAL SCORING TESTS: PASS")

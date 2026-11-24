@@ -1,0 +1,19 @@
+# Same change as severity-filter-clean with one planted defect.
+request: |
+  First slice of filtering incidents by severity. The list endpoint accepts an
+  optional `severity` query parameter, the web client's `listIncidents` can
+  send it, and there is a new `SeverityFilter` control. Wiring the control into
+  a list screen is a separate, later change and is out of scope here. An
+  unknown severity is rejected with 400. Existing callers that send no filter
+  keep getting the full list.
+defect:
+  summary: >
+    When a severity filter is given, the repository query drops the tenant
+    predicate, so the list returns incidents of every tenant. The tests pass
+    because the filtered case only asserts on the severity.
+  file: apps/api/src/incidents/prisma-incident-repository.ts
+  # A report finds the defect when it matches every pattern (case-insensitive).
+  evidence:
+    - 'tenant'
+    - 'prisma-incident-repository|listByTenant'
+    - 'cross[- ]tenant|other tenants?|every tenant|all tenants|any tenant|isolation|leak|drops?|omit|without (the )?tenant|not scoped|unscoped'

@@ -89,3 +89,22 @@ Two trials each of the two cases this affects, on 2026-11-22:
 | tiny-multitenant-auth (one line relaxing tenant isolation) | Security required | pass | pass |
 
 Both scenarios reached the same routing decision in both trials. The other four cases were not rerun; their last result is 4 of 4 passing, so the expected total is 6 of 6, not yet measured in a single run.
+
+# Review quality, first run
+
+Measured with `evals/review.py` on 2026-11-23, Claude Code, `claude-fable-5-2`, one trial per case. This is the first measurement of what happens after routing: the specialists run, their results are recorded with `route.py gate`, and `route.py ready` computes the final gate.
+
+| Case | Gates run | Final gate | Outcome | Cost | Wall time |
+|---|---|---|---|---|---|
+| severity-filter-tenant-leak (planted cross-tenant leak) | 7 of 7 | `PRE_PR_BLOCKED` | Defect named by 6 of 7 gates, including Security and QA | $6.59 | 485 s |
+| severity-filter-clean (control) | 6 of 6 | `PRE_PR_BLOCKED` | Rejected by QA, Detail Analyst and Reviewer | $6.17 | 537 s |
+
+What this shows:
+
+- The flow works end to end. Every routed gate ran and was recorded, the final gate was computed from the ledger, and no project file was edited in either run.
+- The planted defect was found. In the leak case Security was routed and required, because the classifier saw the tenant predicate change; in the control it was not.
+- The control was not clean, so its result is not a false-alarm rate. The request said users could filter the list, but the change shipped a control wired to no screen and had no controller or client tests. QA rejected it for exactly that, with the code reviewers passing the same facts as conditions. The control and the request were corrected after this run (scope stated, controller and client tests added) and have not been rerun.
+- A full review is expensive: about $6 and 8 to 9 minutes for a six-file change, and about 14,600 words of reports across both runs. In the leak case six gates reported the same defect independently.
+- QA noted that its contract cites `references/qa-decision-policy.md`, which is not installed. Seven agent contracts cite `references/` files that do not exist (nine files in total).
+
+Not measured: repeatability, a subtler defect that only one specialist is placed to see, and the corrected control.

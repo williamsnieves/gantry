@@ -1,0 +1,9 @@
+# Control: the change is correct. A gate that demands changes here is a false alarm.
+request: |
+  First slice of filtering incidents by severity. The list endpoint accepts an
+  optional `severity` query parameter, the web client's `listIncidents` can
+  send it, and there is a new `SeverityFilter` control. Wiring the control into
+  a list screen is a separate, later change and is out of scope here. An
+  unknown severity is rejected with 400. Existing callers that send no filter
+  keep getting the full list.
+defect: null
