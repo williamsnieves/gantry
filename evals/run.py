@@ -15,6 +15,7 @@ Every live trial calls the agent runtime and costs tokens.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -108,10 +109,37 @@ def git(sandbox: Path, *arguments: str) -> None:
     )
 
 
-def build_sandbox(case_dir: Path, runtime: str, parent: Path) -> Path:
-    """Fixture + installed harness committed as the base, case files as uncommitted work."""
+def install_dependencies() -> Path:
+    """Install the fixture's dependencies once per lockfile and return the node_modules to share.
+
+    Sandboxes link to it, so a review can run the project's tests, type check and lint.
+    """
+    lock = FIXTURE / "package-lock.json"
+    key = hashlib.sha256(lock.read_bytes() + (FIXTURE / "apps/api/prisma/schema.prisma").read_bytes()).hexdigest()[:12]
+    cache = ROOT / "evals/.cache" / f"fixture-{key}"
+    modules = cache / "node_modules"
+    if (cache / ".installed").exists():
+        return modules
+    shutil.rmtree(cache, ignore_errors=True)
+    shutil.copytree(FIXTURE, cache, ignore=shutil.ignore_patterns("node_modules"))
+    print(f"installing the fixture's dependencies into {cache.relative_to(ROOT)} (once per lockfile)...", flush=True)
+    for command in (["npm", "ci", "--no-audit", "--no-fund"], ["npm", "test"], ["npm", "run", "typecheck"], ["npm", "run", "lint"]):
+        proc = subprocess.run(command, cwd=cache, capture_output=True, text=True)
+        if proc.returncode != 0:
+            raise SystemExit(f"`{' '.join(command)}` failed in the unchanged fixture:\n{(proc.stdout + proc.stderr)[-2000:]}")
+    (cache / ".installed").write_text("ok\n", encoding="utf-8")
+    return modules
+
+
+def build_sandbox(case_dir: Path, runtime: str, parent: Path, dependencies: Path | None = None) -> Path:
+    """Fixture + installed harness committed as the base, case files as uncommitted work.
+
+    With `dependencies`, the sandbox links to that node_modules so the project's checks can be executed.
+    """
     sandbox = Path(tempfile.mkdtemp(prefix=f"{case_dir.name}-", dir=parent))
-    shutil.copytree(FIXTURE, sandbox, dirs_exist_ok=True)
+    shutil.copytree(FIXTURE, sandbox, dirs_exist_ok=True, ignore=shutil.ignore_patterns("node_modules"))
+    if dependencies:
+        (sandbox / "node_modules").symlink_to(dependencies, target_is_directory=True)
     env = {**os.environ, "PYTHONPATH": str(ROOT)}
     subprocess.run(
         [sys.executable, "-m", "gantry", "install", "--runtime", runtime, "--scope", "fullstack", "--project", str(sandbox)],

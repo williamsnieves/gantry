@@ -265,3 +265,25 @@ One probe on 2026-11-25, `claude-fable-5-2`, headless, in a scratch project wher
 No approval was recorded. The agent retried neither call and reported both refusals.
 
 Not measured: a full review that stops on its own with the rule in place, an interactive session where a person confirms the approval, and any runtime other than Claude Code. On runtimes without hooks the two guardrails are held only by the final gate: a stopped review stays blocked, and an unapproved design is a condition a person sees.
+
+## Reviewing with the checks executed
+
+Until now nothing in the fixture could be run, so the Validator judged every change by reading it. The fixture now has its configuration and a lockfile, and `review.py --execute` installs the dependencies so the gates can run the tests, the type check and the lint. All three pass on the unchanged fixture and on the three review cases, including the two with a planted defect.
+
+One trial on 2026-11-25, `claude-fable-5-2`, the planted-leak case, capped at $3.
+
+| | Checks not executable (2026-11-24) | Checks executed |
+|---|---|---|
+| Validator | `CHANGES_REQUIRED`, from reading the diff | `PASS`: 17 tests, type check and lint green |
+| Review stopped after | Validator | the specialists |
+| Gates recorded | 1 of 7 | 5 of 7 |
+| Defect found by | Validator | Backend Code Review, QA, Security |
+| Final gate | `PRE_PR_BLOCKED` | `PRE_PR_BLOCKED` |
+| Cost, wall time | $1.17, 104 s | $3.05, 175 s (ended by the spending cap, after the gates were recorded) |
+
+- The Validator ran `npm test`, `npm run typecheck` and `npm run lint` from `.harness/project.yaml` and reported their results. It also described the leak in its report as something no check detects, and still recorded `PASS` with no condition, because its contract is the mechanical checks.
+- The earlier stop at the Validator was an effect of the fixture: with nothing to execute, the Validator read the change instead. With a green suite the defect is stopped one stage later, and the stop saves the Detail Analyst and the Reviewer, not six gates.
+- Frontend Code Review passed with a condition that names the backend defect.
+- The lead ran the three checks itself twice, in addition to the Validator.
+
+Open: the Validator's finding reaches the final gate only because specialists were routed and found it too. In a change routed to the Validator alone it would be a paragraph in a report under a `PASS`. Not measured: the control and the unlabelled-control case with checks executed, and the uncapped cost of this case.
