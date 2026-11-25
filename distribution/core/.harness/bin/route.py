@@ -186,6 +186,9 @@ GUARDRAILS = (
      "a reviewer can write only its own report, and nobody else can write it"),
     ("review", "the review stops at the first stage that does not pass",
      "`route.py next`; the final gate stays blocked", "launching a later gate is denied (not in the lean profile)"),
+    ("review", "a risk a gate sees outside its own scope is not lost under its pass",
+     "`route.py gate --trigger` records it; the router asks for the plan to be rerun with it, "
+     "and the final gate carries a condition while no routed gate has judged it", ""),
     ("review", "a result counts only for the version of the change it judged",
      "results are tied to a digest of the change; an edit makes them stale", ""),
     ("release", "a pull request is opened only after every required gate passed",
@@ -789,7 +792,25 @@ def next_step(root: Path, runtime: str) -> tuple[str, list[str], list[str]]:
     return "READY", [], []
 
 
+def unrouted_triggers(root: Path, runtime: str) -> list[tuple[str, dict]]:
+    """Triggers a gate reported for the current change that the routing plan does not include: (agent, trigger)."""
+    try:
+        plan = parse((state_dir(root, runtime) / "routing-plan.yaml").read_text(encoding="utf-8"))
+    except (OSError, RouteError):
+        return []
+    planned = {t.get("dimension") for t in plan.get("risk_triggers") or [] if isinstance(t, dict)}
+    identity = change_identity(root)[0]["value"]
+    return [(agent, trigger) for agent, result in sorted(load_gates(root, runtime).items())
+            if result.get("change_identity") == identity
+            for trigger in result.get("reported_triggers", []) if trigger["dimension"] not in planned]
+
+
 def describe_next(root: Path, runtime: str) -> str:
+    reported = unrouted_triggers(root, runtime)
+    if reported:
+        flags = " ".join(f'--trigger "{t["dimension"]}={t["evidence"]}"' for _, t in reported)
+        return (f"next: {', '.join(dict.fromkeys(a for a, _ in reported))} reported a risk the plan does not cover. "
+                f"Rerun `route.py plan` with the same arguments plus {flags}, then run the gates it adds.")
     kind, agents, skipped = next_step(root, runtime)
     if kind == "RUN":
         return "next: run " + ", ".join(agents)
@@ -809,8 +830,8 @@ def cmd_gate(args: argparse.Namespace) -> int:
         previous = gates.get(args.agent)
         if not previous or previous["decision"] not in PASSING:
             raise RouteError(f"{args.agent} has no passing result to carry forward; run the gate instead")
-        if args.decision or args.report or args.condition:
-            raise RouteError("--carry-forward keeps the recorded decision; do not combine it with --decision, --report or --condition")
+        if args.decision or args.report or args.condition or args.trigger:
+            raise RouteError("--carry-forward keeps the recorded decision; do not combine it with --decision, --report, --condition or --trigger")
         if previous["change_identity"] == identity["value"]:
             print(f"{args.agent}: already recorded for the current change")
             return 0
@@ -843,6 +864,9 @@ def cmd_gate(args: argparse.Namespace) -> int:
         "report_sha256": hashlib.sha256(report.read_bytes()).hexdigest()[:16],
         "conditions": conditions,
     }
+    reported = [{"dimension": t["dimension"], "evidence": t["evidence"]} for t in map(parse_trigger, args.trigger or [])]
+    if reported:
+        gates[args.agent]["reported_triggers"] = reported
     save_gates(root, args.runtime, gates)
     print(f"{args.agent}: {args.decision} recorded for {identity['value']}")
     print(describe_next(root, args.runtime))
@@ -898,6 +922,9 @@ def readiness(root: Path, runtime: str) -> tuple[str, list[str], list[str]]:
     unspecified = missing_specification(plan, root)
     if unspecified:
         conditions.append(unspecified)
+    for agent, trigger in unrouted_triggers(root, runtime):
+        conditions.append(f"{agent} reported a {trigger['dimension']} risk that no routed gate judged: {trigger['evidence']}; "
+                          "a person must judge it, or rerun `route.py plan` with that trigger")
     if blockers or missing:
         return "PRE_PR_BLOCKED", blockers + missing, conditions
     return ("PRE_PR_PASS_WITH_CONDITIONS" if conditions else "PRE_PR_PASS"), [], conditions
@@ -982,6 +1009,8 @@ def main(argv: list[str] | None = None) -> int:
     gate.add_argument("--decision", choices=GATE_DECISIONS)
     gate.add_argument("--report", help="the specialist's report file")
     gate.add_argument("--condition", action="append", help="repeatable; required for PASS_WITH_CONDITIONS")
+    gate.add_argument("--trigger", action="append",
+                      help='repeatable: "DIMENSION=what the gate saw", for a risk outside this gate\'s own scope')
     gate.add_argument("--carry-forward", metavar="REASON",
                       help="keep a passing result after an edit that does not invalidate it, with the reason")
     gate.add_argument("--project", default=".")
