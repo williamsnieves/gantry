@@ -38,7 +38,7 @@ PROFILES = ("lean", "standard", "strict")
 # explicit path when a change needs it, so nothing competes for implicit
 # discovery or sits in context unused. A runtime with native skill discovery
 # receives only the entry-point skills, with their full description.
-ENTRYPOINT_SKILLS = ("harness-run", "harness-onboard", "harness-evaluate")
+ENTRYPOINT_SKILLS = ("harness-start", "harness-run", "harness-onboard", "harness-evaluate")
 COMPACT_DESCRIPTION = (
     "Portable engineering capability `{name}`. Use when the harness or a "
     "specialist agent explicitly requires this named capability."
@@ -463,7 +463,7 @@ def print_entrypoints(runtimes):
     print("Commands:")
     for r in runtimes:
         mark = prefix.get(r, "/")
-        print(f"  {r:8} -> {mark}harness-onboard (once, to record the project's conventions), then {mark}harness-run per change")
+        print(f"  {r:8} -> {mark}harness-onboard once, then {mark}harness-start for each piece of work ({mark}harness-run reviews it)")
 
 def cmd_plan(args):
     args.dry_run = True

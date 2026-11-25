@@ -105,6 +105,18 @@ After installing, run the `harness-onboard` skill once in your agent (`/harness-
 
 The file belongs to the project: edit it freely, and it stays if the harness is removed. `python3 .harness/bin/conventions.py check` verifies its headings, its length and that every path it cites exists.
 
+## Starting a piece of work
+
+Give your agent the request through the `harness-start` skill. The agent builds; the harness decides how much has to be settled first.
+
+| Lane | When | Before building |
+|---|---|---|
+| `DIRECT` | No risk trigger: behavior, data and interfaces stay as they are | Nothing |
+| `SPEC` | The accepted behavior changes | Acceptance criteria and slices in `docs/specs/<name>.md` |
+| `DESIGN` | Architecture, security, data integrity, migration or compatibility is involved | The same, plus a design, and your approval |
+
+The lane comes from `python3 .harness/bin/route.py lane`, from the same risk triggers that later choose the reviewers; the size of the change is not an input. `python3 .harness/bin/spec.py check` verifies that a specification has its sections, that every acceptance criterion has an id and is delivered by a slice, and that a `DESIGN` change has its design. The agent then builds slice by slice, test first, and `harness-run` reviews the result against the specification.
+
 ## Project scope
 
 ```text
@@ -180,6 +192,7 @@ pip install "PyYAML>=6.0"
 python3 tests/check_distribution.py   # structural integrity of distribution/
 python3 tests/smoke_test.py           # install / doctor / uninstall round trip
 python3 tests/test_detect.py          # project detection
+python3 tests/test_spec.py            # specification check
 python3 tests/test_eval_scoring.py    # scenario scorer
 python3 tests/test_route.py           # deterministic router
 python3 tests/test_hook.py            # pre-tool-use guard

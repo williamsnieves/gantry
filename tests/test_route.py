@@ -257,4 +257,22 @@ with tempfile.TemporaryDirectory() as tmp:
     assert plan["change_identity"] == {"type": "unversioned", "value": "none", "changed_files": 0}
 
 assert "SECURITY:" in run("vocabulary").stdout
+
+# The lane is decided before any code exists, from the triggers and never from the size of the work.
+def lane_of(mode, *triggers):
+    arguments = [a for trigger in triggers for a in ("--trigger", f"{trigger}=evidence")]
+    return run("lane", "--work-mode", mode, *arguments).stdout.splitlines()[0]
+
+assert lane_of("IMPLEMENTATION") == "lane: DIRECT"
+assert lane_of("REMEDIATION") == "lane: DIRECT"
+assert lane_of("IMPLEMENTATION", "BEHAVIORAL") == "lane: SPEC"
+assert lane_of("IMPLEMENTATION", "USER_IMPACT", "PERFORMANCE") == "lane: SPEC"
+assert lane_of("IMPLEMENTATION", "BEHAVIORAL", "SECURITY") == "lane: DESIGN"
+assert lane_of("IMPLEMENTATION", "DATA_INTEGRITY") == "lane: DESIGN"
+assert lane_of("MIGRATION") == "lane: DESIGN"
+assert lane_of("REVIEW_ONLY", "SECURITY") == "lane: NONE"
+assert "spec.py check" in run("lane", "--work-mode", "IMPLEMENTATION", "--trigger", "BEHAVIORAL=x").stdout
+assert "spec.py" not in run("lane", "--work-mode", "IMPLEMENTATION").stdout
+run("lane", "--work-mode", "IMPLEMENTATION", "--trigger", "BEHAVIORAL", expect=2)  # a trigger needs evidence
+run("lane", "--work-mode", "NOPE", expect=2)
 print("ROUTER TESTS: PASS")

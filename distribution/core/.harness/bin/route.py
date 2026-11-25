@@ -132,6 +132,16 @@ TRIGGERS = {
 }
 LAYERS = ("backend", "frontend")
 
+# How much is settled before building. The lane follows the triggers, not the size of the work.
+LANES = {
+    "NONE": "Nothing is being built.",
+    "DIRECT": "Build it, then review it. No specification is needed.",
+    "SPEC": "Write the acceptance criteria and the slices before building.",
+    "DESIGN": "Write the specification with its design, and have the user approve it before building.",
+}
+DESIGN_TRIGGERS = ("ARCHITECTURE", "SECURITY", "DATA_INTEGRITY", "MIGRATION", "COMPATIBILITY")
+NOT_BUILDING = ("DISCOVERY", "REVIEW_ONLY")
+
 # Signals read from the changed files. They are added to the plan even when the
 # classification omits them, so a small diff cannot hide them; each can only be
 # dropped with an explicit, recorded --dismiss.
@@ -504,6 +514,34 @@ def parse_trigger(raw: str) -> dict:
     return trigger
 
 
+def lane(work_mode: str, triggers: list[dict]) -> tuple[str, str]:
+    """Return (lane, why). Decided before any code exists, from the same vocabulary as the routing plan."""
+    dimensions = [trigger["dimension"] for trigger in triggers]
+    if work_mode in NOT_BUILDING:
+        return "NONE", f"{work_mode} work changes nothing"
+    design = [d for d in dimensions if d in DESIGN_TRIGGERS]
+    if work_mode in ("MIGRATION", "ARCHITECTURE_ONLY"):
+        return "DESIGN", f"{work_mode} work"
+    if design:
+        return "DESIGN", "trigger " + ", ".join(dict.fromkeys(design)) + ": a wrong choice here is expensive to undo"
+    if dimensions:
+        return "SPEC", "trigger " + ", ".join(dict.fromkeys(dimensions)) + ": the accepted behavior has to be written down to be tested"
+    return "DIRECT", "no risk trigger: behavior, data and interfaces stay as they are"
+
+
+def cmd_lane(args: argparse.Namespace) -> int:
+    work_mode = args.work_mode.upper()
+    if work_mode not in WORK_MODES:
+        raise RouteError(f"unknown work mode {work_mode!r}. Known: {', '.join(WORK_MODES)}")
+    name, why = lane(work_mode, [parse_trigger(raw) for raw in args.trigger or []])
+    print(f"lane: {name}")
+    print(f"why: {why}")
+    print(f"next: {LANES[name]}")
+    if name in ("SPEC", "DESIGN"):
+        print(f"spec: write docs/specs/<short-name>.md, then run `python3 .harness/bin/spec.py check docs/specs/<short-name>.md --lane {name}`")
+    return 0
+
+
 def build_plan(args: argparse.Namespace, root: Path) -> dict:
     work_mode = args.work_mode.upper()
     if work_mode not in WORK_MODES:
@@ -850,6 +888,11 @@ def main(argv: list[str] | None = None) -> int:
     plan.add_argument("--project", default=".")
     plan.add_argument("--out")
     plan.set_defaults(func=cmd_plan)
+
+    before = sub.add_parser("lane", help="Before building: how much has to be settled first")
+    before.add_argument("--work-mode", required=True)
+    before.add_argument("--trigger", action="append", help='repeatable: "DIMENSION=what in the request causes it"')
+    before.set_defaults(func=cmd_lane)
 
     check = sub.add_parser("check", help="Validate a routing plan")
     check.add_argument("plan")
