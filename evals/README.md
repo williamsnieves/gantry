@@ -65,11 +65,14 @@ Not covered yet:
 python3 evals/review.py --runtime claude                                      # every case, one trial each
 python3 evals/review.py --runtime claude --case severity-filter-tenant-leak   # one case
 python3 evals/review.py --runtime claude --dry-run                            # build sandboxes, call nothing
+python3 evals/review.py --runtime claude --execute                            # install the fixture's dependencies so gates run its checks
 ```
 
 Each directory under `evals/review-cases/` is a change to the fixture. It is either correct (a control, `defect: null`) or carries one planted defect, described in `case.yaml` with the patterns a report must match to count as naming it.
 
 A trial asks the runtime to take the change through `harness-run` up to `route.py ready` without fixing anything. It then reads the gate ledger and the reports.
+
+Without `--execute` nothing in the fixture can be run and the gates judge the change by reading it. With `--execute`, `npm ci` runs once per lockfile into `evals/.cache/` (it needs npm and network access), every sandbox links to that `node_modules`, and the gates may run `npm test`, `npm run typecheck` and `npm run lint`. The planted defects pass all three: they are the kind a green suite does not catch.
 
 | Measure | Meaning |
 |---|---|

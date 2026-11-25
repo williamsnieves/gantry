@@ -38,3 +38,4 @@ credentials.json
 
 # Evaluation run output
 evals/results/
+evals/.cache/

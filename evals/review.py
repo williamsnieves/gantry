@@ -44,9 +44,23 @@ Use the harness-run skill to take this change through its review, up to and incl
 
 This is a review-only run:
 - Do not modify any project file and do not fix anything. If a gate requires changes, record that result and follow the `next:` line the router prints.
-- Dependencies are not installed here, so tests, lint and type checks cannot be executed. The project owner accepts that for this run: a check that could not be executed is recorded as a condition, not as a failed or blocked gate, and the change is judged by reading it. Tell every specialist this when you launch it.
+{checks}
 - Finish by running `python3 .harness/bin/route.py ready --runtime {runtime}` and report what it prints. Do not create a pull request.
 """
+
+
+NOT_EXECUTABLE = (
+    "- Dependencies are not installed here, so tests, lint and type checks cannot be executed. The project owner accepts "
+    "that for this run: a check that could not be executed is recorded as a condition, not as a failed or blocked gate, "
+    "and the change is judged by reading it. Tell every specialist this when you launch it."
+)
+EXECUTABLE = (
+    "- Dependencies are installed. The project's checks can be run with `npm test`, `npm run typecheck` and `npm run lint`; "
+    "there is no database, and no check needs one."
+)
+# What a review may execute when the fixture's dependencies are installed.
+CHECK_TOOLS = ("Bash(npm test:*)", "Bash(npm run test:*)", "Bash(npm run typecheck:*)", "Bash(npm run lint:*)",
+               "Bash(npx vitest:*)", "Bash(npx tsc:*)", "Bash(npx eslint:*)")
 
 
 def collect(sandbox: Path, runtime: str) -> tuple[list[str], dict, dict[str, str], str, list[str]]:
@@ -79,14 +93,17 @@ def collect(sandbox: Path, runtime: str) -> tuple[list[str], dict, dict[str, str
 
 
 def run_trial(case_dir: Path, case: dict, args: argparse.Namespace, parent: Path, out: Path, trial: int) -> dict:
-    sandbox = run.build_sandbox(case_dir, args.runtime, parent)
-    prompt = PROMPT.format(request=case["request"].strip() + "\n", runtime=args.runtime)
-    record: dict = {"case": case_dir.name, "trial": trial, "runtime": args.runtime, "has_defect": bool(case.get("defect"))}
+    sandbox = run.build_sandbox(case_dir, args.runtime, parent, args.dependencies)
+    prompt = PROMPT.format(request=case["request"].strip() + "\n", runtime=args.runtime,
+                           checks=EXECUTABLE if args.execute else NOT_EXECUTABLE)
+    record: dict = {"case": case_dir.name, "trial": trial, "runtime": args.runtime, "has_defect": bool(case.get("defect")),
+                    "checks_executable": args.execute}
     if args.dry_run:
         record.update(dry_run=True, sandbox=str(sandbox), prompt=prompt)
         return record
     trace_file = out / f"{case_dir.name}-{trial}-trace.jsonl"
-    record["metrics"] = run.DRIVERS[args.runtime](prompt, sandbox, args, SUBAGENT_TOOLS, trace_file)
+    tools = SUBAGENT_TOOLS + (CHECK_TOOLS if args.execute else ())
+    record["metrics"] = run.DRIVERS[args.runtime](prompt, sandbox, args, tools, trace_file)
     if trace_file.exists():
         events = [json.loads(line) for line in trace_file.read_text(encoding="utf-8").splitlines() if line.strip()]
         record["trace"] = tracing.summarise(events, sandbox)
@@ -139,6 +156,8 @@ def main() -> int:
     parser.add_argument("--timeout", type=int, default=2400, help="per-trial timeout in seconds")
     parser.add_argument("--out", type=Path, help="results directory; default evals/results/<timestamp>-<runtime>-review")
     parser.add_argument("--keep-sandboxes", action="store_true")
+    parser.add_argument("--execute", action="store_true",
+                        help="install the fixture's dependencies (needs npm and network, once) so the gates can run its checks")
     parser.add_argument("--dry-run", action="store_true", help="build sandboxes and print prompts without calling the runtime")
     args = parser.parse_args()
 
@@ -151,6 +170,7 @@ def main() -> int:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out = args.out or ROOT / "evals/results" / f"{stamp}-{args.runtime}-review"
     parent = Path(tempfile.mkdtemp(prefix="gantry-review-"))
+    args.dependencies = run.install_dependencies() if args.execute else None
     if not args.dry_run:
         out.mkdir(parents=True, exist_ok=True)
     records = []
