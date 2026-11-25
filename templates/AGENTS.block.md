@@ -8,5 +8,5 @@ For meaningful implementation, remediation, migration, review or release work he
 - Specialist agents in `the runtime's agents directory` are read-only reviewers. They report; they do not implement fixes.
 - Do not edit `.harness/`, installed agent or skill files, or existing lint, type, test and CI configuration to make a check pass. Ask the user.
 
-Where things are: contracts in `.harness/core/` and `.harness/agents/`, skills in `.agents/skills/`, project settings in `.harness/harness.config.yaml`.
+Where things are: contracts in `.harness/core/` and `.harness/agents/`, skills in `.agents/skills/`, settings in `.harness/harness.config.yaml`, stack and check commands in `.harness/project.yaml`, project conventions in `docs/conventions.md` (read it first).
 <!-- GANTRY:END -->

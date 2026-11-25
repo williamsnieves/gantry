@@ -43,6 +43,12 @@ NODE_SCRIPTS = {
     "typecheck": ("typecheck", "type-check", "check-types", "tsc"),
     "build": ("build",),
 }
+TEST_DIRS = {"test", "tests", "__tests__", "spec", "specs", "e2e"}
+# Directories two levels down are what a person means by "where things go" in most repositories.
+LAYOUT_DEPTH = 2
+LAYOUT_MAX = 8
+DOC_FILES = ("README.md", "CONTRIBUTING.md", "ARCHITECTURE.md", "AGENTS.md", "CLAUDE.md", "docs/conventions.md",
+             "docs/adr", "docs/architecture", "openspec")
 CI_FILES = ((".github/workflows", "github-actions"), (".gitlab-ci.yml", "gitlab-ci"), (".circleci", "circleci"),
             ("Jenkinsfile", "jenkins"), ("azure-pipelines.yml", "azure-pipelines"), ("bitbucket-pipelines.yml", "bitbucket"))
 
@@ -166,15 +172,25 @@ def detect(project: Path) -> dict:
     """Return the project description. Deterministic for a given tree."""
     root = Path(project)
     counts: dict[str, int] = {}
-    source_files = test_files = 0
+    areas: dict[str, int] = {}
+    source_files = test_files = beside = apart = 0
     for path in walk(root):
         language = LANGUAGES.get(path.suffix.lower())
         if not language:
             continue
         source_files += 1
         counts[language] = counts.get(language, 0) + 1
+        parts = path.relative_to(root).parts
+        area = "/".join(parts[:min(LAYOUT_DEPTH, len(parts) - 1)]) or "."
+        areas[area] = areas.get(area, 0) + 1
         if TEST_FILE.search(path.name):
             test_files += 1
+            if any(part in TEST_DIRS for part in parts[:-1]):
+                apart += 1
+            else:
+                beside += 1
+    tests = "none" if not test_files else "beside the code" if not apart else "in test directories" if not beside else "mixed"
+    layout = [{"path": area, "source_files": n} for area, n in sorted(areas.items(), key=lambda item: (-item[1], item[0]))[:LAYOUT_MAX]]
     found: dict = {"package_managers": [], "frameworks": [], "checks": {}, "workspaces": False, "notes": []}
     node(root, found)
     python(root, found)
@@ -193,6 +209,9 @@ def detect(project: Path) -> dict:
         "package_managers": list(dict.fromkeys(found["package_managers"])),
         "frameworks": list(dict.fromkeys(found["frameworks"])),
         "workspaces": found["workspaces"],
+        "tests": tests,
+        "layout": layout,
+        "docs": [name for name in DOC_FILES if (root / name).exists()],
         "ci": [label for path, label in CI_FILES if (root / path).exists()],
         "checks": {check: found["checks"][check] for check in ("test", "lint", "typecheck", "build") if check in found["checks"]},
         "notes": found["notes"],
@@ -213,10 +232,13 @@ def quote(value: str) -> str:
 def render(description: dict) -> str:
     """Render the description as YAML that PyYAML and a person can both read."""
     lines = [HEADER.rstrip("\n")]
-    for key in ("kind", "source_files", "test_files", "workspaces"):
+    for key in ("kind", "source_files", "test_files", "tests", "workspaces"):
         value = description[key]
-        lines.append(f"{key}: {str(value).lower() if isinstance(value, bool) else value}")
-    for key in ("languages", "package_managers", "frameworks", "ci", "notes"):
+        lines.append(f"{key}: {str(value).lower() if isinstance(value, bool) else quote(value) if isinstance(value, str) else value}")
+    lines.append("layout: []" if not description["layout"] else "layout:")
+    for area in description["layout"]:
+        lines += [f"  - path: {quote(area['path'])}", f"    source_files: {area['source_files']}"]
+    for key in ("languages", "package_managers", "frameworks", "docs", "ci", "notes"):
         items = description[key]
         lines.append(f"{key}: []" if not items else f"{key}:")
         lines += [f"  - {quote(item)}" for item in items]
@@ -236,9 +258,17 @@ def summary(description: dict) -> list[str]:
         f"  package managers: {join(description['package_managers'])}",
         f"  frameworks:       {join(description['frameworks'])}",
         f"  CI:               {join(description['ci'])}",
+        f"  tests live:       {description['tests']}",
+        f"  largest areas:    {join([area['path'] for area in description['layout'][:4]])}",
     ]
     for name in ("test", "lint", "typecheck", "build"):
         check = description["checks"].get(name)
         lines.append(f"  {name + ':':17} {check['command'] + '  (' + check['source'] + ')' if check else 'not detected'}")
     lines += [f"  note: {note}" for note in description["notes"]]
+    if "docs/conventions.md" not in description["docs"]:
+        lines.append(
+            "  next: run the harness-onboard skill to record this project's conventions from its code"
+            if description["kind"] == "brownfield" else
+            "  next: run the harness-onboard skill to settle the stack and conventions before the first feature"
+        )
     return lines

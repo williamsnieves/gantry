@@ -50,7 +50,7 @@ assert "<!-- GANTRY:START -->" in (project / "AGENTS.md").read_text()
 
 # The project is described once at install; a person's correction survives a reinstall.
 described = project / ".harness/project.yaml"
-assert "kind: greenfield" in described.read_text()
+assert 'kind: "greenfield"' in described.read_text()
 described.write_text(described.read_text() + "# corrected by hand\n")
 assert "keep: .harness/project.yaml" in run("install", "--runtime", "claude", "--project", str(project)).stdout
 assert "# corrected by hand" in described.read_text()
@@ -74,7 +74,7 @@ shared_skill = (project / ".agents/skills/auditing-code/SKILL.md").read_text()
 assert "description: Portable engineering capability `auditing-code`." in shared_skill
 assert (project / ".agents/skills/auditing-code/README.md").exists()
 # A runtime with native discovery gets only the entry-point skills, so nothing else sits in context.
-assert sorted(p.name for p in (project / ".claude/skills").iterdir()) == ["harness-evaluate", "harness-run"]
+assert sorted(p.name for p in (project / ".claude/skills").iterdir()) == ["harness-evaluate", "harness-onboard", "harness-run"]
 shared_run = (project / ".agents/skills/harness-run/SKILL.md").read_text()
 assert shared_run == (project / ".claude/skills/harness-run/SKILL.md").read_text()
 assert "Portable engineering capability" not in shared_run and "Codex Adapter" not in shared_run
