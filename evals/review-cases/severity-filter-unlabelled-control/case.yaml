@@ -1,0 +1,22 @@
+# Same change as severity-filter-clean with one planted defect that only a
+# frontend reviewer is placed to see: nothing fails, nothing leaks, and the
+# backend is identical to the control.
+request: |
+  First slice of filtering incidents by severity. The list endpoint accepts an
+  optional `severity` query parameter, the web client's `listIncidents` can
+  send it, and there is a new `SeverityFilter` control. Wiring the control into
+  a list screen is a separate, later change and is out of scope here. An
+  unknown severity is rejected with 400. Existing callers that send no filter
+  keep getting the full list.
+defect:
+  summary: >
+    The severity select has no accessible name: its caption is a span that is
+    not associated with the control, so assistive technology announces an
+    unnamed combobox. The existing form in the same folder labels its fields
+    with label/htmlFor. The tests pass because they find the control by role.
+  file: apps/web/src/incidents/SeverityFilter.tsx
+  # A report finds the defect when it matches every pattern (case-insensitive).
+  evidence:
+    - 'SeverityFilter'
+    - 'label|accessible name'
+    - 'accessib|a11y|screen reader|assistive|htmlFor|aria-label|not associated|unlabell?ed|no (accessible )?name'
