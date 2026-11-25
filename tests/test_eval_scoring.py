@@ -135,8 +135,13 @@ assert not other["passed"] and other["rejecting"] == ["qa"], other
 # A stale or missing result means the gate did not run for this change.
 partial_run = ran(backend_code_review="CHANGES_REQUIRED")
 partial_run["qa"]["current"] = False
+# That is expected when a gate rejected (the flow stops there), and a failure otherwise.
 skipped = scoring.score_review(DEFECT, REQUIRED, partial_run, {"backend-code-review": leak}, "PRE_PR_BLOCKED")
-assert not skipped["passed"] and skipped["gates_not_run"] == ["qa"] and skipped["recorded"] == 2, skipped
+assert skipped["passed"] and skipped["gates_not_run"] == ["qa"] and skipped["recorded"] == 2, skipped
+unfinished = ran()
+unfinished["qa"]["current"] = False
+unfinished = scoring.score_review(None, REQUIRED, unfinished, {}, "PRE_PR_BLOCKED")
+assert not unfinished["passed"] and unfinished["failure"] == "gates not run: qa", unfinished
 
 # Control: no defect, so any gate demanding changes is a false alarm.
 clean = scoring.score_review(None, REQUIRED, ran(), {}, "PRE_PR_PASS")

@@ -192,3 +192,19 @@ Share of the bill by kind of token, derived from the usage the runtime reports (
 - What is left is the number of specialists. A specialist costs roughly $0.50 to $0.75, and in the leak case six of seven reported the same defect.
 
 Output tokens per agent are not available: the stream reports them only partially.
+
+# Stopping at the first stage that does not pass
+
+Measured on 2026-11-24, `claude-fable-5-2`, one trial each. `route.py` now ends `plan` and every `gate` with a `next:` line. Gates run in stages (Validator, the specialists, Detail Analyst, Reviewer), and a finished stage with a gate that did not pass stops the review.
+
+| Case | Before | After |
+|---|---|---|
+| severity-filter-tenant-leak | $5.31, 364 s, 7 of 7 gates, `PRE_PR_BLOCKED` | $1.17, 104 s, 1 of 7 gates, `PRE_PR_BLOCKED` |
+| severity-filter-clean (control) | $4.37, 331 s, 6 of 6, `PRE_PR_PASS_WITH_CONDITIONS` | $4.91, 388 s, 6 of 6, `PRE_PR_PASS_WITH_CONDITIONS` |
+
+- In the leak case the Validator named the defect and demanded changes, the router printed `next: stop`, and the lead went straight to the Final Pre-PR Gate, which listed the six gates not run and why.
+- The control is unaffected by design: nothing rejects, so every gate runs. Its cost moved from $4.37 to $4.91 with no change that explains it; that is the spread between two trials of the same case.
+- The saving depends on which stage rejects. Here it was the first. A defect that only a specialist sees would still run the Validator and every specialist, and save only Detail Analyst and Reviewer.
+- What is given up: the leak case used to return six independent reports of the defect and whatever else those gates noticed. Now those gates run after the fix.
+
+A first run of this change did not stop: the eval prompt still told the lead to run the remaining gates after a rejection, and the lead followed the prompt over the router ($5.90, 7 of 7 gates). The prompt was corrected and the leak case rerun. It shows that the `next:` line is advice the lead can be talked out of, not an enforced limit.

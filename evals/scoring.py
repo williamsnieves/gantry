@@ -235,7 +235,9 @@ def score_review(defect: dict | None, required: list[str], gates: dict, reports:
     `gates` is {agent: {"decision": ..., "current": bool}} and `reports` is
     {agent: report text}. With a planted defect the run passes when a gate that
     demands changes names the defect and the final gate is blocked. Without one
-    (a control) it passes when no gate demands changes.
+    (a control) it passes when no gate demands changes. Gates left unrun are a
+    failure only when nothing was rejected: the flow stops at the first stage
+    that demands changes.
 
     A report counts as naming the defect when it matches every evidence pattern.
     That is a text match, so read the saved reports before trusting a close call.
@@ -255,7 +257,7 @@ def score_review(defect: dict | None, required: list[str], gates: dict, reports:
     failures = []
     if not required:
         failures.append("no routing plan with required gates")
-    elif not_run:
+    elif not_run and not rejecting:
         failures.append("gates not run: " + ", ".join(not_run))
     if defect:
         patterns = [re.compile(pattern, re.I) for pattern in defect["evidence"]]
