@@ -1,7 +1,7 @@
 <!-- GANTRY:START -->
 # Gantry harness
 
-For meaningful implementation, remediation, migration, review or release work headed to a pull request, run the `harness-run` skill. Questions and exploration do not need it.
+Start a feature, fix or migration with the `harness-start` skill; before a pull request, run `harness-run`. Questions and exploration need neither.
 
 - Routing and the Final Pre-PR Gate are computed by `python3 .harness/bin/route.py`. Never write a routing plan or a gate record by hand.
 - Change size is not change risk: classify a change by what it touches, not by how many lines it has.

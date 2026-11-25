@@ -236,3 +236,18 @@ One trial on 2026-11-25, `claude-fable-5-2`: the harness installed in a copy of 
 - No project file other than `docs/conventions.md` was written.
 
 Not measured: whether reviews are better or cheaper with the file than without it, a large repository, and the new-project path, which needs a person to answer.
+
+# Starting a piece of work
+
+One trial on 2026-11-25, `claude-fable-5-2`, headless: the harness and a `docs/conventions.md` installed in a copy of `evals/fixture`, and the `harness-start` skill given the severity-filter request used by the review cases. The prompt said nobody could answer questions, that dependencies were not installed, and to stop before the review.
+
+| Cost | Wall time | Turns | Lane | Output |
+|---|---|---|---|---|
+| $1.08 | 111 s | 20 | `DESIGN` | A specification that passes `spec.py check`, four source files changed, two test files added |
+
+- The specification has six acceptance criteria in two slices. One of them, written before any code, is the defect planted in the review cases: a filtered request never returns another tenant's incidents.
+- The lane asked for the user's approval. With nobody to give it, the agent built anyway because the prompt told it to continue, and said so first in its reply. The approval is an instruction, not something the harness enforces.
+- It reported that it could not run the tests, and so could not watch them fail first.
+- Its assumptions (empty and repeated values rejected, case-sensitive match, signature of `listIncidents`) were listed in the specification and in the reply.
+
+Not measured: whether the code is correct (nothing was executed and it was not reviewed), whether `DESIGN` was the right lane for an additive query parameter, the `DIRECT` and `SPEC` lanes, and a session where a person answers.
