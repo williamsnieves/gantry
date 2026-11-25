@@ -208,3 +208,17 @@ Measured on 2026-11-24, `claude-fable-5-2`, one trial each. `route.py` now ends 
 - What is given up: the leak case used to return six independent reports of the defect and whatever else those gates noticed. Now those gates run after the fix.
 
 A first run of this change did not stop: the eval prompt still told the lead to run the remaining gates after a rejection, and the lead followed the prompt over the router ($5.90, 7 of 7 gates). The prompt was corrected and the leak case rerun. It shows that the `next:` line is advice the lead can be talked out of, not an enforced limit.
+
+# A defect only some gates are placed to see
+
+Measured on 2026-11-25, `claude-fable-5-2`, one trial. Case `severity-filter-unlabelled-control`: the control's change, except that the caption of the severity select is a span not associated with it, so the control has no accessible name. The tests pass because they find the control by role. The backend is the control's.
+
+| Case | Gates run | Final gate | Found by | Cost | Wall time |
+|---|---|---|---|---|---|
+| severity-filter-unlabelled-control | 4 of 6 | `PRE_PR_BLOCKED` | frontend-code-review, qa | $3.00 | 193 s |
+
+- Frontend Code Review rejected the change for the missing accessible name, citing the labelled form in the same folder. QA rejected it for the other half: the tests query by role, so they cannot tell a labelled control from an unlabelled one. The two findings refer to each other and neither repeats the other.
+- Validator and Backend Code Review passed with conditions. Validator saw the span and left it to QA and Frontend Code Review, saying so in its report. That is the division of work the contracts ask for.
+- The review stopped after the specialist stage: Detail Analyst and Reviewer did not run. Against the control ($4.37 to $4.91, all six gates) the stop saved roughly a third.
+
+With the earlier cases: two planted defects found out of two, one control passed. One trial each; an accessibility defect with a convention to compare against a few lines away is still not a hard one.
