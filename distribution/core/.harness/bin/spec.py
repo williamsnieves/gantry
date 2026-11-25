@@ -34,7 +34,7 @@ def sections(text: str) -> dict[str, str]:
     return out
 
 
-def problems(path: Path, lane: str) -> tuple[list[str], list[str]]:
+def problems(path: Path, lane: str, rollout: bool = False) -> tuple[list[str], list[str]]:
     """Return (problems, notes). Problems fail the check; notes are for the reader."""
     if not path.is_file():
         return [f"{path} does not exist"], []
@@ -42,6 +42,9 @@ def problems(path: Path, lane: str) -> tuple[list[str], list[str]]:
     found = sections(text)
     required = HEADINGS + (("Design",) if lane == "DESIGN" else ())
     out = [f"missing section: ## {heading}" for heading in required if heading not in found]
+    if rollout and len(found.get("Rollout", "").split()) < 20:
+        out.append("missing or too short section: ## Rollout (the order it is deployed in, how it is verified in production "
+                   "and how it is undone, in at least 20 words)")
     out += [f"section is empty: ## {heading}" for heading in ("Problem", "Behavior", "Slices") if heading in found and not found[heading]]
     if lane == "DESIGN" and "Design" in found and len(found["Design"].split()) < 20:
         out.append("## Design is too short to judge: say what was chosen, what was rejected and how to undo it")
@@ -96,6 +99,7 @@ def main(argv: list[str] | None = None) -> int:
     check = sub.add_parser("check", help="Validate a specification")
     check.add_argument("spec")
     check.add_argument("--lane", choices=("SPEC", "DESIGN"), default="SPEC")
+    check.add_argument("--rollout", action="store_true", help="the change has to be rolled out: require a ## Rollout section")
     approval = sub.add_parser("approve", help="Record a person's approval of a specification as it is now")
     approval.add_argument("spec")
     approval.add_argument("--lane", choices=("SPEC", "DESIGN"), default="DESIGN")
@@ -103,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "approve":
         return approve(args.spec, args.lane, Path(args.project))
-    found, notes = problems(Path(args.spec), args.lane)
+    found, notes = problems(Path(args.spec), args.lane, args.rollout)
     print("SPEC: FAIL" if found else "SPEC: PASS")
     for line in found:
         print(f"  {line}")

@@ -74,7 +74,7 @@ shared_skill = (project / ".agents/skills/auditing-code/SKILL.md").read_text()
 assert "description: Portable engineering capability `auditing-code`." in shared_skill
 assert (project / ".agents/skills/auditing-code/README.md").exists()
 # A runtime with native discovery gets only the entry-point skills, so nothing else sits in context.
-assert sorted(p.name for p in (project / ".claude/skills").iterdir()) == ["harness-evaluate", "harness-onboard", "harness-run", "harness-start"]
+assert sorted(p.name for p in (project / ".claude/skills").iterdir()) == ["harness-evaluate", "harness-onboard", "harness-run", "harness-ship", "harness-start"]
 shared_run = (project / ".agents/skills/harness-run/SKILL.md").read_text()
 assert shared_run == (project / ".claude/skills/harness-run/SKILL.md").read_text()
 assert "Portable engineering capability" not in shared_run and "Codex Adapter" not in shared_run
