@@ -243,6 +243,17 @@ with tempfile.TemporaryDirectory() as tmp:
         gate(agent, "PASS")
     ready("PRE_PR_PASS")
 
+    # A risk a gate reports outside its own scope survives its pass: the router asks for it to be routed,
+    # and the final gate carries a condition until the plan covers it.
+    out = gate("validator", "PASS", "--trigger", "SECURITY=severity filter drops the tenant predicate").stdout
+    assert 'next: validator reported a risk the plan does not cover' in out and '--trigger "SECURITY=severity filter drops' in out, out
+    out = ready("PRE_PR_PASS_WITH_CONDITIONS")
+    assert "validator reported a SECURITY risk that no routed gate judged: severity filter drops the tenant predicate" in out, out
+    gate("validator", "PASS", "--trigger", "BEHAVIORAL=already in the plan")
+    ready("PRE_PR_PASS")
+    gate("validator", "PASS", "--trigger", "RISKY=x", expect=2)
+    gate("validator", "PASS")
+
     # One blocker is not averaged away by four passes.
     gate("qa", "CHANGES_REQUIRED")
     assert "qa: CHANGES_REQUIRED" in ready("PRE_PR_BLOCKED")

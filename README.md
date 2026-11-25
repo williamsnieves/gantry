@@ -174,6 +174,8 @@ REVIEW
   the review stops at the first stage that does not pass
     every runtime: `route.py next`; the final gate stays blocked
     with hooks: launching a later gate is denied (not in the lean profile)
+  a risk a gate sees outside its own scope is not lost under its pass
+    every runtime: `route.py gate --trigger` records it; the router asks for the plan to be rerun with it, and the final gate carries a condition while no routed gate has judged it
   a result counts only for the version of the change it judged
     every runtime: results are tied to a digest of the change; an edit makes them stale
 RELEASE
