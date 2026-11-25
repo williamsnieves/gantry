@@ -38,6 +38,7 @@ Verify them.
 
 - current working tree or change diff;
 - applicable `AGENTS.md`;
+- `.harness/project.yaml` when present: the project's detected stack and its test, lint, typecheck and build commands. Start the validation matrix from it, and report a command that is missing or wrong instead of replacing it silently;
 - project manifests, scripts, CI, and tool configuration;
 - optional OpenSpec change or implementation task list;
 - optional baseline branch, commit, or prior validation evidence;

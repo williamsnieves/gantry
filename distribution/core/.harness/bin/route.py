@@ -151,7 +151,8 @@ PASSING = ("PASS", "PASS_WITH_CONDITIONS")
 # always protected from agent edits; quality configuration is protected unless the
 # delivery profile is lean.
 HARNESS_PROTECTED = (".harness/core/", ".harness/bin/", ".harness/agents/", ".harness/evals/")
-HARNESS_PROTECTED_FILES = (".harness/harness.config.yaml", ".harness/install-state.json", ".claude/settings.json")
+HARNESS_PROTECTED_FILES = (".harness/harness.config.yaml", ".harness/project.yaml", ".harness/install-state.json",
+                           ".claude/settings.json")
 GENERATED_STATE = ("routing-plan.yaml", "gates.json")
 QUALITY_CONFIG_NAMES = (
     ".eslintignore", ".prettierignore", "biome.json", "biome.jsonc", "ruff.toml", ".ruff.toml", ".flake8",
