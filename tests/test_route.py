@@ -148,6 +148,8 @@ with tempfile.TemporaryDirectory() as tmp:
     (project / "src").mkdir()
     (project / "src/app.ts").write_text("export const a = 1;\n")
     (project / "eslint.config.js").write_text("export default [];\n")
+    (project / "docs/specs").mkdir(parents=True)
+    (project / "docs/specs/change.md").write_text("# Change\n")
     git(project, "add", "-A")
     git(project, "commit", "-q", "-m", "base")
     git(project, "checkout", "-q", "-b", "feature")
@@ -165,8 +167,13 @@ with tempfile.TemporaryDirectory() as tmp:
         return run("gate", "--runtime", "claude", "--agent", agent, "--decision", decision,
                    "--report", f".harness/runtime/claude/artifacts/{agent}-report.md", *extra, cwd=project, expect=expect)
 
+    def plan(*sources):
+        sources = sources or ("docs/specs/change.md",)
+        return run("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND", "--trigger", "BEHAVIORAL=x",
+                   *[a for source in sources for a in ("--behavior-source", source)], cwd=project).stdout
+
     assert "no routing plan" in ready("PRE_PR_BLOCKED")
-    run("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND", "--trigger", "BEHAVIORAL=x", cwd=project)
+    plan()
     required = ["validator", "backend-code-review", "qa", "detail-analyst", "reviewer"]
     out = ready("PRE_PR_BLOCKED")
     assert all(f"{agent}: required gate has no recorded result" in out for agent in required), out
@@ -200,6 +207,20 @@ with tempfile.TemporaryDirectory() as tmp:
     gate("reviewer", "PASS")
     ready("PRE_PR_PASS")
 
+    # A change in the SPEC or DESIGN lane that names no specification passes, with a condition that says so.
+    plan_file = project / ".harness/runtime/claude/routing-plan.yaml"
+    specified = plan_file.read_text()
+    assert 'lane: "SPEC"' in specified and "Lane: SPEC" in plan() and "Note:" not in plan()
+    run("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND", "--trigger", "BEHAVIORAL=x", cwd=project)
+    assert "lane SPEC but no --behavior-source was given" in ready("PRE_PR_PASS_WITH_CONDITIONS")
+    assert "Note: lane SPEC but none of docs/specs/nope.md exists" in plan("docs/specs/nope.md")
+    assert "none of docs/specs/nope.md exists" in ready("PRE_PR_PASS_WITH_CONDITIONS")
+    # The lane is part of the plan: editing it by hand invalidates the plan.
+    plan_file.write_text(specified.replace('lane: "SPEC"', 'lane: "DIRECT"'))
+    assert "routing plan is invalid" in ready("PRE_PR_BLOCKED")
+    plan_file.write_text(specified)
+    ready("PRE_PR_PASS")
+
     # One blocker is not averaged away by four passes.
     gate("qa", "CHANGES_REQUIRED")
     assert "qa: CHANGES_REQUIRED" in ready("PRE_PR_BLOCKED")
@@ -221,7 +242,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # Any edit after the gates makes readiness stale.
     (project / "src/app.ts").write_text("export const a = 3;\n")
     assert "edited after the routing plan" in ready("PRE_PR_BLOCKED")
-    run("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND", "--trigger", "BEHAVIORAL=x", cwd=project)
+    plan()
     assert ready("PRE_PR_BLOCKED").count("result is stale") == 5
     # Rerun the invalidated gates, carry the others forward with a reason.
     for agent in ("validator", "backend-code-review", "qa"):
@@ -233,7 +254,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
     # A change that edits the checks that judge it always carries a condition for a person.
     (project / "eslint.config.js").write_text("export default [{ rules: {} }];\n")
-    run("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND", "--trigger", "BEHAVIORAL=x", cwd=project)
+    plan()
     for agent in required:
         gate(agent, "PASS")
     assert "a person must review: eslint.config.js" in ready("PRE_PR_PASS_WITH_CONDITIONS")

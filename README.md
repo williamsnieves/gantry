@@ -117,6 +117,8 @@ Give your agent the request through the `harness-start` skill. The agent builds;
 
 The lane comes from `python3 .harness/bin/route.py lane`, from the same risk triggers that later choose the reviewers; the size of the change is not an input. `python3 .harness/bin/spec.py check` verifies that a specification has its sections, that every acceptance criterion has an id and is delivered by a slice, and that a `DESIGN` change has its design. The agent then builds slice by slice, test first, and `harness-run` reviews the result against the specification.
 
+The routing plan records the lane. When a `SPEC` or `DESIGN` change reaches the Final Pre-PR Gate without an existing file passed as `--behavior-source`, the gate still passes but carries a condition saying the accepted behavior was not written down, so a person sees it in the pull request.
+
 ## Project scope
 
 ```text
