@@ -330,6 +330,42 @@ assert lane_of("IMPLEMENTATION", "BEHAVIORAL", "SECURITY") == "lane: DESIGN"
 assert lane_of("IMPLEMENTATION", "DATA_INTEGRITY") == "lane: DESIGN"
 assert lane_of("MIGRATION") == "lane: DESIGN"
 assert lane_of("REVIEW_ONLY", "SECURITY") == "lane: NONE"
+
+# The model tier follows the gate's job and the lane: nothing is saved on a risky change or on the gates that judge risk.
+for agent in route.AGENTS:
+    assert route.tier(agent, "DESIGN") == ("standard" if agent == "validator" else "deep"), agent
+    assert route.tier(agent, "DIRECT") == route.tier(agent, "SPEC"), agent
+assert route.tier("validator", "SPEC") == "fast" and route.tier("qa", "SPEC") == "standard"
+assert all(route.tier(agent, "DIRECT") == "deep" for agent in route.DEEP_AGENTS)
+assert set(route.DEEP_AGENTS) <= set(route.AGENTS)
+
+with tempfile.TemporaryDirectory() as tmp:
+    project = Path(tmp)
+    plan_args = ("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND")
+    out = run(*plan_args, "--trigger", "BEHAVIORAL=x", cwd=project).stdout
+    # With no models file every gate runs on the session's model, and the plan still records the tier.
+    assert "validator" in out and "[fast]" in out and "[deep]" in out and "models:" not in out, out
+    plan_file = project / ".harness/runtime/claude/routing-plan.yaml"
+    written = yaml.safe_load(plan_file.read_text())
+    tiers = {e["agent"]: e["model_tier"] for e in written["agents"]}
+    assert tiers["validator"] == "fast" and tiers["qa"] == "standard" and tiers["reviewer"] == "deep", tiers
+    plan_file.write_text(plan_file.read_text().replace('model_tier: "deep"', 'model_tier: "fast"'))
+    assert "ROUTING PLAN: FAIL" in run("check", str(plan_file), expect=1).stdout  # a tier edited by hand invalidates the plan
+    # The project's file maps tiers to models for its runtime; an empty value and another runtime's section change nothing.
+    (project / ".harness/models.yaml").write_text(
+        "# comment\nclaude:\n  fast: haiku   # cheap\n  standard: \"sonnet\"\n  deep: \"\"\nopencode:\n  deep: other/model\n  fast: x\n")
+    assert route.configured_models(project, "claude") == {"fast": "haiku", "standard": "sonnet"}
+    assert route.configured_models(project, "opencode") == {"deep": "other/model", "fast": "x"}
+    assert route.configured_models(project, "cursor") == {}
+    out = run(*plan_args, "--trigger", "BEHAVIORAL=x", cwd=project).stdout
+    assert "[fast: haiku]" in out and "[standard: sonnet]" in out and "[deep]" in out, out
+    assert out.rstrip().endswith("next: run validator\nmodels: launch validator=haiku"), out
+    assert route.gate_models(project, "claude") == {"validator": "haiku", "backend-code-review": "sonnet", "qa": "sonnet",
+                                                    "detail-analyst": "sonnet"}, route.gate_models(project, "claude")
+    # The same gates on a change in the DESIGN lane move up a tier.
+    out = run(*plan_args, "--trigger", "DATA_INTEGRITY=x", cwd=project).stdout
+    assert "[standard: sonnet]" in out and "[fast" not in out and out.count("[deep]") >= 3, out
+    assert route.gate_models(project, "claude") == {"validator": "sonnet"}, route.gate_models(project, "claude")
 assert "spec.py check" in run("lane", "--work-mode", "IMPLEMENTATION", "--trigger", "BEHAVIORAL=x").stdout
 assert "spec.py" not in run("lane", "--work-mode", "IMPLEMENTATION").stdout
 run("lane", "--work-mode", "IMPLEMENTATION", "--trigger", "BEHAVIORAL", expect=2)  # a trigger needs evidence

@@ -48,6 +48,21 @@ NATIVE_SKILL_DIRS = {"claude": ".claude/skills"}
 # What `gantry inspect` found in the project: its stack and the commands that check it.
 PROJECT_FILE = ".harness/project.yaml"
 
+# Which model each tier of gate runs on. Written once and then the user's: an install never overwrites it.
+MODELS_FILE = ".harness/models.yaml"
+MODELS_TEMPLATE = """# Which model each gate runs on, per runtime. Yours to edit; agents cannot.
+#
+# The router gives every gate a tier from its job and the change's risk:
+#   fast      runs the project's checks and reports them (Validator outside the DESIGN lane)
+#   standard  reviews code against known rules (code reviews, QA, Detail Analyst outside the DESIGN lane)
+#   deep      judges risk, design or the change as a whole (Security, Architecture, Reviewer; every reviewer in the DESIGN lane)
+#
+# An empty value means the session's own model, which is how every gate runs until you fill one in.
+# On Claude Code the values are the model names its agent launcher accepts, for example:
+#   fast: haiku
+#   standard: sonnet
+{sections}"""
+
 # Runtimes whose command hooks the harness can register. The guard denies agent
 # edits to harness files and quality configuration, and pull-request creation
 # before the Final Pre-PR Gate passes. See distribution/core/.harness/bin/hook.py.
@@ -64,6 +79,7 @@ HOOK_DISCLOSURE = """Hooks registered in {path} (skip with --no-hooks):
   - ask you to confirm when the agent records your approval of a design with `spec.py approve`
   - deny `git commit` and `git push` while the change adds a secret
   - deny `gh pr merge` until `release.py check` passes (not in the lean profile)
+  - launch each gate on the model .harness/models.yaml gives its tier, when you have filled one in
   They apply to the agent only; you can still make these changes yourself."""
 
 def package_root() -> Path:
@@ -428,6 +444,15 @@ def cmd_install(args):
         project, final_runtimes, args.scope, args.profile, dry_run=args.dry_run
     )
 
+    models = project / MODELS_FILE
+    if models.exists():
+        print(f"keep: {MODELS_FILE}")
+    else:
+        print(f"{'[DRY-RUN] ' if args.dry_run else ''}write: {MODELS_FILE}")
+        if not args.dry_run:
+            sections = "".join(f'{r}:\n  fast: ""\n  standard: ""\n  deep: ""\n' for r in final_runtimes)
+            models.write_text(MODELS_TEMPLATE.format(sections=sections), encoding="utf-8")
+
     description = detect.detect(project)
     described = project / PROJECT_FILE
     if described.exists():
@@ -639,8 +664,9 @@ def cmd_uninstall(args):
             sp = state_path(project)
             if sp.exists():
                 sp.unlink()
-            if (project / PROJECT_FILE).exists():
-                (project / PROJECT_FILE).unlink()
+            for owned in (PROJECT_FILE, MODELS_FILE):
+                if (project / owned).exists():
+                    (project / owned).unlink()
         else:
             save_state(project, state)
 

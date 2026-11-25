@@ -16,6 +16,8 @@ Reads the hook event as JSON on stdin and denies four things:
 
 It also turns `spec.py approve` into a question for the person: approving a
 design is their decision, so the agent's command waits for their confirmation.
+And it launches each gate on the model the project's `.harness/models.yaml`
+gives its tier, by rewriting the launch when it names another one.
 
 Rules 2, 3, 4 and 6 are off when the delivery profile is `lean`.
 
@@ -83,6 +85,17 @@ def confirm(event: dict) -> str | None:
         return ("Gantry: this records that you approved the specification as it is written now. "
                 "Confirm only if you have read it and agree with its design.")
     return None
+
+
+def model_for(event: dict, root: Path, runtime: str) -> dict | None:
+    """Return the gate launch rewritten to use the model its tier is mapped to, or None when it already does."""
+    tool_input = event.get("tool_input") or {}
+    if event.get("tool_name") not in SUBAGENT_TOOLS:
+        return None
+    model = route.gate_models(root, runtime).get(tool_input.get("subagent_type"))
+    if not model or tool_input.get("model") == model:
+        return None
+    return {**tool_input, "model": model}
 
 
 def decide(event: dict, root: Path, runtime: str) -> str | None:
@@ -184,12 +197,22 @@ def main() -> int:
     except Exception as error:  # fail open: a bug in the guard must not block work
         print(f"gantry hook: internal error, allowing the action ({error!r})", file=sys.stderr)
         return 0
-    question = None
+    question = rewritten = None
     if not reason:
         try:
             question = confirm(event)
+            rewritten = None if question else model_for(event, root, runtime)
         except Exception as error:
             print(f"gantry hook: internal error, allowing the action ({error!r})", file=sys.stderr)
+    if rewritten:
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "allow",
+                "permissionDecisionReason": f"Gantry: {rewritten['subagent_type']} runs on {rewritten['model']} (.harness/models.yaml)",
+                "updatedInput": rewritten,
+            }
+        }))
     if question:
         print(json.dumps({
             "hookSpecificOutput": {

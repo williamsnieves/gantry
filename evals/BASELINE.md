@@ -344,3 +344,25 @@ What it does show:
 - It read the migration and reported that it narrows a `TEXT` column instead of widening it, which contradicts the specification.
 
 Not measured: a change whose review passed and that lacks only its rollout, a project whose files do support a rollout, the record after a real release, and any session with a person.
+
+## A cheaper model for the gates
+
+The router records a tier for each gate (`fast`, `standard`, `deep`) and the project maps tiers to models in `.harness/models.yaml`. With nothing mapped, every gate runs on the session's model, as in every measurement above.
+
+Two probes on 2026-11-25 confirmed the mechanism on Claude Code ($0.21 and $0.20): with `fast: haiku` mapped, a Validator launched without naming a model ran on `claude-haiku-5-5`; with nothing mapped, only the session's model was used.
+
+One trial of the unlabelled-control case, `--execute`, the lead on `claude-fable-5-2` and every gate on `claude-sonnet-5-5` (`--tier-model fast=haiku --tier-model standard=sonnet --tier-model deep=sonnet`; the change is in the `DESIGN` lane, so no gate was `fast`):
+
+| | Every gate on the lead's model (2026-11-24, checks not executable) | Gates on `claude-sonnet-5-5` |
+|---|---|---|
+| Defect found by | Frontend Code Review, QA | Frontend Code Review, QA |
+| Gates recorded | 4 of 6, stopped after the specialists | 4 of 6, stopped after the specialists |
+| Final gate | `PRE_PR_BLOCKED` | `PRE_PR_BLOCKED` |
+| Cost, wall time | $3.00, 193 s | $1.24, 129 s |
+| Of which the gates | not separated | $0.22 |
+
+- The same two gates found the same defect, and the two that did not need to find it passed.
+- The lead is now $1.02 of $1.24. Any further saving is in the lead, not in the gates.
+- The lead named the model itself in all four launches, following the `models:` line, so the hook had nothing to rewrite.
+
+This is not the shipped policy. In the `DESIGN` lane the policy keeps reviewers on `deep`; the trial mapped `deep` to the cheaper model on purpose, to see whether the defect survives it. One trial of one case with a defect: it says a cheaper model can find this defect, not that it finds defects as often. The two runs also differ in whether the checks were executable. Not measured: the planted leak and the control on the cheaper model, `haiku` for the Validator in a real review, and a false alarm rate.

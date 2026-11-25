@@ -53,6 +53,12 @@ described = project / ".harness/project.yaml"
 assert 'kind: "greenfield"' in described.read_text()
 described.write_text(described.read_text() + "# corrected by hand\n")
 assert "keep: .harness/project.yaml" in run("install", "--runtime", "claude", "--project", str(project)).stdout
+# The models file is the user's: written once with nothing mapped, and kept as edited.
+models = project / ".harness/models.yaml"
+assert 'claude:\n  fast: ""\n  standard: ""\n  deep: ""' in models.read_text()
+models.write_text("claude:\n  fast: haiku\n")
+assert "keep: .harness/models.yaml" in run("install", "--runtime", "claude", "--project", str(project)).stdout
+assert models.read_text() == "claude:\n  fast: haiku\n"
 assert "# corrected by hand" in described.read_text()
 assert "write: .harness/project.yaml" in run("inspect", "--write", "--project", str(project)).stdout
 assert "# corrected by hand" not in described.read_text()
