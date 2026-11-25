@@ -1,4 +1,6 @@
 """The specification check: structure and traceability, not judgement."""
+import hashlib
+import json
 import subprocess
 import sys
 import tempfile
@@ -66,5 +68,23 @@ assert code == 0 and "note: 2 open question(s)" in out, out
 
 missing = subprocess.run([sys.executable, str(CHECKER), "check", str(work / "nope.md")], capture_output=True, text=True)
 assert missing.returncode == 1 and "does not exist" in missing.stdout
+
+# Approval records the text a person approved; a specification that fails the check cannot be approved.
+def approve(name, text):
+    (work / "docs/specs").mkdir(parents=True, exist_ok=True)
+    (work / "docs/specs" / name).write_text(text, encoding="utf-8")
+    proc = subprocess.run([sys.executable, str(CHECKER), "approve", f"docs/specs/{name}", "--project", str(work)],
+                          capture_output=True, text=True)
+    return proc.returncode, proc.stdout
+
+code, out = approve("filter.md", GOOD)
+assert code == 1 and "NOT APPROVED" in out and "missing section: ## Design" in out, out
+assert not (work / ".harness/runtime/approvals.json").exists()
+code, out = approve("filter.md", designed)
+assert code == 0 and "SPEC: APPROVED (docs/specs/filter.md)" in out, out
+recorded = json.loads((work / ".harness/runtime/approvals.json").read_text())
+assert recorded["docs/specs/filter.md"]["sha256"] == hashlib.sha256(designed.encode()).hexdigest(), recorded
+outside = subprocess.run([sys.executable, str(CHECKER), "approve", "/etc/hosts", "--project", str(work)], capture_output=True, text=True)
+assert outside.returncode == 1 and "outside the project" in outside.stdout
 
 print("SPEC TESTS: PASS")

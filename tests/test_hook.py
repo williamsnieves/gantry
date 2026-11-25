@@ -116,6 +116,39 @@ with tempfile.TemporaryDirectory() as tmp:
         subprocess.run([*route, "gate", "--runtime", "claude", "--agent", agent, "--decision", "PASS",
                         "--report", f".harness/runtime/claude/artifacts/{agent}-report.md"], cwd=project, check=True, capture_output=True)
     allowed("Bash", command="gh pr create --title x --body y")
+
+    # Once a stage did not pass, the gates after it cannot be launched; the one that rejected can run again.
+    def record(agent, decision):
+        subprocess.run([*route, "gate", "--runtime", "claude", "--agent", agent, "--decision", decision,
+                        "--report", f".harness/runtime/claude/artifacts/{agent}-report.md"], cwd=project, check=True, capture_output=True)
+
+    (project / ".harness/runtime/claude/gates.json").unlink()
+    allowed("Agent", subagent_type="reviewer", prompt="review")
+    record("validator", "CHANGES_REQUIRED")
+    for tool in ("Agent", "Task"):
+        reason = denied(tool, subagent_type="qa", prompt="review")
+        assert "validator did not pass" in reason and "qa would judge a change that has to be edited" in reason, reason
+    allowed("Agent", subagent_type="validator", prompt="review again")
+    allowed("Agent", subagent_type="general-purpose", prompt="look something up")
+    for agent in ("validator", "backend-code-review", "qa", "detail-analyst", "reviewer"):
+        record(agent, "PASS")
+    allowed("Agent", subagent_type="qa", prompt="review")
+
+    # Approving a design is the person's decision: the agent's command becomes a question, and a reviewer cannot ask it.
+    def asked(command, agent=None):
+        payload = json.dumps({"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": command},
+                              "cwd": str(project), **({"agent_type": agent} if agent else {})})
+        proc = subprocess.run([sys.executable, str(project / ".harness/bin/hook.py"), "claude"],
+                              input=payload, capture_output=True, text=True)
+        return json.loads(proc.stdout)["hookSpecificOutput"] if proc.stdout.strip() else None
+
+    question = asked("python3 .harness/bin/spec.py approve docs/specs/filter.md")
+    assert question["permissionDecision"] == "ask" and "you approved the specification" in question["permissionDecisionReason"]
+    assert asked("python3 .harness/bin/spec.py check docs/specs/filter.md --lane DESIGN") is None
+    refused = asked("python3 .harness/bin/spec.py approve docs/specs/filter.md", agent="reviewer")
+    assert refused["permissionDecision"] == "deny" and "the user's decision" in refused["permissionDecisionReason"]
+    denied("Write", file_path=".harness/runtime/approvals.json")
+
     (project / "src/app.ts").write_text("export const a = 3;\n")  # a post-gate edit makes readiness stale
     assert "edited after the routing plan" in denied("Bash", command="gh pr create --fill")
 
@@ -125,6 +158,7 @@ with tempfile.TemporaryDirectory() as tmp:
     allowed("Bash", command="git commit --no-verify -m wip")
     allowed("Bash", command="gh pr create --fill")
     denied("Edit", file_path=".harness/bin/hook.py")
+    assert asked("python3 .harness/bin/spec.py approve docs/specs/filter.md")["permissionDecision"] == "ask"
 
     # A malformed event never blocks work.
     reason, stderr = hook("Edit", raw="not json")

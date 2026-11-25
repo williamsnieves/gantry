@@ -144,6 +144,46 @@ strict
 
 They are initial operating presets. Risk triggers and portable gate policy remain authoritative.
 
+## Guardrails
+
+A guardrail is something the harness guarantees whatever the agent decides. None of them is decided by a model: each is a rule over the files, the routing plan and the recorded gate results, so it fires the same way every time. Which ones apply to a change follows its risk: the lane and the triggers choose them, as they choose the reviewers.
+
+`python3 .harness/bin/route.py guardrails` prints the list:
+
+```text
+ANY
+  the harness's files and routing state are not edited by the agent
+    every runtime: the final gate rejects a routing plan or a report that was changed by hand
+    with hooks: the edit is denied
+SPECIFY
+  how much is settled before building follows the risk, not the size
+    every runtime: `route.py lane`; `route.py plan` computes the lane again from the change itself
+  a specification has its criteria, and each criterion is delivered by a slice
+    every runtime: `spec.py check`
+  a design is approved by a person
+    every runtime: the final gate carries a condition until `spec.py approve` was run on the current text
+    with hooks: `spec.py approve` asks the person to confirm; a reviewing agent cannot run it
+BUILD
+  a failing check is fixed in the code, not by weakening the check
+    every runtime: the final gate carries a condition naming any lint, type, test or CI configuration the change edits
+    with hooks: the edit and `--no-verify` are denied (not in the lean profile)
+REVIEW
+  a reviewer reports and does not fix; a report is what the reviewer wrote
+    every runtime: the final gate rejects a report changed after its result was recorded
+    with hooks: a reviewer can write only its own report, and nobody else can write it
+  the review stops at the first stage that does not pass
+    every runtime: `route.py next`; the final gate stays blocked
+    with hooks: launching a later gate is denied (not in the lean profile)
+  a result counts only for the version of the change it judged
+    every runtime: results are tied to a digest of the change; an edit makes them stale
+RELEASE
+  a pull request is opened only after every required gate passed
+    every runtime: `route.py ready` exits non-zero
+    with hooks: `gh pr create` is denied (not in the lean profile)
+```
+
+"Every runtime" is what holds on any tool, because the router computes it. "With hooks" is what a runtime with command hooks adds by refusing the action when it is attempted; today that is Claude Code. A hook is a first barrier, not a boundary: a shell command can still write a file, which is why each guardrail also has a check at the final gate.
+
 ## Safety
 
 The installer:

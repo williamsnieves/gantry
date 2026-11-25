@@ -55,11 +55,13 @@ HOOK_MARKER = ".harness/bin/hook.py"
 HOOK_SETTINGS = {"claude": ".claude/settings.json"}
 # Runtimes whose specialists write their own report, which only a hook can confine to that file.
 AGENT_DIRS = {"claude": ".claude/agents"}
-HOOK_MATCHERS = ("Edit|Write|MultiEdit|NotebookEdit", "Bash")
+HOOK_MATCHERS = ("Edit|Write|MultiEdit|NotebookEdit", "Bash", "Agent|Task")
 HOOK_DISCLOSURE = """Hooks registered in {path} (skip with --no-hooks):
   - deny agent edits to harness files and to routing state written by route.py
   - deny agent edits to existing lint, type, test and CI configuration (not in the lean profile)
   - deny `gh pr create` until `route.py ready` passes, and commands using --no-verify (not in the lean profile)
+  - deny launching a gate after the review stopped at a stage that did not pass (not in the lean profile)
+  - ask you to confirm when the agent records your approval of a design with `spec.py approve`
   They apply to the agent only; you can still make these changes yourself."""
 
 def package_root() -> Path:
