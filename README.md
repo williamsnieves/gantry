@@ -85,6 +85,17 @@ OpenCode   → /harness-run
 Oh My Pi   → /harness-run
 ```
 
+## Project description
+
+`gantry install` looks at the project once and writes what it finds to `.harness/project.yaml`: whether the project is new or existing, its languages, package managers and frameworks, its CI, and the commands that run its tests, lint, type checks and build. Nothing is executed and no model is called.
+
+```bash
+gantry inspect --project ~/code/my-app          # print it
+gantry inspect --project ~/code/my-app --write  # refresh the saved file after changing tooling
+```
+
+The Validator starts from those commands instead of rediscovering them on every run. Agents cannot edit the file: the commands that judge a change are not chosen by the agent being judged. Correct it by hand when detection is wrong; a reinstall keeps your version and `inspect --write` replaces it. A command is listed only when the project declares it (a script, a dependency, a build file); anything else is reported as not detected.
+
 ## Project scope
 
 ```text
@@ -159,6 +170,7 @@ Runtime adapters execute the same routing, handoff, blocking, re-review and Fina
 pip install "PyYAML>=6.0"
 python3 tests/check_distribution.py   # structural integrity of distribution/
 python3 tests/smoke_test.py           # install / doctor / uninstall round trip
+python3 tests/test_detect.py          # project detection
 python3 tests/test_eval_scoring.py    # scenario scorer
 python3 tests/test_route.py           # deterministic router
 python3 tests/test_hook.py            # pre-tool-use guard

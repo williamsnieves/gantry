@@ -88,7 +88,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
     # The harness's own files, installed files and generated routing state.
     for path in (".harness/bin/route.py", ".harness/core/routing/ROUTING-POLICY.md", ".claude/settings.json",
-                 ".harness/harness.config.yaml", ".claude/agents/qa.md", ".agents/skills/harness-run/SKILL.md",
+                 ".harness/harness.config.yaml", ".harness/project.yaml", ".claude/agents/qa.md", ".agents/skills/harness-run/SKILL.md",
                  ".harness/runtime/claude/routing-plan.yaml", ".harness/runtime/claude/gates.json"):
         denied("Edit", file_path=str(project / path))
     denied("Write", file_path=".harness/runtime/claude/gates.json")  # even when it does not exist yet

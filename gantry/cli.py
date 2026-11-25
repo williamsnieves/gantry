@@ -15,6 +15,8 @@ try:
 except Exception:
     yaml = None
 
+from gantry import detect
+
 VERSION = "1.0.0"
 START = "<!-- GANTRY:START -->"
 END = "<!-- GANTRY:END -->"
@@ -42,6 +44,9 @@ COMPACT_DESCRIPTION = (
     "specialist agent explicitly requires this named capability."
 )
 NATIVE_SKILL_DIRS = {"claude": ".claude/skills"}
+
+# What `gantry inspect` found in the project: its stack and the commands that check it.
+PROJECT_FILE = ".harness/project.yaml"
 
 # Runtimes whose command hooks the harness can register. The guard denies agent
 # edits to harness files and quality configuration, and pull-request creation
@@ -419,14 +424,39 @@ def cmd_install(args):
         project, final_runtimes, args.scope, args.profile, dry_run=args.dry_run
     )
 
+    description = detect.detect(project)
+    described = project / PROJECT_FILE
+    if described.exists():
+        print(f"keep: {PROJECT_FILE} (refresh with `gantry inspect --write`)")
+    else:
+        print(f"{'[DRY-RUN] ' if args.dry_run else ''}write: {PROJECT_FILE}")
+        if not args.dry_run:
+            described.write_text(detect.render(description), encoding="utf-8")
+
     if not args.dry_run:
         state["harness_version"] = VERSION
         state["runtimes"] = final_runtimes
         save_state(project, state)
 
     print()
+    print("\n".join(detect.summary(description)))
+    print()
     print("Installed runtimes:", ", ".join(final_runtimes))
     print_entrypoints(final_runtimes)
+
+
+def cmd_inspect(args):
+    project = ensure_project(args.project)
+    description = detect.detect(project)
+    if args.json:
+        print(json.dumps(description, indent=2))
+    else:
+        print("\n".join(detect.summary(description)))
+    if args.write:
+        if not (project / ".harness").is_dir():
+            raise SystemExit("The harness is not installed in this project; run `gantry install` first.")
+        (project / PROJECT_FILE).write_text(detect.render(description), encoding="utf-8")
+        print(f"write: {PROJECT_FILE}")
 
 def print_entrypoints(runtimes):
     entries = {
@@ -608,6 +638,8 @@ def cmd_uninstall(args):
             sp = state_path(project)
             if sp.exists():
                 sp.unlink()
+            if (project / PROJECT_FILE).exists():
+                (project / PROJECT_FILE).unlink()
         else:
             save_state(project, state)
 
@@ -646,6 +678,12 @@ def build_parser():
     dr = sub.add_parser("doctor", help="Validate the installed harness")
     dr.add_argument("--project", default=".")
     dr.set_defaults(func=cmd_doctor)
+
+    insp = sub.add_parser("inspect", help="Describe the project: new or existing, stack, and check commands")
+    insp.add_argument("--project", default=".")
+    insp.add_argument("--json", action="store_true")
+    insp.add_argument("--write", action="store_true", help=f"save the result to {PROJECT_FILE}")
+    insp.set_defaults(func=cmd_inspect)
 
     un = sub.add_parser("uninstall", help="Remove selected runtime overlays")
     un.add_argument("--project", default=".")

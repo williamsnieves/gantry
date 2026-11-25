@@ -48,6 +48,15 @@ assert (project / "opencode.json").read_text() == '{"existing":true}\n'
 assert "# Existing rules" in (project / "AGENTS.md").read_text()
 assert "<!-- GANTRY:START -->" in (project / "AGENTS.md").read_text()
 
+# The project is described once at install; a person's correction survives a reinstall.
+described = project / ".harness/project.yaml"
+assert "kind: greenfield" in described.read_text()
+described.write_text(described.read_text() + "# corrected by hand\n")
+assert "keep: .harness/project.yaml" in run("install", "--runtime", "claude", "--project", str(project)).stdout
+assert "# corrected by hand" in described.read_text()
+assert "write: .harness/project.yaml" in run("inspect", "--write", "--project", str(project)).stdout
+assert "# corrected by hand" not in described.read_text()
+
 # Shared installed once.
 assert (project / ".agents/skills/harness-run/SKILL.md").exists()
 assert (project / ".harness/core/routing/ROUTING-POLICY.md").exists()
