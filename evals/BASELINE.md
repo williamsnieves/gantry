@@ -287,3 +287,26 @@ One trial on 2026-11-25, `claude-fable-5-2`, the planted-leak case, capped at $3
 - The lead ran the three checks itself twice, in addition to the Validator.
 
 Open: the Validator's finding reaches the final gate only because specialists were routed and found it too. In a change routed to the Validator alone it would be a paragraph in a report under a `PASS`. Not measured: the control and the unlabelled-control case with checks executed, and the uncapped cost of this case.
+
+### The control with the checks executed
+
+One trial on 2026-11-25, `claude-fable-5-2`, the control case, `--execute`.
+
+| | Checks not executable (2026-11-24) | Checks executed |
+|---|---|---|
+| Gates | 6 of 6, passing with conditions about checks that could not be run | 6 of 6, every one a plain `PASS` |
+| Final gate | `PRE_PR_PASS_WITH_CONDITIONS` | `PRE_PR_PASS_WITH_CONDITIONS` |
+| Conditions | from the reviewers | one, from the router: lane `DESIGN` and no specification was given |
+| Cost, wall time | $4.91, 388 s | $3.70, 260 s |
+
+- No reviewer raised a false alarm, and none attached a condition once the checks could be run.
+- The remaining condition is correct for this case: the change is given to the review without a specification. The lead classified it `BEHAVIORAL` and `COMPATIBILITY`, and `COMPATIBILITY` puts it in the `DESIGN` lane.
+- The Validator ran the checks six times and the lead three more.
+
+Not measured: a control that arrives with an approved specification, which is the only way this case can reach `PRE_PR_PASS`. One trial; the cost difference is within what earlier trials of this case varied by.
+
+## A risk a gate sees outside its own scope
+
+In the planted-leak run above the Validator described the leak and recorded `PASS` with nothing attached. `route.py gate` now takes `--trigger "<DIMENSION>=<what it saw>"` with any decision. While the routing plan does not cover that dimension, the `next:` line asks for the plan to be rerun with it, which routes the gate that owns the risk, and the Final Pre-PR Gate carries a condition naming it.
+
+Covered by `tests/test_route.py`. Not measured live: whether the lead passes the trigger on when a specialist reports one.
