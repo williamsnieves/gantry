@@ -310,3 +310,18 @@ Not measured: a control that arrives with an approved specification, which is th
 In the planted-leak run above the Validator described the leak and recorded `PASS` with nothing attached. `route.py gate` now takes `--trigger "<DIMENSION>=<what it saw>"` with any decision. While the routing plan does not cover that dimension, the `next:` line asks for the plan to be rerun with it, which routes the gate that owns the risk, and the Final Pre-PR Gate carries a condition naming it.
 
 Covered by `tests/test_route.py`. Not measured live: whether the lead passes the trigger on when a specialist reports one.
+
+## The security scan
+
+`scan.py` reads the lines a change adds and applies fixed rules: credentials in a provider's format and private keys block the final gate, possible credentials are conditions, and risky code patterns add the `SECURITY` trigger so the Security gate reviews the change. No model is involved.
+
+Checked on 2026-11-25 without any agent run, by applying the rules to every line of two codebases as if all of it were new:
+
+| Codebase | Files | Lines | Secrets | Possible credentials | Risky patterns |
+|---|---|---|---|---|---|
+| This repository | 810 | 176,134 | 0 | 0 | 0 |
+| A full-stack TypeScript application used as a reference | 900 | 191,611 | 0 | 2 | 0 |
+
+The two possible credentials are an environment file and a compose file that sets a database password, which is what the rule is for.
+
+This measures false alarms, not detection. `tests/test_scan.py` covers each rule on the pattern it is written for and on a safe form beside it. Not measured: what the rules miss in real vulnerable code, how often the `SECURITY` trigger they add is dismissed, and the cost of the extra Security gate they route. The planted tenant leak in the review cases is a logic defect and no rule here sees it; that one is found by the reviewers.

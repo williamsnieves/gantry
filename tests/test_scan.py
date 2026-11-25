@@ -1,0 +1,128 @@
+"""The security scan: rules over the lines a change adds. Run: python3 tests/test_scan.py"""
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+BIN = ROOT / "distribution/core/.harness/bin"
+sys.path.insert(0, str(BIN))
+import route  # noqa: E402
+import scan  # noqa: E402
+
+# Built from pieces so this file holds nothing a secret scanner would stop.
+GITHUB = "gh" + "p_" + "a1B2" * 9
+STRIPE = "sk" + "_live_" + "a1B2c3D4" * 3
+AWS = "AK" + "IA" + "ABCDEFGHIJKLMNOP"
+KEY = "-----BEGIN RSA " + "PRIVATE KEY-----"
+
+
+def git(cwd, *args):
+    subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid", *args], cwd=cwd, check=True, capture_output=True)
+
+
+def run(tool, *args, cwd, expect=0):
+    proc = subprocess.run([sys.executable, str(BIN / tool), *args], cwd=cwd, capture_output=True, text=True)
+    assert proc.returncode == expect, (args, proc.returncode, proc.stdout, proc.stderr)
+    return proc.stdout
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    project = Path(tmp).resolve()
+    (project / "src").mkdir()
+    # What the project already contained is not the change's doing.
+    (project / "src/legacy.ts").write_text(f"const old = eval(input);\nconst token = \"{GITHUB}\";\n")
+    (project / "src/app.ts").write_text("export const a = 1;\n")
+    git(project, "init", "-q", "-b", "main")
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "base")
+    git(project, "checkout", "-q", "-b", "feature")
+
+    def found():
+        return scan.findings(project, route.change_identity(project)[1], route.base_commit(project))
+
+    (project / "src/app.ts").write_text("export const a = 2;\n")
+    (project / "src/legacy.ts").write_text(f"const old = eval(input);\nconst token = \"{GITHUB}\";\nexport {{}};\n")
+    assert not any(found().values()), found()
+    assert "SECURITY SCAN: PASS (2 changed files)" in run("scan.py", cwd=project)
+
+    # Secrets, in an edited file and in a new one; the value is never printed.
+    (project / "src/app.ts").write_text(f"export const a = 2;\nconst stripe = \"{STRIPE}\";\n")
+    (project / "deploy.sh").write_text(f"export AWS_ACCESS_KEY_ID={AWS}\n")
+    (project / "key.txt").write_text(KEY + "\nabc\n")
+    secrets = {(f["what"], f["path"], f["line"]) for f in found()["secret"]}
+    assert secrets == {("Stripe live key", "src/app.ts", 2), ("AWS access key", "deploy.sh", 1), ("private key", "key.txt", 1)}, secrets
+    out = run("scan.py", cwd=project, expect=1)
+    assert "SECURITY SCAN: FAIL" in out and "Stripe live key at src/app.ts:2" in out and STRIPE not in out and AWS not in out, out
+
+    # The final gate blocks on a secret whatever the gates said, and the plan says so up front.
+    plan = ("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND")
+    out = run("route.py", *plan, cwd=project)
+    assert "Secret in the change, the final gate will block: Stripe live key at src/app.ts:2" in out, out
+    out = run("route.py", "ready", "--runtime", "claude", cwd=project, expect=1)
+    assert "the change adds what looks like a secret" in out and "rotate it" in out and STRIPE not in out, out
+
+    # A marked line is an exception a person confirms; possible credentials are conditions, placeholders are not.
+    (project / "deploy.sh").unlink()
+    (project / "key.txt").unlink()
+    (project / "src/app.ts").write_text(
+        f"export const a = 2;\nconst fixture = \"{STRIPE}\"; // gantry:allow documented test key\n"
+        "const password = \"hunter2hunter2hunter2\";\n"
+        "const apiKey = \"your-api-key-here\";\n"
+        "const db = \"postgres://app:s3cr3tpass@db.internal:5432/app\";\n"
+        "const local = \"postgres://app:app@localhost:5432/app\";\n")
+    (project / ".env").write_text("PORT=3000\n")
+    (project / ".env.example").write_text("PORT=3000\n")
+    result = found()
+    assert not result["secret"] and [f["line"] for f in result["allowed"]] == [2], result
+    assert {(f["path"], f["line"]) for f in result["suspect"]} == {("src/app.ts", 3), ("src/app.ts", 5), (".env", 0)}, result["suspect"]
+    run("route.py", *plan, cwd=project)
+    reports = project / ".harness/runtime/claude/artifacts"
+    reports.mkdir(parents=True)
+    for agent in ("validator", "backend-code-review", "detail-analyst", "reviewer"):
+        (reports / f"{agent}-report.md").write_text("ok\n")
+        run("route.py", "gate", "--runtime", "claude", "--agent", agent, "--decision", "PASS",
+            "--report", f".harness/runtime/claude/artifacts/{agent}-report.md", cwd=project)
+    out = run("route.py", "ready", "--runtime", "claude", cwd=project)
+    assert out.startswith("PRE_PR_PASS_WITH_CONDITIONS") and "marked `gantry:allow`" in out and "possible credential" in out, out
+    (project / ".env").unlink()
+
+    # A risky pattern is a reason for the Security gate to look: it adds the trigger, and can be dismissed with a reason.
+    (project / "src/app.ts").write_text(
+        "export const a = 2;\n"
+        "const rows = await prisma.$queryRawUnsafe(`select * from incidents where id = ${id}`);\n"
+        "el.innerHTML = html;\n"
+        "const digest = createHash(\"md5\").update(password).digest(\"hex\");\n")
+    (project / "notes.md").write_text("Never call eval(input) on user data.\n")
+    risky = {(f["what"], f["line"]) for f in found()["risky"]}
+    assert risky == {("query built from a string", 2), ("markup injected without escaping", 3), ("weak hash", 4)}, risky
+    out = run("route.py", *plan, cwd=project)
+    assert "Added from the changed files: SECURITY (the security scan found query built from a string at src/app.ts:2" in out, out
+    assert "REQUIRED        security" in out, out
+    out = run("route.py", *plan, "--dismiss", "SECURITY=the query has no user input and the hash is a cache key", cwd=project)
+    assert "REQUIRED        security" not in out, out
+    (project / "src/app.ts").write_text("export const a = 3;\n")
+    (project / "notes.md").unlink()
+    run("route.py", *plan, "--dismiss", "SECURITY=nothing", cwd=project, expect=2)
+
+# Each risky rule fires on its pattern and stays quiet on the safe form.
+FIRES = {
+    "dynamic code execution": ["const v = eval(body.code);", "const f = new Function(src);"],
+    "markup injected without escaping": ["<div dangerouslySetInnerHTML={{ __html: text }} />", "<p v-html=\"bio\"></p>"],
+    "shell command built from a string": ["subprocess.run(cmd, shell=True)", "os.system(command)", "execSync(`rm -rf ${dir}`);"],
+    "query built from a string": ["cur.execute(f\"SELECT * FROM users WHERE id = {uid}\")", "db.query(\"select * from t where id = \" + id);"],
+    "unsafe deserialization": ["data = pickle.loads(blob)", "cfg = yaml.load(text)"],
+    "TLS verification disabled": ["requests.get(url, verify=False)", "new Agent({ rejectUnauthorized: false })"],
+    "weak hash": ["hashlib.md5(password.encode())"],
+    "any origin allowed": ["res.setHeader(\"Access-Control-Allow-Origin\", \"*\");", "app.use(cors({ origin: \"*\" }));"],
+}
+QUIET = ["const retrieval = retrieve(x);", "cfg = yaml.load(text, Loader=yaml.SafeLoader)", "requests.get(url, verify=True)",
+         "db.query(\"select * from t where id = $1\", [id]);", "execSync(\"npm test\");", "el.textContent = html;",
+         "createHash(\"sha256\")", "app.use(cors({ origin: \"https://app.example.com\" }));", "medieval(x)", "model.eval()"]
+for name, pattern in scan.RISKY:
+    for line in FIRES[name]:
+        assert pattern.search(line), (name, line)
+    for line in QUIET:
+        assert not pattern.search(line), (name, line)
+
+print("SCAN TESTS: PASS")

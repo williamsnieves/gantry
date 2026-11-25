@@ -62,6 +62,7 @@ HOOK_DISCLOSURE = """Hooks registered in {path} (skip with --no-hooks):
   - deny `gh pr create` until `route.py ready` passes, and commands using --no-verify (not in the lean profile)
   - deny launching a gate after the review stopped at a stage that did not pass (not in the lean profile)
   - ask you to confirm when the agent records your approval of a design with `spec.py approve`
+  - deny `git commit` and `git push` while the change adds a secret
   They apply to the agent only; you can still make these changes yourself."""
 
 def package_root() -> Path:
@@ -506,6 +507,7 @@ def cmd_doctor(args):
         ".harness/core/routing/ROUTING-POLICY.md",
         ".harness/bin/route.py",
         ".harness/bin/hook.py",
+        ".harness/bin/scan.py",
         ".harness/core/pre-pr/FINAL-PRE-PR-GATE.md",
         ".harness/agents/reviewer/AGENT.md",
         ".harness/evals/end-to-end/E2E-ORACLE.md",

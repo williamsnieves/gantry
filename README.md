@@ -167,6 +167,11 @@ BUILD
   a failing check is fixed in the code, not by weakening the check
     every runtime: the final gate carries a condition naming any lint, type, test or CI configuration the change edits
     with hooks: the edit and `--no-verify` are denied (not in the lean profile)
+  a secret does not leave in the change
+    every runtime: `scan.py` reads every added line; the final gate blocks on a credential in a provider's format or a private key, and carries a condition for anything that may be one
+    with hooks: `git commit` and `git push` are denied while one is there
+  code that needs a security reviewer gets one
+    every runtime: a risky pattern in the added lines adds the SECURITY trigger to the routing plan, which routes the Security gate
 REVIEW
   a reviewer reports and does not fix; a report is what the reviewer wrote
     every runtime: the final gate rejects a report changed after its result was recorded
@@ -183,6 +188,8 @@ RELEASE
     every runtime: `route.py ready` exits non-zero
     with hooks: `gh pr create` is denied (not in the lean profile)
 ```
+
+The security scan (`python3 .harness/bin/scan.py`) reads only the lines the change adds. A credential in a format a provider issues, or a private key, blocks the final gate; a line marked `gantry:allow` becomes a condition a person confirms. A value that may be a credential is a condition. A risky code pattern (dynamic code execution, unescaped markup, queries or shell commands built from strings, unsafe deserialization, disabled TLS verification, weak hashes, wildcard CORS) is not a verdict: it adds the `SECURITY` trigger, so the Security gate, which works from STRIDE, the OWASP Top 10, the CWE Top 25 and OWASP ASVS, reviews the change.
 
 "Every runtime" is what holds on any tool, because the router computes it. "With hooks" is what a runtime with command hooks adds by refusing the action when it is attempted; today that is Claude Code. A hook is a first barrier, not a boundary: a shell command can still write a file, which is why each guardrail also has a check at the final gate.
 
@@ -237,6 +244,7 @@ python3 tests/check_distribution.py   # structural integrity of distribution/
 python3 tests/smoke_test.py           # install / doctor / uninstall round trip
 python3 tests/test_detect.py          # project detection
 python3 tests/test_spec.py            # specification check
+python3 tests/test_scan.py            # security scan of added lines
 python3 tests/test_eval_scoring.py    # scenario scorer
 python3 tests/test_route.py           # deterministic router
 python3 tests/test_hook.py            # pre-tool-use guard
