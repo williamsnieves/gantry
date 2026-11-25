@@ -144,6 +144,9 @@ LANES = {
 }
 DESIGN_TRIGGERS = ("ARCHITECTURE", "SECURITY", "DATA_INTEGRITY", "MIGRATION", "COMPATIBILITY")
 NOT_BUILDING = ("DISCOVERY", "REVIEW_ONLY")
+# Changes that cannot simply be merged: something has to happen in order, be verified and be undoable.
+ROLLOUT_TRIGGERS = ("MIGRATION", "INFRASTRUCTURE", "DATA_INTEGRITY")
+ROLLOUT_MODES = ("MIGRATION", "RELEASE_ONLY")
 
 # Signals read from the changed files. They are added to the plan even when the
 # classification omits them, so a small diff cannot hide them; each can only be
@@ -201,6 +204,13 @@ GUARDRAILS = (
      "results are tied to a digest of the change; an edit makes them stale", ""),
     ("release", "a pull request is opened only after every required gate passed",
      "`route.py ready` exits non-zero", "`gh pr create` is denied (not in the lean profile)"),
+    ("release", "a change that moves data, schema or infrastructure ships with a written rollout: order, verification, undo",
+     "`release.py check` blocks without a `## Rollout` section in the specification",
+     "`gh pr merge` is denied while it blocks (not in the lean profile)"),
+    ("release", "a change users will notice is in the changelog, when the project keeps one",
+     "`release.py check` carries a condition", ""),
+    ("operate", "what happened after shipping is written down, and a failure names the risk nobody declared",
+     "`release.py record` appends to docs/releases.md; nothing forces it to be run", ""),
 )
 GENERATED_STATE = ("routing-plan.yaml", "gates.json")
 QUALITY_CONFIG_NAMES = (
@@ -581,16 +591,31 @@ def lane(work_mode: str, triggers: list[dict]) -> tuple[str, str]:
     return "DIRECT", "no risk trigger: behavior, data and interfaces stay as they are"
 
 
+def needs_rollout(work_mode: str, triggers: list[dict]) -> str | None:
+    """Why this change needs a written rollout, or None."""
+    if work_mode in ROLLOUT_MODES:
+        return f"{work_mode} work has to be rolled out"
+    dimensions = [t.get("dimension") for t in triggers if isinstance(t, dict) and t.get("dimension") in ROLLOUT_TRIGGERS]
+    if dimensions and work_mode not in NO_CODE + NOT_BUILDING:
+        return "trigger " + ", ".join(dict.fromkeys(dimensions)) + " means this change has to be rolled out"
+    return None
+
+
 def cmd_lane(args: argparse.Namespace) -> int:
     work_mode = args.work_mode.upper()
     if work_mode not in WORK_MODES:
         raise RouteError(f"unknown work mode {work_mode!r}. Known: {', '.join(WORK_MODES)}")
-    name, why = lane(work_mode, [parse_trigger(raw) for raw in args.trigger or []])
+    triggers = [parse_trigger(raw) for raw in args.trigger or []]
+    name, why = lane(work_mode, triggers)
     print(f"lane: {name}")
     print(f"why: {why}")
     print(f"next: {LANES[name]}")
     if name in ("SPEC", "DESIGN"):
-        print(f"spec: write docs/specs/<short-name>.md, then run `python3 .harness/bin/spec.py check docs/specs/<short-name>.md --lane {name}`")
+        rollout = " --rollout" if needs_rollout(work_mode, triggers) else ""
+        print(f"spec: write docs/specs/<short-name>.md, then run `python3 .harness/bin/spec.py check docs/specs/<short-name>.md --lane {name}{rollout}`")
+        if rollout:
+            print("rollout: the specification needs a `## Rollout` section: the order it is deployed in, how it is verified "
+                  "in production and how it is undone")
     return 0
 
 
@@ -971,6 +996,8 @@ def cmd_ready(args: argparse.Namespace) -> int:
         print(f"  blocker: {blocker}")
     for condition in conditions:
         print(f"  condition: {condition}")
+    if status != "PRE_PR_BLOCKED":
+        print(f"  next: before the change is merged or deployed, run `python3 .harness/bin/release.py check --runtime {args.runtime}`")
     return 1 if status == "PRE_PR_BLOCKED" else 0
 
 

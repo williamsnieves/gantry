@@ -119,6 +119,20 @@ The lane comes from `python3 .harness/bin/route.py lane`, from the same risk tri
 
 The routing plan records the lane. When a `SPEC` or `DESIGN` change reaches the Final Pre-PR Gate without an existing file passed as `--behavior-source`, the gate still passes but carries a condition saying the accepted behavior was not written down, so a person sees it in the pull request.
 
+## Shipping, and what happened after
+
+The `harness-ship` skill takes a reviewed change out and closes the loop on it.
+
+```bash
+python3 .harness/bin/release.py check --runtime claude
+python3 .harness/bin/release.py record --outcome SHIPPED --change "#42 severity filter"
+python3 .harness/bin/release.py record --outcome INCIDENT --change "#42" --note "filtered list showed other tenants" --missed SECURITY
+```
+
+`check` prints `RELEASE_READY`, `RELEASE_READY_WITH_CONDITIONS` or `RELEASE_BLOCKED`. It requires the Final Pre-PR Gate to pass, and adds what only matters when shipping: a migration, a release-only change, or a change with a `MIGRATION`, `INFRASTRUCTURE` or `DATA_INTEGRITY` trigger needs a `## Rollout` section in its specification (the order it is deployed in, how it is verified in production, how it is undone); a change users will notice carries a condition when the project keeps a changelog and the change does not touch it.
+
+`record` appends a line to `docs/releases.md`. A rollback or an incident says what happened and, with `--missed`, which risk nobody declared when the change was routed. The harness does not deploy and does not watch production: the record is written by whoever saw the outcome. It is the list of what got past the review.
+
 ## Project scope
 
 ```text
@@ -187,6 +201,14 @@ RELEASE
   a pull request is opened only after every required gate passed
     every runtime: `route.py ready` exits non-zero
     with hooks: `gh pr create` is denied (not in the lean profile)
+  a change that moves data, schema or infrastructure ships with a written rollout: order, verification, undo
+    every runtime: `release.py check` blocks without a `## Rollout` section in the specification
+    with hooks: `gh pr merge` is denied while it blocks (not in the lean profile)
+  a change users will notice is in the changelog, when the project keeps one
+    every runtime: `release.py check` carries a condition
+OPERATE
+  what happened after shipping is written down, and a failure names the risk nobody declared
+    every runtime: `release.py record` appends to docs/releases.md; nothing forces it to be run
 ```
 
 The security scan (`python3 .harness/bin/scan.py`) reads only the lines the change adds. A credential in a format a provider issues, or a private key, blocks the final gate; a line marked `gantry:allow` becomes a condition a person confirms. A value that may be a credential is a condition. A risky code pattern (dynamic code execution, unescaped markup, queries or shell commands built from strings, unsafe deserialization, disabled TLS verification, weak hashes, wildcard CORS) is not a verdict: it adds the `SECURITY` trigger, so the Security gate, which works from STRIDE, the OWASP Top 10, the CWE Top 25 and OWASP ASVS, reviews the change.
@@ -245,6 +267,7 @@ python3 tests/smoke_test.py           # install / doctor / uninstall round trip
 python3 tests/test_detect.py          # project detection
 python3 tests/test_spec.py            # specification check
 python3 tests/test_scan.py            # security scan of added lines
+python3 tests/test_release.py         # release gate and release record
 python3 tests/test_eval_scoring.py    # scenario scorer
 python3 tests/test_route.py           # deterministic router
 python3 tests/test_hook.py            # pre-tool-use guard

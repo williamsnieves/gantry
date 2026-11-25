@@ -314,7 +314,7 @@ assert "SECURITY:" in run("vocabulary").stdout
 
 # The guardrail table in the README is the one the router prints.
 table = run("guardrails").stdout.strip()
-assert all(phase in table for phase in ("ANY", "SPECIFY", "BUILD", "REVIEW", "RELEASE")), table
+assert all(phase in table for phase in ("ANY", "SPECIFY", "BUILD", "REVIEW", "RELEASE", "OPERATE")), table
 assert table in (ROOT / "README.md").read_text(encoding="utf-8"), "README guardrail table differs from `route.py guardrails`"
 
 # The lane is decided before any code exists, from the triggers and never from the size of the work.

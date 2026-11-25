@@ -12,11 +12,12 @@ Reads the hook event as JSON on stdin and denies four things:
    and commands that pass `--no-verify`.
 4. Launching a gate after the review stopped at a stage that did not pass.
 5. `git commit` and `git push` while the change adds a secret (see scan.py).
+6. `gh pr merge` while the release gate blocks (see release.py).
 
 It also turns `spec.py approve` into a question for the person: approving a
 design is their decision, so the agent's command waits for their confirmation.
 
-Rules 2, 3 and 4 are off when the delivery profile is `lean`.
+Rules 2, 3, 4 and 6 are off when the delivery profile is `lean`.
 
 A hook is a first barrier, not a boundary: a shell command can still write a
 file. `route.py ready` reports any quality configuration the change touched,
@@ -38,6 +39,7 @@ import route  # noqa: E402
 
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
 PR_CREATE = re.compile(r"(^|[\s;&|(])gh\s+pr\s+create\b")
+PR_MERGE = re.compile(r"(^|[\s;&|(])gh\s+pr\s+merge\b")
 NO_VERIFY = re.compile(r"(^|\s)--no-verify\b")
 COMMIT_OR_PUSH = re.compile(r"(^|[\s;&|(])git\s+(?:-\S+\s+\S+\s+)*(commit|push)\b")
 APPROVE = re.compile(r"\bspec\.py[\"']?\s+approve\b")
@@ -152,6 +154,15 @@ def decide(event: dict, root: Path, runtime: str) -> str | None:
         command = str(tool_input.get("command") or "")
         if NO_VERIFY.search(command):
             return f"Gantry: --no-verify skips the project's commit and push checks. Run the command without it and fix what the checks report. {ASK_USER}"
+        if PR_MERGE.search(command):
+            import release  # noqa: E402  (imports route and spec from this directory)
+            status, blockers, _ = release.status(root, runtime)
+            if status == "RELEASE_BLOCKED":
+                return (
+                    f"Gantry: the change is not ready to ship. `python3 .harness/bin/release.py check --runtime {runtime}` "
+                    f"reports RELEASE_BLOCKED: {'; '.join(blockers)}. Resolve these with the harness-ship skill, "
+                    f"or stop and ask the user to merge it themselves; do not work around this."
+                )
         if PR_CREATE.search(command):
             status, blockers, _ = route.readiness(root, runtime)
             if status == "PRE_PR_BLOCKED":

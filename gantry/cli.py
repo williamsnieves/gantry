@@ -38,7 +38,7 @@ PROFILES = ("lean", "standard", "strict")
 # explicit path when a change needs it, so nothing competes for implicit
 # discovery or sits in context unused. A runtime with native skill discovery
 # receives only the entry-point skills, with their full description.
-ENTRYPOINT_SKILLS = ("harness-start", "harness-run", "harness-onboard", "harness-evaluate")
+ENTRYPOINT_SKILLS = ("harness-start", "harness-run", "harness-ship", "harness-onboard", "harness-evaluate")
 COMPACT_DESCRIPTION = (
     "Portable engineering capability `{name}`. Use when the harness or a "
     "specialist agent explicitly requires this named capability."
@@ -63,6 +63,7 @@ HOOK_DISCLOSURE = """Hooks registered in {path} (skip with --no-hooks):
   - deny launching a gate after the review stopped at a stage that did not pass (not in the lean profile)
   - ask you to confirm when the agent records your approval of a design with `spec.py approve`
   - deny `git commit` and `git push` while the change adds a secret
+  - deny `gh pr merge` until `release.py check` passes (not in the lean profile)
   They apply to the agent only; you can still make these changes yourself."""
 
 def package_root() -> Path:
@@ -466,7 +467,7 @@ def print_entrypoints(runtimes):
     print("Commands:")
     for r in runtimes:
         mark = prefix.get(r, "/")
-        print(f"  {r:8} -> {mark}harness-onboard once, then {mark}harness-start for each piece of work ({mark}harness-run reviews it)")
+        print(f"  {r:8} -> {mark}harness-onboard once, then {mark}harness-start for each piece of work ({mark}harness-run reviews it, {mark}harness-ship releases it)")
 
 def cmd_plan(args):
     args.dry_run = True
@@ -508,6 +509,7 @@ def cmd_doctor(args):
         ".harness/bin/route.py",
         ".harness/bin/hook.py",
         ".harness/bin/scan.py",
+        ".harness/bin/release.py",
         ".harness/core/pre-pr/FINAL-PRE-PR-GATE.md",
         ".harness/agents/reviewer/AGENT.md",
         ".harness/evals/end-to-end/E2E-ORACLE.md",

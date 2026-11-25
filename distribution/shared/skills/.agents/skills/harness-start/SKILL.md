@@ -48,6 +48,9 @@ What a reader might expect and will not get.
 ## Design
 (DESIGN lane only.) What was chosen, what was rejected and why, and how to undo it.
 
+## Rollout
+(Only when the lane output asks for it.) The order it is deployed in, how it is verified in production, how it is undone.
+
 ## Slices
 1. <a thin end-to-end piece that works on its own> (AC-1)
 2. ... (AC-2, AC-3)
@@ -73,3 +76,5 @@ If building shows the specification was wrong, change the specification first an
 ## 5. Review
 
 Run the `harness-run` skill. When there is a specification, pass it to the plan with `--behavior-source docs/specs/<short-name>.md`: it is what the reviewers judge the change against.
+
+When the review passes and the change is going to be merged or deployed, continue with the `harness-ship` skill.
