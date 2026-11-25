@@ -112,7 +112,7 @@ def claude_settings():
 def harness_hooks():
     return [h["command"] for e in claude_settings()["hooks"]["PreToolUse"] for h in e["hooks"] if ".harness/bin/hook.py" in h["command"]]
 
-assert len(harness_hooks()) == 2
+assert len(harness_hooks()) == 3
 assert claude_settings()["permissions"] == {"allow": ["Bash(npm test:*)"]}
 assert claude_settings()["hooks"]["Stop"] and claude_settings()["hooks"]["PreToolUse"][0]["hooks"][0]["command"] == "echo mine"
 assert (project / ".harness/bin/hook.py").exists() and (project / ".harness/bin/route.py").exists()
@@ -130,7 +130,7 @@ assert "tools: Read, Grep, Glob\n" in qa_agent and "permissionMode: plan\n" in q
 run("install", "--runtime", "all", "--scope", "fullstack", "--profile", "standard", "--project", str(project))
 run("status", "--project", str(project))
 
-assert len(harness_hooks()) == 2  # the reinstall registered them once, not twice
+assert len(harness_hooks()) == 3  # the reinstall registered them once, not twice
 qa_agent = (project / ".claude/agents/qa.md").read_text()
 assert "tools: Read, Grep, Glob, Write\n" in qa_agent and "permissionMode: acceptEdits\n" in qa_agent
 

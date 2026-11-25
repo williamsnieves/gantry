@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pre-tool-use guard for agent runtimes that support command hooks.
 
-Reads the hook event as JSON on stdin and denies three things:
+Reads the hook event as JSON on stdin and denies four things:
 
 1. Edits to the harness's own files, and to routing state that only
    route.py may write. A specialist agent may write one file, its own
@@ -10,8 +10,12 @@ Reads the hook event as JSON on stdin and denies three things:
    failing check is fixed in the code rather than by weakening the check.
 3. `gh pr create` before the Final Pre-PR Gate passes for the current change,
    and commands that pass `--no-verify`.
+4. Launching a gate after the review stopped at a stage that did not pass.
 
-Rules 2 and 3 are off when the delivery profile is `lean`.
+It also turns `spec.py approve` into a question for the person: approving a
+design is their decision, so the agent's command waits for their confirmation.
+
+Rules 2, 3 and 4 are off when the delivery profile is `lean`.
 
 A hook is a first barrier, not a boundary: a shell command can still write a
 file. `route.py ready` reports any quality configuration the change touched,
@@ -34,6 +38,8 @@ import route  # noqa: E402
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
 PR_CREATE = re.compile(r"(^|[\s;&|(])gh\s+pr\s+create\b")
 NO_VERIFY = re.compile(r"(^|\s)--no-verify\b")
+APPROVE = re.compile(r"\bspec\.py[\"']?\s+approve\b")
+SUBAGENT_TOOLS = ("Agent", "Task")
 REPORT = re.compile(r"\.harness/runtime/([a-z]+)/artifacts/([a-z-]+)-report\.md")
 ASK_USER = "If the change is really needed, stop and ask the user to make it or to approve it; do not work around this."
 
@@ -63,6 +69,16 @@ def relative(root: Path, raw: str) -> str | None:
         return path.resolve().relative_to(root.resolve()).as_posix()
     except ValueError:
         return None  # outside the project
+
+
+def confirm(event: dict) -> str | None:
+    """Return the question to put to the person before the tool call runs, or None."""
+    if event.get("tool_name") != "Bash" or event.get("agent_type") in route.AGENTS:
+        return None
+    if APPROVE.search(str((event.get("tool_input") or {}).get("command") or "")):
+        return ("Gantry: this records that you approved the specification as it is written now. "
+                "Confirm only if you have read it and agree with its design.")
+    return None
 
 
 def decide(event: dict, root: Path, runtime: str) -> str | None:
@@ -106,6 +122,21 @@ def decide(event: dict, root: Path, runtime: str) -> str | None:
             )
         return None
 
+    if tool == "Bash" and event.get("agent_type") in route.AGENTS and APPROVE.search(str(tool_input.get("command") or "")):
+        return f"Gantry: approving a specification is the user's decision, not a reviewer's. {ASK_USER}"
+
+    if tool in SUBAGENT_TOOLS and enforcing:
+        gate = tool_input.get("subagent_type")
+        kind, rejecting, later = route.next_step(root, runtime)
+        if kind == "STOP" and gate in later:
+            return (
+                f"Gantry: the review stopped because {', '.join(rejecting)} did not pass, and {gate} would judge a change "
+                f"that has to be edited anyway. Run `python3 .harness/bin/route.py ready --runtime {runtime}` and report "
+                f"the blockers; once the change is fixed, `route.py plan` starts the review again. "
+                f"If this version needs {gate}'s opinion regardless, stop and ask the user to launch it; do not work around this."
+            )
+        return None
+
     if tool == "Bash" and enforcing:
         command = str(tool_input.get("command") or "")
         if NO_VERIFY.search(command):
@@ -131,6 +162,20 @@ def main() -> int:
     except Exception as error:  # fail open: a bug in the guard must not block work
         print(f"gantry hook: internal error, allowing the action ({error!r})", file=sys.stderr)
         return 0
+    question = None
+    if not reason:
+        try:
+            question = confirm(event)
+        except Exception as error:
+            print(f"gantry hook: internal error, allowing the action ({error!r})", file=sys.stderr)
+    if question:
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "ask",
+                "permissionDecisionReason": question,
+            }
+        }))
     if reason:
         print(json.dumps({
             "hookSpecificOutput": {

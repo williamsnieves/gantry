@@ -162,7 +162,35 @@ PASSING = ("PASS", "PASS_WITH_CONDITIONS")
 # delivery profile is lean.
 HARNESS_PROTECTED = (".harness/core/", ".harness/bin/", ".harness/agents/", ".harness/evals/")
 HARNESS_PROTECTED_FILES = (".harness/harness.config.yaml", ".harness/project.yaml", ".harness/install-state.json",
-                           ".claude/settings.json")
+                           ".harness/runtime/approvals.json", ".claude/settings.json")
+# Written by `spec.py approve`: which specifications a person approved, by content.
+APPROVALS_FILE = ".harness/runtime/approvals.json"
+
+# Every guardrail, by the phase it acts in: (phase, what it guarantees, what enforces it on every runtime,
+# what a runtime with command hooks adds). `route.py guardrails` prints this table.
+GUARDRAILS = (
+    ("any", "the harness's files and routing state are not edited by the agent",
+     "the final gate rejects a routing plan or a report that was changed by hand", "the edit is denied"),
+    ("specify", "how much is settled before building follows the risk, not the size",
+     "`route.py lane`; `route.py plan` computes the lane again from the change itself", ""),
+    ("specify", "a specification has its criteria, and each criterion is delivered by a slice",
+     "`spec.py check`", ""),
+    ("specify", "a design is approved by a person",
+     "the final gate carries a condition until `spec.py approve` was run on the current text",
+     "`spec.py approve` asks the person to confirm; a reviewing agent cannot run it"),
+    ("build", "a failing check is fixed in the code, not by weakening the check",
+     "the final gate carries a condition naming any lint, type, test or CI configuration the change edits",
+     "the edit and `--no-verify` are denied (not in the lean profile)"),
+    ("review", "a reviewer reports and does not fix; a report is what the reviewer wrote",
+     "the final gate rejects a report changed after its result was recorded",
+     "a reviewer can write only its own report, and nobody else can write it"),
+    ("review", "the review stops at the first stage that does not pass",
+     "`route.py next`; the final gate stays blocked", "launching a later gate is denied (not in the lean profile)"),
+    ("review", "a result counts only for the version of the change it judged",
+     "results are tied to a digest of the change; an edit makes them stale", ""),
+    ("release", "a pull request is opened only after every required gate passed",
+     "`route.py ready` exits non-zero", "`gh pr create` is denied (not in the lean profile)"),
+)
 GENERATED_STATE = ("routing-plan.yaml", "gates.json")
 QUALITY_CONFIG_NAMES = (
     ".eslintignore", ".prettierignore", "biome.json", "biome.jsonc", "ruff.toml", ".ruff.toml", ".flake8",
@@ -680,16 +708,29 @@ def cmd_plan(args: argparse.Namespace) -> int:
     return 0
 
 
+def approved(root: Path, source: str) -> bool:
+    """Whether a person approved this file as it is now."""
+    try:
+        recorded = json.loads((root / APPROVALS_FILE).read_text(encoding="utf-8")).get(Path(source).as_posix(), {})
+        return recorded.get("sha256") == hashlib.sha256((root / source).read_bytes()).hexdigest()
+    except (OSError, json.JSONDecodeError, AttributeError):
+        return False
+
+
 def missing_specification(plan: dict, root: Path) -> str | None:
-    """A SPEC or DESIGN change is expected to name the file that says what it should do."""
+    """A SPEC or DESIGN change is expected to name the file that says what it should do, and a design to be approved."""
     if plan.get("lane") not in ("SPEC", "DESIGN") or plan.get("work_mode") in NO_CODE:
         return None
     sources = plan.get("accepted_behavior_sources") or []
-    if any((root / source).is_file() for source in sources):
-        return None
-    given = f"none of {', '.join(sources)} exists" if sources else "no --behavior-source was given"
-    return (f"lane {plan['lane']} but {given}: the accepted behavior was not written down before building, "
-            "so the gates judged the change against the request alone")
+    existing = [source for source in sources if (root / source).is_file()]
+    if not existing:
+        given = f"none of {', '.join(sources)} exists" if sources else "no --behavior-source was given"
+        return (f"lane {plan['lane']} but {given}: the accepted behavior was not written down before building, "
+                "so the gates judged the change against the request alone")
+    if plan["lane"] == "DESIGN" and not any(approved(root, source) for source in existing):
+        return (f"lane DESIGN but no person approved {', '.join(existing)} as it is now; a person must read the design, "
+                f"then run `python3 .harness/bin/spec.py approve {existing[0]}`")
+    return None
 
 
 def state_dir(root: Path, runtime: str) -> Path:
@@ -872,6 +913,19 @@ def cmd_ready(args: argparse.Namespace) -> int:
     return 1 if status == "PRE_PR_BLOCKED" else 0
 
 
+def cmd_guardrails(_: argparse.Namespace) -> int:
+    phase = None
+    for name, what, everywhere, with_hooks in GUARDRAILS:
+        if name != phase:
+            print(f"{name.upper()}")
+            phase = name
+        print(f"  {what}")
+        print(f"    every runtime: {everywhere}")
+        if with_hooks:
+            print(f"    with hooks: {with_hooks}")
+    return 0
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     path = Path(args.plan)
     if not path.exists():
@@ -910,6 +964,8 @@ def main(argv: list[str] | None = None) -> int:
     plan.add_argument("--project", default=".")
     plan.add_argument("--out")
     plan.set_defaults(func=cmd_plan)
+
+    sub.add_parser("guardrails", help="List what the harness guarantees in each phase and what enforces it").set_defaults(func=cmd_guardrails)
 
     before = sub.add_parser("lane", help="Before building: how much has to be settled first")
     before.add_argument("--work-mode", required=True)

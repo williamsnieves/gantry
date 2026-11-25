@@ -25,7 +25,7 @@ Follow the lane it prints. Do not choose a lighter one because the change looks 
 
 - `DIRECT`: go to step 4.
 - `SPEC`: write the specification (step 3), show the user its acceptance criteria, and continue.
-- `DESIGN`: write the specification with its `## Design`, show it to the user and wait for their approval before any code.
+- `DESIGN`: write the specification with its `## Design`, show it to the user and wait for their approval before any code. When they approve, run `python3 .harness/bin/spec.py approve docs/specs/<short-name>.md`; never run it on your own judgement, and run it again if the specification changes.
 - `NONE`: nothing is being built; answer or review instead.
 
 ## 3. Specify

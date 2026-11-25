@@ -1,5 +1,7 @@
 """Tests for the deterministic router. Run: python3 tests/test_route.py"""
+import hashlib
 import importlib.util
+import json
 import subprocess
 import sys
 import tempfile
@@ -221,6 +223,26 @@ with tempfile.TemporaryDirectory() as tmp:
     plan_file.write_text(specified)
     ready("PRE_PR_PASS")
 
+    # A design counts as approved only while the text a person approved is unchanged.
+    def design(*sources):
+        return run("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND", "--trigger", "DATA_INTEGRITY=x",
+                   *[a for source in sources for a in ("--behavior-source", source)], cwd=project).stdout
+
+    assert "Lane: DESIGN" in design("docs/specs/change.md") and "no person approved docs/specs/change.md" in design("docs/specs/change.md")
+    for agent in required:
+        gate(agent, "PASS")
+    assert "spec.py approve docs/specs/change.md" in ready("PRE_PR_PASS_WITH_CONDITIONS")
+    approvals = project / ".harness/runtime/approvals.json"
+    approvals.write_text(json.dumps({"docs/specs/change.md": {"sha256": hashlib.sha256(b"# Change\n").hexdigest()}}))
+    ready("PRE_PR_PASS")
+    approvals.write_text(json.dumps({"docs/specs/change.md": {"sha256": "0" * 64}}))
+    assert "no person approved" in ready("PRE_PR_PASS_WITH_CONDITIONS")
+    approvals.unlink()
+    plan()
+    for agent in required:
+        gate(agent, "PASS")
+    ready("PRE_PR_PASS")
+
     # One blocker is not averaged away by four passes.
     gate("qa", "CHANGES_REQUIRED")
     assert "qa: CHANGES_REQUIRED" in ready("PRE_PR_BLOCKED")
@@ -278,6 +300,11 @@ with tempfile.TemporaryDirectory() as tmp:
     assert plan["change_identity"] == {"type": "unversioned", "value": "none", "changed_files": 0}
 
 assert "SECURITY:" in run("vocabulary").stdout
+
+# The guardrail table in the README is the one the router prints.
+table = run("guardrails").stdout.strip()
+assert all(phase in table for phase in ("ANY", "SPECIFY", "BUILD", "REVIEW", "RELEASE")), table
+assert table in (ROOT / "README.md").read_text(encoding="utf-8"), "README guardrail table differs from `route.py guardrails`"
 
 # The lane is decided before any code exists, from the triggers and never from the size of the work.
 def lane_of(mode, *triggers):
