@@ -586,6 +586,7 @@ def build_plan(args: argparse.Namespace, root: Path) -> dict:
         "work_mode": work_mode,
         "scopes": scopes,
         "risk_triggers": triggers,
+        "lane": lane(work_mode, triggers)[0],
         "dismissed_signals": dismissed,
         "accepted_behavior_sources": list(args.behavior_source or []),
         "existing_gate_results": [],
@@ -622,6 +623,8 @@ def validate(plan: dict) -> list[str]:
     for trigger in triggers:
         if not isinstance(trigger, dict) or trigger.get("dimension") not in TRIGGERS or not trigger.get("evidence"):
             problems.append(f"malformed risk trigger: {trigger!r}")
+    if not problems and plan.get("lane") != lane(plan["work_mode"], triggers)[0]:
+        problems.append(f"lane is {plan.get('lane')!r} but the work mode and triggers give {lane(plan['work_mode'], triggers)[0]}")
     agents = plan.get("agents") or []
     listed = [entry.get("agent") for entry in agents if isinstance(entry, dict)]
     if listed != list(AGENTS):
@@ -663,6 +666,10 @@ def cmd_plan(args: argparse.Namespace) -> int:
         shown = out
     print(f"Routing plan written to {shown}")
     print(f"Change identity: {plan['change_identity']['type']} {plan['change_identity']['value']}")
+    print(f"Lane: {plan['lane']}")
+    unspecified = missing_specification(plan, root)
+    if unspecified:
+        print(f"Note: {unspecified}")
     for trigger in plan["risk_triggers"]:
         if trigger["source"] == "detected":
             print(f"Added from the changed files: {trigger['dimension']} ({trigger['evidence']})")
@@ -671,6 +678,18 @@ def cmd_plan(args: argparse.Namespace) -> int:
     if not args.out:
         print(describe_next(root, args.runtime))
     return 0
+
+
+def missing_specification(plan: dict, root: Path) -> str | None:
+    """A SPEC or DESIGN change is expected to name the file that says what it should do."""
+    if plan.get("lane") not in ("SPEC", "DESIGN") or plan.get("work_mode") in NO_CODE:
+        return None
+    sources = plan.get("accepted_behavior_sources") or []
+    if any((root / source).is_file() for source in sources):
+        return None
+    given = f"none of {', '.join(sources)} exists" if sources else "no --behavior-source was given"
+    return (f"lane {plan['lane']} but {given}: the accepted behavior was not written down before building, "
+            "so the gates judged the change against the request alone")
 
 
 def state_dir(root: Path, runtime: str) -> Path:
@@ -835,6 +854,9 @@ def readiness(root: Path, runtime: str) -> tuple[str, list[str], list[str]]:
     judged = sorted(p for p in paths if (protection(p) or ("", ""))[0] == "quality-config")
     if judged:
         conditions.append("the change edits the checks that judge it; a person must review: " + ", ".join(judged))
+    unspecified = missing_specification(plan, root)
+    if unspecified:
+        conditions.append(unspecified)
     if blockers or missing:
         return "PRE_PR_BLOCKED", blockers + missing, conditions
     return ("PRE_PR_PASS_WITH_CONDITIONS" if conditions else "PRE_PR_PASS"), [], conditions
