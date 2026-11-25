@@ -24,6 +24,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import scan  # noqa: E402
+
 PLAN_VERSION = "2.0.0"
 CONTRACT_VERSION = "1.0.0"
 
@@ -181,6 +184,11 @@ GUARDRAILS = (
     ("build", "a failing check is fixed in the code, not by weakening the check",
      "the final gate carries a condition naming any lint, type, test or CI configuration the change edits",
      "the edit and `--no-verify` are denied (not in the lean profile)"),
+    ("build", "a secret does not leave in the change",
+     "`scan.py` reads every added line; the final gate blocks on a credential in a provider's format or a private key, "
+     "and carries a condition for anything that may be one", "`git commit` and `git push` are denied while one is there"),
+    ("build", "code that needs a security reviewer gets one",
+     "a risky pattern in the added lines adds the SECURITY trigger to the routing plan, which routes the Security gate", ""),
     ("review", "a reviewer reports and does not fix; a report is what the reviewer wrote",
      "the final gate rejects a report changed after its result was recorded",
      "a reviewer can write only its own report, and nobody else can write it"),
@@ -429,8 +437,21 @@ def change_identity(root: Path) -> tuple[dict, list[str]]:
     return {"type": "content", "value": "sha256:" + digest.hexdigest()[:16]}, paths
 
 
-def detect_signals(paths: list[str]) -> list[dict]:
+def scan_change(root: Path, paths: list[str]) -> dict[str, list[dict]]:
+    """What scan.py finds in the lines the change adds. A failure of the scan is reported, never hidden."""
+    try:
+        return scan.findings(root, paths, base_commit(root))
+    except Exception as error:  # the scan must not take the router down with it
+        return {"secret": [], "allowed": [], "risky": [],
+                "suspect": [{"what": f"the security scan could not run ({error!r})", "path": "scan.py", "line": 0}]}
+
+
+def detect_signals(paths: list[str], root: Path | None = None) -> list[dict]:
+    """Triggers the change itself shows: from the paths it touches and, with `root`, from the lines it adds."""
     signals = []
+    risky = scan_change(root, paths)["risky"] if root else []
+    if risky:
+        signals.append({"dimension": "SECURITY", "evidence": "the security scan found " + scan.summary(risky)})
     for dimension, description, matches in PATH_SIGNALS:
         hits = [p for p in paths if matches(p)]
         if hits:
@@ -599,10 +620,11 @@ def build_plan(args: argparse.Namespace, root: Path) -> dict:
     identity, paths = change_identity(root)
     declared = {t["dimension"] for t in triggers}
     dismissed_dims = {d["dimension"] for d in dismissed}
-    for signal in detect_signals(paths):
+    detected = detect_signals(paths, root)
+    for signal in detected:
         if signal["dimension"] not in declared and signal["dimension"] not in dismissed_dims and work_mode not in NO_CODE:
             triggers.append({**signal, "source": "detected"})
-    unused = sorted(dismissed_dims - {s["dimension"] for s in detect_signals(paths)})
+    unused = sorted(dismissed_dims - {s["dimension"] for s in detected})
     if unused:
         raise RouteError(f"--dismiss given for {', '.join(unused)}, but nothing in the changed files signals it")
 
@@ -698,6 +720,10 @@ def cmd_plan(args: argparse.Namespace) -> int:
     print(f"Routing plan written to {shown}")
     print(f"Change identity: {plan['change_identity']['type']} {plan['change_identity']['value']}")
     print(f"Lane: {plan['lane']}")
+    scanned = scan_change(root, change_identity(root)[1])
+    for kind, label in (("secret", "Secret in the change, the final gate will block"), ("suspect", "Possible credential")):
+        if scanned[kind]:
+            print(f"{label}: {scan.summary(scanned[kind])}")
     unspecified = missing_specification(plan, root)
     if unspecified:
         print(f"Note: {unspecified}")
@@ -922,6 +948,14 @@ def readiness(root: Path, runtime: str) -> tuple[str, list[str], list[str]]:
     unspecified = missing_specification(plan, root)
     if unspecified:
         conditions.append(unspecified)
+    scanned = scan_change(root, paths)
+    if scanned["secret"]:
+        blockers.append("the change adds what looks like a secret: " + scan.summary(scanned["secret"]) +
+                        "; remove it, and rotate it if it was ever real")
+    if scanned["allowed"]:
+        conditions.append(f"marked `{scan.ALLOW}`, a person must confirm it is not a real secret: " + scan.summary(scanned["allowed"]))
+    if scanned["suspect"]:
+        conditions.append("possible credential, a person must look: " + scan.summary(scanned["suspect"]))
     for agent, trigger in unrouted_triggers(root, runtime):
         conditions.append(f"{agent} reported a {trigger['dimension']} risk that no routed gate judged: {trigger['evidence']}; "
                           "a person must judge it, or rerun `route.py plan` with that trigger")

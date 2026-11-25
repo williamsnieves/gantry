@@ -11,6 +11,7 @@ Reads the hook event as JSON on stdin and denies four things:
 3. `gh pr create` before the Final Pre-PR Gate passes for the current change,
    and commands that pass `--no-verify`.
 4. Launching a gate after the review stopped at a stage that did not pass.
+5. `git commit` and `git push` while the change adds a secret (see scan.py).
 
 It also turns `spec.py approve` into a question for the person: approving a
 design is their decision, so the agent's command waits for their confirmation.
@@ -38,6 +39,7 @@ import route  # noqa: E402
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
 PR_CREATE = re.compile(r"(^|[\s;&|(])gh\s+pr\s+create\b")
 NO_VERIFY = re.compile(r"(^|\s)--no-verify\b")
+COMMIT_OR_PUSH = re.compile(r"(^|[\s;&|(])git\s+(?:-\S+\s+\S+\s+)*(commit|push)\b")
 APPROVE = re.compile(r"\bspec\.py[\"']?\s+approve\b")
 SUBAGENT_TOOLS = ("Agent", "Task")
 REPORT = re.compile(r"\.harness/runtime/([a-z]+)/artifacts/([a-z-]+)-report\.md")
@@ -136,6 +138,15 @@ def decide(event: dict, root: Path, runtime: str) -> str | None:
                 f"If this version needs {gate}'s opinion regardless, stop and ask the user to launch it; do not work around this."
             )
         return None
+
+    if tool == "Bash" and COMMIT_OR_PUSH.search(str(tool_input.get("command") or "")):
+        secrets = route.scan_change(root, route.change_identity(root)[1])["secret"]
+        if secrets:
+            return (
+                f"Gantry: the change adds what looks like a secret ({route.scan.summary(secrets)}), and a commit or a push "
+                f"would spread it. Remove it from the file and read it from the environment instead. "
+                f"If it is not a real secret, stop and ask the user; do not work around this."
+            )
 
     if tool == "Bash" and enforcing:
         command = str(tool_input.get("command") or "")

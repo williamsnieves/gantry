@@ -99,6 +99,16 @@ with tempfile.TemporaryDirectory() as tmp:
     allowed("Write", file_path="vitest.config.ts")
     allowed("Write", file_path=".github/workflows/release.yml")
 
+    # A commit or a push is refused while the change adds a secret, in every profile.
+    leaked = "gh" + "p_" + "a1B2" * 9
+    (project / "src/app.ts").write_text(f'export const a = 2;\nconst token = "{leaked}";\n')
+    for command in ("git commit -am wip", "git add -A && git commit -m x", "git -C . push origin feature"):
+        reason = denied("Bash", command=command)
+        assert "GitHub token at src/app.ts:2" in reason and leaked not in reason, reason
+    allowed("Bash", command="git status && git diff")
+    (project / "src/app.ts").write_text("export const a = 2;\n")
+    allowed("Bash", command="git commit -am wip")
+
     # Skipping checks, and opening a pull request before the gates pass.
     assert "--no-verify" in denied("Bash", command="git commit --no-verify -m wip")
     reason = denied("Bash", command="git push -u origin feature && gh pr create --fill")
