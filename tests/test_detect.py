@@ -45,6 +45,8 @@ assert node["languages"] == ["typescript"] and node["package_managers"] == ["pnp
 assert {"react", "express", "prisma", "vitest", "typescript", "eslint"} <= set(node["frameworks"]), node
 assert node["checks"]["test"]["command"] == "pnpm test", node
 assert node["checks"]["lint"]["command"] == "pnpm run lint" and node["checks"]["typecheck"]["command"] == "pnpm run typecheck", node
+assert node["tests"] == "beside the code" and node["docs"] == [], node
+assert node["layout"] == [{"path": "apps/api", "source_files": 5}, {"path": "apps/web", "source_files": 1}], node
 assert "build" not in node["checks"] and node["ci"] == ["github-actions"] and node["notes"] == [], node
 
 # The npm placeholder script is not a test command, and an existing project without checks says so.
@@ -65,6 +67,7 @@ py = detect.detect(project({
 }))
 assert py["languages"] == ["python"] and py["package_managers"] == ["uv"] and "fastapi" in py["frameworks"], py
 assert [py["checks"][c]["command"] for c in ("test", "lint", "typecheck")] == ["uv run pytest", "uv run ruff check .", "uv run mypy ."], py
+assert py["tests"] == "in test directories" and py["layout"][0] == {"path": "app", "source_files": 4}, py
 go = detect.detect(project({"go.mod": "module x\n", **{f"m{i}.go": "" for i in range(4)}, "m0_test.go": ""}))
 assert go["checks"]["test"]["command"] == "go test ./..." and go["test_files"] == 1, go
 
@@ -82,7 +85,41 @@ target = project({"package.json": json.dumps({"scripts": {"test": "vitest"}}), *
 run = lambda *args: subprocess.run([sys.executable, "-m", "gantry", *args], cwd=ROOT, capture_output=True, text=True)
 shown = run("inspect", "--project", str(target))
 assert shown.returncode == 0 and "Project: brownfield" in shown.stdout and "npm test" in shown.stdout, shown.stdout + shown.stderr
+assert "next: run the harness-onboard skill to record this project's conventions" in shown.stdout, shown.stdout
+(target / "docs").mkdir()
+(target / "docs/conventions.md").write_text("# Project conventions\n")
+assert "harness-onboard" not in run("inspect", "--project", str(target)).stdout
+assert "settle the stack" in "\n".join(detect.summary(empty))
 assert json.loads(run("inspect", "--project", str(target), "--json").stdout)["kind"] == "brownfield"
 assert run("inspect", "--project", str(target), "--write").returncode != 0
+
+# The conventions file: headings, length and cited paths are checked; judgement is not.
+checker = ROOT / "distribution/core/.harness/bin/conventions.py"
+check = lambda: subprocess.run([sys.executable, str(checker), "check", "--project", str(target)], capture_output=True, text=True)
+assert check().returncode == 1 and "missing section: ## Structure" in check().stdout
+good = """# Project conventions
+
+## Structure
+Features live under `src/` (`src/m0.ts`). Run one with `npm test`.
+
+## Patterns
+Modules export plain functions (`src/m1.ts:3-9`, `src/m2.ts`).
+
+## Tests
+None yet; see `package.json`.
+
+## Do not
+Nothing recorded.
+
+## Open questions
+Where tests will live.
+"""
+(target / "docs/conventions.md").write_text(good)
+assert check().returncode == 0, check().stdout
+(target / "docs/conventions.md").write_text(good.replace("`src/m2.ts`", "`src/missing/handler.ts`") + "word " * 600)
+out = check().stdout
+assert "cites `src/missing/handler.ts`, which does not exist" in out and "keep it under 600" in out, out
+(target / "docs/conventions.md").unlink()
+assert "does not exist; run the harness-onboard skill" in check().stdout
 
 print("DETECT TESTS: PASS")

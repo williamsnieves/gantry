@@ -96,6 +96,15 @@ gantry inspect --project ~/code/my-app --write  # refresh the saved file after c
 
 The Validator starts from those commands instead of rediscovering them on every run. Agents cannot edit the file: the commands that judge a change are not chosen by the agent being judged. Correct it by hand when detection is wrong; a reinstall keeps your version and `inspect --write` replaces it. A command is listed only when the project declares it (a script, a dependency, a build file); anything else is reported as not detected.
 
+## Onboarding
+
+After installing, run the `harness-onboard` skill once in your agent (`/harness-onboard`, or `$harness-onboard` in Codex). It writes `docs/conventions.md`, a file of under 600 words that later runs and reviewers read first.
+
+- In an existing project it reads the code and records what at least two files show, naming a file for each statement. Where the code does the same job two ways it lists both as an open question instead of choosing.
+- In a new project it asks at most five questions, each with a default, and records the answers.
+
+The file belongs to the project: edit it freely, and it stays if the harness is removed. `python3 .harness/bin/conventions.py check` verifies its headings, its length and that every path it cites exists.
+
 ## Project scope
 
 ```text

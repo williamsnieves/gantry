@@ -222,3 +222,17 @@ Measured on 2026-11-25, `claude-fable-5-2`, one trial. Case `severity-filter-unl
 - The review stopped after the specialist stage: Detail Analyst and Reviewer did not run. Against the control ($4.37 to $4.91, all six gates) the stop saved roughly a third.
 
 With the earlier cases: two planted defects found out of two, one control passed. One trial each; an accessibility defect with a convention to compare against a few lines away is still not a hard one.
+
+# Onboarding an existing project
+
+One trial on 2026-11-25, `claude-fable-5-2`: the harness installed in a copy of `evals/fixture` (10 source files) and the `harness-onboard` skill run once, headless.
+
+| Cost | Wall time | Turns | Output |
+|---|---|---|---|
+| $0.65 | 60 s | 12 | `docs/conventions.md`, 571 words, passes `conventions.py check` |
+
+- Every statement names a file, and four checked by hand against the fixture were true (no default exports, `isSupport` declared and never read, the search hook swallows failures, another tenant's incident is reported as not found).
+- It listed eight open questions rather than choosing, among them real inconsistencies in the fixture: validation done two ways, dependencies imported but not declared in `package.json`, a create call in the web client with no matching route.
+- No project file other than `docs/conventions.md` was written.
+
+Not measured: whether reviews are better or cheaper with the file than without it, a large repository, and the new-project path, which needs a person to answer.
