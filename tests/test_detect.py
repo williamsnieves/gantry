@@ -49,6 +49,26 @@ assert node["tests"] == "beside the code" and node["docs"] == [], node
 assert node["layout"] == [{"path": "apps/api", "source_files": 5}, {"path": "apps/web", "source_files": 1}], node
 assert "build" not in node["checks"] and node["ci"] == ["github-actions"] and node["notes"] == [], node
 
+# PHP, Ruby and .NET: the manager, the frameworks and the commands their own manifests declare.
+checks = lambda found: {name: check["command"] for name, check in found["checks"].items()}
+laravel = detect.detect(project({
+    "composer.json": json.dumps({"require": {"laravel/framework": "^11"}, "require-dev": {"pestphp/pest": "^3", "larastan/larastan": "^3", "laravel/pint": "^1"}}),
+    "artisan": "", **{f"app/Models/M{i}.php": "<?php\n" for i in range(5)},
+}))
+assert laravel["package_managers"] == ["composer"] and {"laravel", "pest", "phpstan", "pint"} <= set(laravel["frameworks"]), laravel
+assert checks(laravel) == {"test": "php artisan test", "typecheck": "vendor/bin/phpstan analyse", "format": "vendor/bin/pint --test"}, laravel
+assert laravel["languages"] == ["php"] and any("no command detected for: lint" in note for note in laravel["notes"]), laravel
+scripted = detect.detect(project({"composer.json": json.dumps({"require-dev": {"phpunit/phpunit": "^11"}, "scripts": {"test": "phpunit", "lint": "phpcs"}})}))
+assert checks(scripted) == {"test": "composer run-script test", "lint": "composer run-script lint"}, scripted
+rails = detect.detect(project({"Gemfile": "source 'https://rubygems.org'\ngem 'rails'\ngem \"rspec-rails\", group: :test\ngem 'rubocop'\n"}))
+assert rails["package_managers"] == ["bundler"] and checks(rails) == {"test": "bundle exec rspec", "lint": "bundle exec rubocop"}, rails
+net = detect.detect(project({"Shop.sln": "", "src/Shop/Order.cs": ""}))
+assert checks(net) == {"test": "dotnet test", "build": "dotnet build", "format": "dotnet format --verify-no-changes"}, net
+# Terraform is noted, not run: its commands need the tool on every machine.
+infra = detect.detect(project({"infra/main.tf": "", "infra/modules/db/main.tf": "", "package.json": json.dumps({"scripts": {"test": "vitest run"}})}))
+assert "terraform" in infra["frameworks"] and checks(infra) == {"test": "npm test"}, infra
+assert any(note.startswith("Terraform files in infra and 1 more") for note in infra["notes"]), infra["notes"]
+
 # The npm placeholder script is not a test command, and an existing project without checks says so.
 bare = detect.detect(project({
     "package.json": json.dumps({"scripts": {"test": 'echo "Error: no test specified" && exit 1'}}),
