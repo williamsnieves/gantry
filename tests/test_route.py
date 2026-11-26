@@ -206,8 +206,9 @@ with tempfile.TemporaryDirectory() as tmp:
     for agent in required[:-1]:
         gate(agent, "PASS")
     assert "reviewer: required gate has no recorded result" in ready("PRE_PR_BLOCKED")
+    assert "pillar:" not in ready("PRE_PR_BLOCKED")
     gate("reviewer", "PASS")
-    ready("PRE_PR_PASS")
+    assert "pillar: quality: validator PASS, backend-code-review PASS, qa PASS, detail-analyst PASS, reviewer PASS" in ready("PRE_PR_PASS")
 
     # A change in the SPEC or DESIGN lane that names no specification passes, with a condition that says so.
     plan_file = project / ".harness/runtime/claude/routing-plan.yaml"
@@ -331,12 +332,18 @@ with tempfile.TemporaryDirectory() as tmp:
     written = json.loads((project / ".harness/receipts" / first).read_text())
     assert written["status"] == "PRE_PR_PASS" and written["gates"]["reviewer"] == "PASS" and written["lane"] == "DIRECT", written
     assert written["change"] == "sha256:" + first[:-5]
+    # The gate says, pillar by pillar, who judged the change; a pillar nobody judged is said, not left out.
+    assert "  pillar: quality: validator PASS, backend-code-review PASS, detail-analyst PASS, reviewer PASS" in out, out
+    assert "  pillar: security: added lines scanned for secrets and risky patterns; no specialist gate ran, no SECURITY trigger" in out, out
+    assert "  pillar: scalability: no specialist gate ran, no PERFORMANCE or INFRASTRUCTURE trigger was declared or detected" in out, out
+    assert len(written["pillars"]) == 4 and written["pillars"][2].startswith("performance: no specialist gate ran"), written
     # The receipt is not part of the change it describes: writing and committing it leaves the review valid.
     assert review().splitlines()[0] == "PRE_PR_PASS" and receipts() == [first]
     git(project, "add", "-A")
     git(project, "commit", "-q", "-m", "change")
     out = verify("--base", "main")
     assert out.startswith("REVIEW RECEIPT: PASS (PRE_PR_PASS, 2 files, gates: validator, backend-code-review, detail-analyst, reviewer)"), out
+    assert "  pillar: performance: no specialist gate ran" in out, out
     # An edit after the review is a version nobody reviewed, committed or not.
     (project / "src/app.ts").write_text("export const a = 3;\n")
     assert "edited after the review" in verify("--base", "main", expect=1)

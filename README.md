@@ -207,6 +207,27 @@ standard
 
 The profile decides how much the hooks refuse; the routing and the Final Pre-PR Gate are the same in both. `lean` denies only edits to the harness and committing a secret. `standard` also denies weakening a check, launching a gate after the review stopped, and opening or merging a pull request before its gate passes. A `strict` profile existed and did the same as `standard`; it is still accepted and installed as `standard`.
 
+## Quality, security, performance, scalability
+
+Every change is judged for the same four things, and the Final Pre-PR Gate says for each one who judged it:
+
+```text
+PRE_PR_PASS
+  pillar: quality: validator PASS, backend-code-review PASS, qa PASS, detail-analyst PASS, reviewer PASS
+  pillar: security: added lines scanned for secrets and risky patterns; security PASS
+  pillar: performance: no specialist gate ran, no PERFORMANCE trigger was declared or detected
+  pillar: scalability: no specialist gate ran, no PERFORMANCE or INFRASTRUCTURE trigger was declared or detected
+```
+
+| Pillar | On every change | When the risk calls for it |
+|---|---|---|
+| Quality | The project's own checks (Validator), a code review, the Detail Analyst and the Reviewer | QA, when behavior, data integrity, compatibility or user impact changes |
+| Security | A scan of every added line: a secret blocks, a risky pattern routes the Security gate | The Security gate (STRIDE, OWASP Top 10, CWE Top 25, OWASP ASVS), on a `SECURITY` trigger |
+| Performance | Nothing by rule | The Performance gate, on a `PERFORMANCE` trigger: a target, a measured regression, data growth, a sensitive path |
+| Scalability | Nothing by rule | The Performance gate for load and capacity, the Infrastructure gate for how it is deployed and scaled |
+
+The lines go into the pull request unchanged, and into the review receipt when the project keeps them. A pillar that no specialist judged is stated, not left out: the person reading the pull request decides whether that is right for this change. Performance and scalability have no rule that detects them from the code, as the security scan does; they are reviewed when the agent or the person declares the trigger.
+
 ## Guardrails
 
 A guardrail is something the harness guarantees whatever the agent decides. None of them is decided by a model: each is a rule over the files, the routing plan and the recorded gate results, so it fires the same way every time. Which ones apply to a change follows its risk: the lane and the triggers choose them, as they choose the reviewers.
