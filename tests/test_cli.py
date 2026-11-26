@@ -1,0 +1,156 @@
+"""The guided install, the upgrade and the doctor: what a person meets first."""
+import builtins
+import contextlib
+import io
+import json
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from gantry import cli  # noqa: E402
+
+tmp = Path(tempfile.mkdtemp(prefix="gantry-cli-"))
+
+
+def project(name, files=()):
+    root = tmp / name
+    root.mkdir()
+    for path, text in files:
+        (root / path).parent.mkdir(parents=True, exist_ok=True)
+        (root / path).write_text(text, encoding="utf-8")
+    return root
+
+
+def gantry(*arguments, answers=None, expect=0):
+    """Run the CLI in process. `answers` makes it a terminal session that types them."""
+    typed = list(answers or [])
+    asked = []
+
+    def fake_input(prompt=""):
+        asked.append(prompt)
+        return typed.pop(0) if typed else ""
+
+    out = io.StringIO()
+    real_input, real_interactive = builtins.input, cli.interactive
+    builtins.input, cli.interactive = fake_input, (lambda: answers is not None)
+    code = 0
+    try:
+        with contextlib.redirect_stdout(out):
+            cli.main([str(a) for a in arguments])
+    except SystemExit as stop:
+        code = stop.code if isinstance(stop.code, int) else 1 if stop.code else 0
+        out.write(str(stop.code) if isinstance(stop.code, str) else "")
+    finally:
+        builtins.input, cli.interactive = real_input, real_interactive
+    assert code == expect, (arguments, code, out.getvalue())
+    return out.getvalue(), asked
+
+
+def config(root):
+    return (root / ".harness/harness.config.yaml").read_text()
+
+
+WEB_AND_API = (("package.json", json.dumps({"dependencies": {"react": "19", "express": "5"}})), ("CLAUDE.md", "# rules\n"))
+
+# Without a terminal nothing can be asked: init says what it would do and changes nothing.
+plain = project("plain", WEB_AND_API)
+out, _ = gantry("init", "--project", plain, expect=1)
+assert "gantry init --yes --runtime claude --scope fullstack --profile standard" in out, out
+assert not (plain / ".harness").exists()
+
+# --yes accepts the proposal: the tool the project already uses and the scope its frameworks show.
+out, asked = gantry("init", "--yes", "--project", plain)
+assert not asked and "scope fullstack, profile standard" in out and (plain / ".claude/agents/reviewer.md").exists(), out
+assert "shared-core:" in out and "install shared-core:" not in out, out  # a count per group, not a line per file
+assert not list((plain / ".harness").rglob("*.pyc")), "bytecode from a development checkout was installed"
+assert "install shared-core: .harness/bin/route.py" in gantry("install", "--runtime", "claude", "--verbose", "--project", plain)[0]
+
+# In a terminal it asks, with what it found as the default, and a wrong answer is asked again.
+guided = project("guided", WEB_AND_API)
+out, asked = gantry("init", "--project", guided, answers=["nope", "claude,codex", "", "lean", "n", ""])
+assert "Unsupported runtime(s): nope" in out and "found CLAUDE.md" in out, out
+assert [prompt.split(" [")[1] for prompt in asked[:3]] == ["claude]: ", "claude]: ", "fullstack]: "], asked
+assert "scope_profile: fullstack" in config(guided) and "delivery_profile: lean" in config(guided)
+assert (guided / ".codex/agents/reviewer.toml").exists()
+assert not (guided / ".claude/settings.json").exists()  # hooks were declined
+# A flag is an answer: it is not asked again. Declining at the end changes nothing.
+declined = project("declined", WEB_AND_API)
+out, asked = gantry("init", "--runtime", "cursor", "--scope", "backend", "--project", declined, answers=["", "n"])
+assert len(asked) == 2 and "Nothing was changed." in out and not (declined / ".harness").exists(), (asked, out)
+# No tool in the project or named: init says how to name one instead of guessing.
+empty = project("empty")
+real_which, cli.shutil.which = cli.shutil.which, lambda name: None
+out, _ = gantry("init", "--yes", "--project", empty, expect=1)
+cli.shutil.which = real_which
+assert "Name one: gantry init --runtime" in out and not (empty / ".harness").exists(), out
+
+# A reinstall keeps the scope and profile that were chosen.
+gantry("install", "--runtime", "claude", "--no-hooks", "--project", guided)
+assert "scope_profile: fullstack" in config(guided) and "delivery_profile: lean" in config(guided)
+
+# Upgrade: same runtimes, scope, profile and hook choice, without naming any of them.
+out, _ = gantry("upgrade", "--project", guided)
+assert "for claude, codex (hooks stay off" in out and "delivery_profile: lean" in config(guided), out
+assert not (guided / ".claude/settings.json").exists()
+assert "permissionMode: plan\n" in (guided / ".claude/agents/qa.md").read_text()
+out, _ = gantry("upgrade", "--project", empty, expect=1)
+assert "run `gantry init`" in out
+
+# An edited file stops the upgrade before anything is written, and every such file is named at once.
+state_before = (plain / ".harness/install-state.json").read_text()
+for name in ("qa.md", "security.md"):
+    with (plain / ".claude/agents" / name).open("a") as file:
+        file.write("\nmine\n")
+stale = plain / ".harness/bin/route.py"
+shipped = stale.read_bytes()
+state = json.loads(state_before)
+stale.write_text("old\n")  # as if an older version had installed another route.py
+state["managed_files"][".harness/bin/route.py"]["sha256"] = cli.sha256(stale)
+(plain / ".harness/install-state.json").write_text(json.dumps(state))
+out, _ = gantry("upgrade", "--project", plain, expect=1)
+assert "2 file(s) would be overwritten" in out and "qa.md: was edited" in out and "security.md: was edited" in out, out
+assert stale.read_text() == "old\n" and "Nothing was changed." in out
+out, _ = gantry("upgrade", "--dry-run", "--force", "--project", plain)
+assert "(1 updated)" in out and "(2 updated)" in out, out
+assert stale.read_text() == "old\n"
+gantry("upgrade", "--force", "--project", plain)
+assert stale.read_bytes() == shipped and "mine" not in (plain / ".claude/agents/qa.md").read_text()
+# A file that is already what the harness ships is adopted, not refused: an interrupted install can be rerun.
+state = json.loads((plain / ".harness/install-state.json").read_text())
+del state["managed_files"][".claude/agents/qa.md"]
+(plain / ".harness/install-state.json").write_text(json.dumps(state))
+gantry("upgrade", "--project", plain)
+assert ".claude/agents/qa.md" in json.loads((plain / ".harness/install-state.json").read_text())["managed_files"]
+
+# Doctor: every problem comes with what to do about it.
+out, _ = gantry("doctor", "--project", plain)
+assert out.startswith("DOCTOR: PASS WITH WARNINGS") and "not a git repository" in out and "fix: git init" in out, out
+assert "docs/conventions.md is not written yet" in out and "every gate runs on the session's model" in out, out
+subprocess.run(["git", "init", "-q"], cwd=plain, check=True)
+(plain / ".gitignore").write_text(".harness/runtime/\n")
+(plain / ".harness/models.yaml").write_text("claude:\n  fast: haiku\n  quick: haiku\n")
+(plain / "docs").mkdir()
+(plain / "docs/conventions.md").write_text("# Conventions\n")
+out, _ = gantry("doctor", "--project", plain)
+assert "not a git repository" not in out and "not ignored by git" not in out, out
+assert "gates run on fast=haiku; the hook launches each gate on it" in out and "unknown tier quick" in out, out
+assert "docs/conventions.md does not pass its check" in out, out
+# An installation older than the CLI, a script that cannot run, and a missing file.
+stale.write_text("raise SystemExit('boom')\n")
+state = json.loads((plain / ".harness/install-state.json").read_text())
+state["managed_files"][".harness/bin/route.py"]["sha256"] = cli.sha256(stale)
+state["harness_version"] = "0.9.0"
+(plain / ".harness/install-state.json").write_text(json.dumps(state))
+(plain / ".claude/agents/reviewer.md").unlink()
+out, _ = gantry("doctor", "--project", plain, expect=1)
+assert out.startswith("DOCTOR: FAIL") and "The installation is 0.9.0; this CLI is" in out and "ships 1 file(s) that differ" in out, out
+assert "route.py` does not run: boom" in out and "Missing managed file: .claude/agents/reviewer.md" in out and "fix: gantry upgrade" in out, out
+gantry("upgrade", "--project", plain)
+assert gantry("doctor", "--project", plain)[0].count("fix: gantry upgrade") == 0
+
+shutil.rmtree(tmp)
+print("CLI TESTS: PASS")

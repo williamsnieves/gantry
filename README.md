@@ -5,25 +5,24 @@ Universal distribution of the portable software-engineering harness.
 ## One CLI
 
 ```bash
+./gantry.sh init --project /path/to/repo
+```
+
+`init` looks at the project, proposes the agent tools it uses, a scope and a profile, and asks before it installs. It proposes a tool because the project already has its files (`.claude/`, `.cursor/`, `opencode.json`), or else because its command is on your PATH; it proposes the scope from the frameworks it detects. Every question has that proposal as its default, and a flag is an answer that is not asked again.
+
+Where nothing can be asked (CI, a script), name what you want:
+
+```bash
+./gantry.sh init --yes --project .                       # accept the proposal
 ./gantry.sh install --runtime cursor --project /path/to/repo
-```
-
-or:
-
-```bash
 ./gantry.sh install --runtime claude,codex,cursor,opencode,omp --project .
-```
-
-or simply:
-
-```bash
 ./gantry.sh install --runtime all --project .
 ```
 
 On Windows PowerShell:
 
 ```powershell
-.\gantry.ps1 install --runtime all --project .
+.\gantry.ps1 init --project .
 ```
 
 ## What the installer handles automatically
@@ -68,12 +67,16 @@ Claude receives only the entry-point skills in `.claude/skills/`; its agents rea
 ## Typical setup
 
 ```bash
-./gantry.sh plan   --runtime cursor,codex   --scope fullstack   --profile standard   --project ~/code/my-app
-
-./gantry.sh install   --runtime cursor,codex   --scope fullstack   --profile standard   --project ~/code/my-app
-
-./gantry.sh doctor --project ~/code/my-app
+./gantry.sh init    --project ~/code/my-app     # asks, then installs
+./gantry.sh doctor  --project ~/code/my-app     # checks it, and says how to fix what is wrong
+./gantry.sh upgrade --project ~/code/my-app     # later: bring it to a newer Gantry
 ```
+
+An install prints a count of files per group; `--verbose` prints every file, and `plan` or `--dry-run` shows what would change without writing.
+
+`upgrade` reinstalls what is there with the version of Gantry you are running. It keeps the runtimes, the scope, the profile and whether the hooks are registered, and never touches `.harness/project.yaml`, `.harness/models.yaml` or `docs/`. Before writing anything it lists every harness file you edited and stops; `--force` replaces them with the harness's version.
+
+`doctor` checks more than the files. It runs the router and the hook with `python3` as an agent would, and reports: an installation older than the CLI, a project that is not a git repository (the router identifies a change through git), check commands the Validator has no entry for, a missing or failing `docs/conventions.md`, and which model each runtime's gates run on. Each finding is followed by a `fix:` line. Errors exit non-zero; warnings and notes do not.
 
 Then:
 
@@ -177,7 +180,7 @@ standard
 strict
 ```
 
-They are initial operating presets. Risk triggers and portable gate policy remain authoritative.
+The profile decides how much the hooks refuse; the routing and the Final Pre-PR Gate are the same in all three. `lean` denies only edits to the harness and committing a secret. `standard` also denies weakening a check, launching a gate after the review stopped, and opening or merging a pull request before its gate passes. `strict` is the same as `standard` today.
 
 ## Guardrails
 
@@ -256,12 +259,14 @@ The installer:
 ## CLI
 
 ```text
-gantry install
-gantry init
-gantry plan
-gantry status
-gantry doctor
-gantry uninstall
+gantry init        guided install; --yes accepts what it proposes
+gantry install     the same without questions; --runtime is required
+gantry plan        what install would change
+gantry upgrade     bring the installation to this version, keeping its choices
+gantry doctor      check the installation and say how to fix it
+gantry status      what is installed
+gantry inspect     what the project is; --write saves it
+gantry uninstall   remove runtimes; --purge-shared removes everything
 ```
 
 ## Architecture
@@ -288,6 +293,7 @@ Runtime adapters execute the same routing, handoff, blocking, re-review and Fina
 pip install "PyYAML>=6.0"
 python3 tests/check_distribution.py   # structural integrity of distribution/
 python3 tests/smoke_test.py           # install / doctor / uninstall round trip
+python3 tests/test_cli.py             # guided install, upgrade and doctor
 python3 tests/test_detect.py          # project detection
 python3 tests/test_spec.py            # specification check
 python3 tests/test_scan.py            # security scan of added lines
