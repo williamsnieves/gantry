@@ -14,7 +14,10 @@ Four kinds of finding:
 - risky: a code pattern a security reviewer should look at (dynamic code
   execution, markup injection, queries or shell commands built from strings,
   unsafe deserialization, disabled TLS verification, weak hashes, wildcard
-  CORS). It adds the SECURITY trigger to the routing plan, which routes the
+  CORS), or an infrastructure setting one should look at (a network rule open
+  to any address, public storage, a permission for any action, encryption
+  turned off, a database reachable from the internet, in Terraform files). It
+  adds the SECURITY trigger to the routing plan, which routes the
   Security gate. It is a reason to look, not a verdict.
 
 - slow: a code pattern a performance reviewer should look at (a query or a
@@ -55,6 +58,8 @@ ASSIGNED = re.compile(
         ["']?\s*[:=]\s*["']([^"'\s]{12,})["']""")
 URL_PASSWORD = re.compile(r"\b[a-z][a-z0-9+.-]*://[^\s:/@'\"]+:([^\s@'\"]{6,})@[^\s'\"]+")
 SUSPECT_FILES = re.compile(r"(?:^|/)(?:\.env(?:\.(?!example|sample|template|dist)[\w.-]+)?|id_rsa|id_ed25519|[^/]+\.(?:pem|p12|pfx|keystore|jks))$")
+# Terraform state records every value it manages, passwords and keys included, in plain text.
+STATE_FILES = re.compile(r"\.tfstate(?:\.backup)?$")
 
 CODE = (".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".vue", ".svelte", ".py", ".go", ".rs", ".java", ".kt", ".rb", ".php",
         ".cs", ".swift", ".scala", ".sh")
@@ -72,6 +77,51 @@ RISKY = (
     ("weak hash", re.compile(r"createHash\s*\(\s*[\"'](?:md5|sha1)[\"']|\bhashlib\.(?:md5|sha1)\s*\(|MessageDigest\.getInstance\(\s*\"(?:MD5|SHA-?1)\"")),
     ("any origin allowed", re.compile(r"Access-Control-Allow-Origin[\"']?\s*[:,]\s*[\"']\*|\borigin\s*:\s*[\"']\*[\"']")),
 )
+
+# Infrastructure as code (Terraform, OpenTofu). A setting here is what gets deployed, so the reviewer it needs is Security.
+IAC = (".tf", ".tfvars", ".tf.json")
+ANY_ADDRESS = re.compile(r"[\"'](?:0\.0\.0\.0/0|::/0)[\"']|source_address_prefix(?:es)?\s*=\s*\[?\s*[\"'](?:\*|Internet)[\"']")
+NESTED = re.compile(r"^\s+(ingress|egress|route)\b")
+OUTBOUND = re.compile(r"\btype\s*=\s*[\"']egress[\"']|\bdirection\s*=\s*[\"'](?:EGRESS|Outbound)[\"']"
+                      r"|\baws_(?:route|route_table|vpc_security_group_egress_rule)\b|\bdestination_cidr_block\b", re.I)
+INBOUND = re.compile(r"\btype\s*=\s*[\"']ingress[\"']|\bdirection\s*=\s*[\"'](?:INGRESS|Inbound)[\"']|\bsource_ranges\b"
+                     r"|\bsource_address_prefix|\b(?:aws_vpc_security_group_ingress_rule|google_compute_firewall)\b", re.I)
+BLOCK_START = re.compile(r"^(?:resource|module|data)\b")
+IAC_RISKY = (
+    ("public storage", re.compile(
+        r"\bacl\s*=\s*[\"']public-read(?:-write)?[\"']|\b(?:block_public_acls|block_public_policy|ignore_public_acls|restrict_public_buckets)\s*=\s*false"
+        r"|\ballow(?:_nested_items_to_be_public|_blob_public_access)\s*=\s*true|[\"']all(?:Authenticated)?Users[\"']")),
+    ("permission for any action or any principal", re.compile(
+        r"[\"']?\b[Aa]ctions?[\"']?\s*[:=]\s*\[?\s*[\"']\*[\"']|[\"']?\b[Pp]rincipal[\"']?\s*[:=]\s*[\"']\*[\"']"
+        r"|\bidentifiers\s*=\s*\[\s*[\"']\*[\"']|AdministratorAccess|[\"']roles/(?:owner|editor)[\"']")),
+    ("encryption turned off", re.compile(r"\b(?:storage_)?encrypted\s*=\s*false|\bencryption_at_rest_enabled\s*=\s*false"
+                                         r"|\b(?:enable_)?https_(?:traffic_)?only(?:_enabled)?\s*=\s*false")),
+    ("database or service reachable from the internet", re.compile(r"\bpublicly_accessible\s*=\s*true|\bpublic_network_access_enabled\s*=\s*true")),
+)
+
+
+def open_to_any_address(lines: list[str], index: int) -> bool:
+    """Does lines[index] open an inbound rule to every address? An outbound rule to anywhere is how most networks are set."""
+    if not 0 <= index < len(lines) or not ANY_ADDRESS.search(lines[index]):
+        return False
+    start = index
+    while start > max(index - LOOK_BACK, 0) and not BLOCK_START.search(lines[start]):
+        nested = NESTED.search(lines[start])
+        if nested:   # the nearest `ingress {` or `egress {` above the line is the rule it belongs to
+            return nested.group(1) == "ingress"
+        start -= 1
+    end = next((n for n in range(index + 1, min(index + LOOK_BACK, len(lines))) if BLOCK_START.search(lines[n])), min(index + LOOK_BACK, len(lines)))
+    block = "\n".join(lines[start:end])   # a rule that is its own resource says its direction anywhere in it
+    return not OUTBOUND.search(block) and bool(INBOUND.search(block))
+
+
+def infrastructure(lines: list[str], number: int, text: str) -> list[str]:
+    """What a security reviewer should look at on one added line of an infrastructure file."""
+    if text.lstrip().startswith(("#", "//")):
+        return []
+    found = [name for name, pattern in IAC_RISKY if pattern.search(text)]
+    return found + (["network rule open to any address"] if open_to_any_address(lines, number - 1) else [])
+
 
 # Patterns a performance reviewer should look at. They need the lines around the added one, so they read the file.
 # Tests, scripts, seeds and migrations are left out: how fast they run is not what the change is judged for.
@@ -203,9 +253,19 @@ def findings(root: Path, paths: list[str], base: str | None) -> dict[str, list[d
     wanted = set(paths)
     out: dict[str, list[dict]] = {"secret": [], "allowed": [], "suspect": [], "risky": [], "slow": []}
     files: dict[str, list[str]] = {}
+
+    def read(path: str) -> list[str]:
+        if path not in files:
+            file = root / path
+            files[path] = (file.read_text(encoding="utf-8", errors="replace").splitlines()
+                           if file.is_file() and file.stat().st_size <= MAX_BYTES else [])
+        return files[path]
+
     for path in paths:
         if SUSPECT_FILES.search(path) and (root / path).is_file():
             out["suspect"].append({"what": "environment or key file in the change", "path": path, "line": 0})
+        if STATE_FILES.search(path) and (root / path).is_file():
+            out["suspect"].append({"what": "Terraform state file in the change, which holds secrets in plain text", "path": path, "line": 0})
     for path, number, text in added_lines(root, paths, base):
         if path not in wanted or len(text) > 2000:
             continue
@@ -220,13 +280,12 @@ def findings(root: Path, paths: list[str], base: str | None) -> dict[str, list[d
             out["suspect"].append({"what": "quoted value assigned to a credential name", **item})
         elif url and not PLACEHOLDER.search(url.group(0)):
             out["suspect"].append({"what": "URL that carries a password", **item})
+        if path.endswith(IAC):
+            out["risky"] += [{"what": what, **item} for what in infrastructure(read(path), number, text)]
         if path.endswith(CODE):
             out["risky"] += [{"what": name, **item} for name, pattern in RISKY if pattern.search(text)]
             if not NOT_RUNTIME.search(path):
-                if path not in files:
-                    file = root / path
-                    files[path] = (file.read_text(encoding="utf-8", errors="replace").splitlines()
-                                   if file.is_file() and file.stat().st_size <= MAX_BYTES else [])
+                read(path)
                 out["slow"] += [{"what": what, **item} for what in slow(files[path], number)]
     out["slow"] = new_to_the_file(root, base, files, out["slow"])
     return out

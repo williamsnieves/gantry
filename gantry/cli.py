@@ -105,7 +105,8 @@ RUNTIME_SIGNS = {"claude": (".claude", "CLAUDE.md"), "codex": (".codex",), "curs
 RUNTIME_COMMANDS = {"claude": ("claude",), "codex": ("codex",), "cursor": ("cursor-agent", "cursor"),
                     "opencode": ("opencode",), "omp": ("omp",)}
 FRONTEND = {"react", "next", "vue", "svelte", "angular"}
-BACKEND = {"express", "fastify", "nestjs", "hono", "prisma", "drizzle", "typeorm", "fastapi", "django", "flask", "sqlalchemy"}
+BACKEND = {"express", "fastify", "nestjs", "hono", "prisma", "drizzle", "typeorm", "fastapi", "django", "flask", "sqlalchemy",
+           "laravel", "symfony", "rails", "sinatra"}
 PROFILE_MEANING = {
     "lean": "the hooks deny only edits to the harness and committing a secret",
     "standard": "the hooks also deny weakening a check, skipping a review stage, and a pull request before the review passes",

@@ -27,6 +27,58 @@ def run(tool, *args, cwd, expect=0):
     return proc.stdout
 
 
+# Terraform: what gets deployed. Inbound from anywhere is a finding; outbound to anywhere is how most networks are set.
+TERRAFORM = """resource "aws_security_group" "web" {
+  ingress {
+    from_port   = 22
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+resource "aws_security_group_rule" "admin" {
+  cidr_blocks = ["0.0.0.0/0"]
+  type        = "ingress"
+}
+resource "aws_security_group_rule" "out" {
+  type        = "egress"
+  cidr_blocks = ["0.0.0.0/0"]
+}
+resource "aws_route" "default" {
+  destination_cidr_block = "0.0.0.0/0"
+}
+resource "google_compute_firewall" "open" {
+  source_ranges = ["0.0.0.0/0"]
+}
+resource "aws_s3_bucket_public_access_block" "assets" {
+  block_public_acls = false
+}
+resource "aws_db_instance" "main" {
+  publicly_accessible = true
+  storage_encrypted   = false
+  # acl = "public-read"
+}
+data "aws_iam_policy_document" "all" {
+  statement {
+    actions   = ["*"]
+    resources = ["*"]
+  }
+}
+resource "aws_iam_role_policy" "narrow" {
+  policy = jsonencode({ Statement = [{ Action = ["s3:GetObject"], Resource = "*" }] })
+}
+"""
+tf = TERRAFORM.splitlines()
+infra = {number: found for number in range(1, len(tf) + 1) if (found := scan.infrastructure(tf, number, tf[number - 1]))}
+assert infra == {
+    4: ["network rule open to any address"], 12: ["network rule open to any address"], 23: ["network rule open to any address"],
+    26: ["public storage"], 29: ["database or service reachable from the internet"], 30: ["encryption turned off"],
+    35: ["permission for any action or any principal"],
+}, infra
+
+
 with tempfile.TemporaryDirectory() as tmp:
     project = Path(tmp).resolve()
     (project / "src").mkdir()
@@ -189,5 +241,17 @@ with tempfile.TemporaryDirectory() as tmp:
     assert "PERFORMANCE (the scan found query or request inside a loop at src/owners.ts:3" in out and "REQUIRED        performance" in out, out
     out = run("route.py", *plan, "--dismiss", "PERFORMANCE=rows is at most three", cwd=project)
     assert "REQUIRED        performance" not in out, out
+
+    # Terraform in a change: the path routes Infrastructure, a risky setting adds Security, and a state file is never clean.
+    (project / "infra").mkdir()
+    (project / "infra/main.tf").write_text(TERRAFORM)
+    (project / "infra/terraform.tfstate").write_text("{}\n")
+    result = found()
+    assert {(f["what"], f["line"]) for f in result["risky"] if f["path"] == "infra/main.tf"} >= {
+        ("network rule open to any address", 4), ("public storage", 26), ("permission for any action or any principal", 35)}, result["risky"]
+    assert ("Terraform state file in the change, which holds secrets in plain text", "infra/terraform.tfstate") in {
+        (f["what"], f["path"]) for f in result["suspect"]}, result["suspect"]
+    out = run("route.py", *plan, cwd=project)
+    assert "network rule open to any address at infra/main.tf:4" in out and "REQUIRED        security" in out and "REQUIRED        infrastructure" in out, out
 
 print("SCAN TESTS: PASS")

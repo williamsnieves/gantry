@@ -99,6 +99,19 @@ gantry inspect --project ~/code/my-app --write  # refresh the saved file after c
 
 The Validator starts from those commands instead of rediscovering them on every run. Agents cannot edit the file: the commands that judge a change are not chosen by the agent being judged. Correct it by hand when detection is wrong; a reinstall keeps your version and `inspect --write` replaces it. A command is listed only when the project declares it (a script, a dependency, a build file); anything else is reported as not detected. A format command is listed only when it checks without rewriting files (`format:check`, `black --check`, `cargo fmt --check`).
 
+| Read from | Commands detected |
+|---|---|
+| `package.json` (npm, pnpm, yarn, bun) | scripts for test, lint, typecheck, build, format check |
+| `pyproject.toml`, `requirements*.txt` | pytest, ruff, black, mypy, pyright |
+| `composer.json` | scripts; `php artisan test`, Pest, PHPUnit, PHPStan, Psalm, PHP_CodeSniffer, Pint, PHP-CS-Fixer |
+| `Gemfile` | RSpec or `bin/rails test`, RuboCop or Standard, Sorbet |
+| `go.mod`, `Cargo.toml` | test, vet or clippy, build, `cargo fmt --check` |
+| `*.sln`, `*.csproj` | `dotnet test`, `dotnet build`, `dotnet format --verify-no-changes` |
+| `pom.xml`, Gradle build files | test |
+| `Makefile` | targets named test, lint, typecheck, build, format-check |
+
+Any other stack works the same way once its commands are written under `checks:` by hand: the router, the gates and the scan do not depend on the language. Terraform is noted but not run, because its commands need the tool on every machine.
+
 ## Do the checks pass? One command, no model
 
 ```bash
@@ -410,7 +423,7 @@ OPERATE
     every runtime: `release.py record` appends to docs/releases.md; nothing forces it to be run
 ```
 
-The security scan (`python3 .harness/bin/scan.py`) reads only the lines the change adds. A credential in a format a provider issues, or a private key, blocks the final gate; a line marked `gantry:allow` becomes a condition a person confirms. A value that may be a credential is a condition. A risky code pattern (dynamic code execution, unescaped markup, queries or shell commands built from strings, unsafe deserialization, disabled TLS verification, weak hashes, wildcard CORS) is not a verdict: it adds the `SECURITY` trigger, so the Security gate, which works from STRIDE, the OWASP Top 10, the CWE Top 25 and OWASP ASVS, reviews the change. The same scan reads added lines of runtime code for a query or request inside a loop and for a list read without a limit; either adds the `PERFORMANCE` trigger, so the Performance gate reviews the change.
+The security scan (`python3 .harness/bin/scan.py`) reads only the lines the change adds. A credential in a format a provider issues, or a private key, blocks the final gate; a line marked `gantry:allow` becomes a condition a person confirms. A value that may be a credential is a condition. A risky code pattern (dynamic code execution, unescaped markup, queries or shell commands built from strings, unsafe deserialization, disabled TLS verification, weak hashes, wildcard CORS) is not a verdict: it adds the `SECURITY` trigger, so the Security gate, which works from STRIDE, the OWASP Top 10, the CWE Top 25 and OWASP ASVS, reviews the change. In Terraform files (`.tf`, `.tfvars`) the risky settings are an inbound network rule open to any address, public storage, a permission for any action or any principal, encryption turned off, and a database reachable from the internet; an outbound rule to anywhere is not reported. A Terraform state file in a change is a condition, because state holds every managed secret in plain text. The same scan reads added lines of runtime code for a query or request inside a loop and for a list read without a limit; either adds the `PERFORMANCE` trigger, so the Performance gate reviews the change.
 
 "Every runtime" is what holds on any tool, because the router computes it. "With hooks" is what a runtime with command hooks adds by refusing the action when it is attempted; today that is Claude Code. A hook is a first barrier, not a boundary: a shell command can still write a file, which is why each guardrail also has a check at the final gate.
 

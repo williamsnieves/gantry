@@ -392,3 +392,15 @@ No model was called. Not measured: what the rules miss, how often the trigger is
 Both changes add about twenty lines and the operators apply to two of them: a negation in the controller and an equality in the component. The tests of both cases notice both.
 
 The planted tenant leak is not found, and is not what this measures: the leak is in which fields a query filters by, and no operator changes that. Mutation testing says whether the tests check the decisions the new lines make; the leak is found by the reviewers. Not measured: a change whose tests are weak in a real project, the cost on a slow test suite, and any stack but this one.
+
+## Terraform rules: what they report on real files
+
+Run over 40 Terraform files from two unrelated local projects, with no model, on every line (the scan itself reads only added lines).
+
+| | Lines |
+|---|---|
+| Reported: inbound rule open to any address | 6 |
+| Not reported: `0.0.0.0/0` on an outbound rule or a route | 7 |
+| Reported by the other rules (public storage, any action, encryption off, public database) | 0 |
+
+All six reports are `ingress` blocks of security groups, and all seven lines left out are `egress` blocks or routes, read by hand. Some of the six are a public load balancer on ports 80 and 443, which is intended: the rule is a reason for the Security gate to look, not a verdict. The other four rules found nothing here, so they are only exercised by the fixture in `tests/test_scan.py`.

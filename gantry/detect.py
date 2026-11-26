@@ -37,6 +37,12 @@ NODE_FRAMEWORKS = {
     "@biomejs/biome": "biome",
 }
 PYTHON_FRAMEWORKS = ("fastapi", "django", "flask", "sqlalchemy", "pydantic", "pytest", "ruff", "black", "mypy", "pyright")
+PHP_PACKAGES = {
+    "laravel/framework": "laravel", "symfony/framework-bundle": "symfony", "phpunit/phpunit": "phpunit", "pestphp/pest": "pest",
+    "phpstan/phpstan": "phpstan", "larastan/larastan": "phpstan", "nunomaduro/larastan": "phpstan", "vimeo/psalm": "psalm",
+    "laravel/pint": "pint", "friendsofphp/php-cs-fixer": "php-cs-fixer", "squizlabs/php_codesniffer": "phpcs",
+}
+RUBY_GEMS = ("rails", "sinatra", "rspec", "rspec-rails", "minitest", "rubocop", "sorbet", "standard")
 NODE_SCRIPTS = {
     "test": ("test", "test:unit"),
     "lint": ("lint",),
@@ -178,6 +184,80 @@ def others(root: Path, found: dict) -> None:
             found["checks"].setdefault("format", {"command": f"make {target}", "source": f"Makefile target `{target}`"})
 
 
+def php(root: Path, found: dict) -> None:
+    manifest = root / "composer.json"
+    if not manifest.is_file():
+        return
+    try:
+        package = json.loads(read(manifest))
+    except json.JSONDecodeError:
+        found["notes"].append("composer.json is not valid JSON; PHP commands were not detected")
+        return
+    if not isinstance(package, dict):
+        return
+    found["package_managers"].append("composer")
+    required = {**(package.get("require") if isinstance(package.get("require"), dict) else {}),
+                **(package.get("require-dev") if isinstance(package.get("require-dev"), dict) else {})}
+    present = list(dict.fromkeys(label for name, label in PHP_PACKAGES.items() if name in required))
+    found["frameworks"] += present
+    scripts = package.get("scripts") if isinstance(package.get("scripts"), dict) else {}
+    for check, names in (("test", ("test",)), ("lint", ("lint",)), ("typecheck", ("analyse", "analyze", "phpstan", "stan")),
+                         ("format", ("format:check", "format-check", "cs:check", "pint:test"))):
+        name = next((n for n in names if n in scripts), None)
+        if name:
+            found["checks"].setdefault(check, {"command": f"composer run-script {name}", "source": f"composer.json script `{name}`"})
+    tools = (
+        ("test", "laravel", "php artisan test", (root / "artisan").is_file()), ("test", "pest", "vendor/bin/pest", True),
+        ("test", "phpunit", "vendor/bin/phpunit", True), ("typecheck", "phpstan", "vendor/bin/phpstan analyse", True),
+        ("typecheck", "psalm", "vendor/bin/psalm", True), ("lint", "phpcs", "vendor/bin/phpcs", True),
+        ("format", "pint", "vendor/bin/pint --test", True), ("format", "php-cs-fixer", "vendor/bin/php-cs-fixer fix --dry-run --diff", True),
+    )
+    for check, package_label, command, applies in tools:
+        if package_label in present and applies:
+            found["checks"].setdefault(check, {"command": command, "source": f"{package_label} in composer.json"})
+
+
+def ruby(root: Path, found: dict) -> None:
+    gemfile = read(root / "Gemfile")
+    if not gemfile:
+        return
+    found["package_managers"].append("bundler")
+    present = [gem for gem in RUBY_GEMS if re.search(rf"""^\s*gem\s+["']{re.escape(gem)}["']""", gemfile, re.M)]
+    found["frameworks"] += present
+    if "rspec" in present or "rspec-rails" in present:
+        found["checks"].setdefault("test", {"command": "bundle exec rspec", "source": "rspec in Gemfile"})
+    elif "rails" in present and (root / "bin/rails").is_file():
+        found["checks"].setdefault("test", {"command": "bin/rails test", "source": "rails in Gemfile"})
+    if "rubocop" in present:
+        found["checks"].setdefault("lint", {"command": "bundle exec rubocop", "source": "rubocop in Gemfile"})
+    elif "standard" in present:
+        found["checks"].setdefault("lint", {"command": "bundle exec standardrb", "source": "standard in Gemfile"})
+    if "sorbet" in present:
+        found["checks"].setdefault("typecheck", {"command": "bundle exec srb tc", "source": "sorbet in Gemfile"})
+
+
+def dotnet(root: Path, found: dict) -> None:
+    solution = sorted(root.glob("*.sln")) or sorted(root.glob("*.csproj"))
+    if not solution:
+        return
+    found["package_managers"].append("dotnet")
+    source = solution[0].name
+    found["checks"].setdefault("test", {"command": "dotnet test", "source": source})
+    found["checks"].setdefault("build", {"command": "dotnet build", "source": source})
+    found["checks"].setdefault("format", {"command": "dotnet format --verify-no-changes", "source": source})
+
+
+def terraform(root: Path, found: dict) -> None:
+    """Infrastructure as code is noted, not run: its commands need the tool, and often credentials, on every machine."""
+    places = sorted({str(path.parent.relative_to(root)) for path in walk(root) if path.suffix == ".tf"})
+    if not places:
+        return
+    found["frameworks"].append("terraform")
+    where = places[0] if len(places) == 1 else f"{places[0]} and {len(places) - 1} more"
+    found["notes"].append(f"Terraform files in {where}: where everyone has the tool, add `terraform fmt -check -recursive` and "
+                          "`terraform validate` under checks; the security scan reads `.tf` changes either way")
+
+
 def detect(project: Path) -> dict:
     """Return the project description. Deterministic for a given tree."""
     root = Path(project)
@@ -204,7 +284,11 @@ def detect(project: Path) -> dict:
     found: dict = {"package_managers": [], "frameworks": [], "checks": {}, "workspaces": False, "notes": []}
     node(root, found)
     python(root, found)
+    php(root, found)
+    ruby(root, found)
+    dotnet(root, found)
     others(root, found)
+    terraform(root, found)
     kind = "greenfield" if source_files <= GREENFIELD_MAX_SOURCE_FILES else "brownfield"
     missing = [check for check in ("test", "lint", "typecheck") if check not in found["checks"]]
     if kind == "brownfield" and missing:
