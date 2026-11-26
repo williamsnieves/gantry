@@ -297,7 +297,7 @@ BUILD
     every runtime: the final gate carries a condition naming any lint, type, test or CI configuration the change edits
     with hooks: the edit and `--no-verify` are denied (not in the lean profile)
   a secret does not leave in the change
-    every runtime: `scan.py` reads every added line; the final gate blocks on a credential in a provider's format or a private key, and carries a condition for anything that may be one
+    every runtime: `scan.py` reads every added line; the final gate blocks on a credential in a provider's format or a private key, and carries a condition for anything that may be one; with the git hooks installed, git refuses the commit and the push whoever runs them
     with hooks: `git commit` and `git push` are denied while one is there
   code that needs a security reviewer gets one
     every runtime: a risky pattern in the added lines adds the SECURITY trigger to the routing plan, which routes the Security gate
@@ -341,6 +341,18 @@ OPERATE
 The security scan (`python3 .harness/bin/scan.py`) reads only the lines the change adds. A credential in a format a provider issues, or a private key, blocks the final gate; a line marked `gantry:allow` becomes a condition a person confirms. A value that may be a credential is a condition. A risky code pattern (dynamic code execution, unescaped markup, queries or shell commands built from strings, unsafe deserialization, disabled TLS verification, weak hashes, wildcard CORS) is not a verdict: it adds the `SECURITY` trigger, so the Security gate, which works from STRIDE, the OWASP Top 10, the CWE Top 25 and OWASP ASVS, reviews the change. The same scan reads added lines of runtime code for a query or request inside a loop and for a list read without a limit; either adds the `PERFORMANCE` trigger, so the Performance gate reviews the change.
 
 "Every runtime" is what holds on any tool, because the router computes it. "With hooks" is what a runtime with command hooks adds by refusing the action when it is attempted; today that is Claude Code. A hook is a first barrier, not a boundary: a shell command can still write a file, which is why each guardrail also has a check at the final gate.
+
+## The same result in any tool
+
+The harness is the fixed point; the agent tool is interchangeable. What decides a change's fate is computed by scripts that are the same everywhere, so two tools working on the same change get the same routing, the same gates and the same verdict. Three layers enforce it, from the widest to the narrowest:
+
+| Layer | Acts on | What it enforces | Turn on with |
+|---|---|---|---|
+| CI | Whatever is about to be merged, whoever wrote it | The content was reviewed and passed (`route.py verify`) | `--receipts`, and one CI step |
+| git | Every commit and push in this clone, by any tool or person | No secret leaves in the change | `--git-hooks` |
+| The tool's own hooks | The agent, at the moment it acts | Everything in the "with hooks" lines above | Installed by default on Claude Code |
+
+The first two do not depend on the tool, which is what makes the result uniform on Codex, Cursor, OpenCode and Oh My Pi, where there is no tool hook. Git hooks live in each clone and are not versioned: `gantry upgrade` installs them in a fresh clone and `gantry doctor` says when they are missing. A project that already has a hook (husky, lefthook, pre-commit) keeps it and is told the one line to call from it. A push is never refused for lacking a review, because work in progress is pushed all the time; the review is enforced where the change is merged. `git commit --no-verify` skips a git hook, which is why the final gate and CI check the same things again.
 
 ## Safety
 

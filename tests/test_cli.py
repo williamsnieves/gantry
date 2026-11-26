@@ -71,7 +71,7 @@ assert "install shared-core: .harness/bin/route.py" in gantry("install", "--runt
 
 # In a terminal it asks, with what it found as the default, and a wrong answer is asked again.
 guided = project("guided", WEB_AND_API)
-out, asked = gantry("init", "--project", guided, answers=["nope", "claude,codex", "", "lean", "n", "y", "y", ""])
+out, asked = gantry("init", "--project", guided, answers=["nope", "claude,codex", "", "lean", "n", "y", "", "y", ""])
 assert "Unsupported runtime(s): nope" in out and "found CLAUDE.md" in out, out
 assert [prompt.split(" [")[1] for prompt in asked[:3]] == ["claude]: ", "claude]: ", "fullstack]: "], asked
 assert "scope_profile: fullstack" in config(guided) and "delivery_profile: lean" in config(guided)
@@ -81,8 +81,8 @@ assert "receipts: true" in config(guided) and "Review receipts are on" in out, o
 assert "mutation: true" in config(guided) and "Mutation testing is on" in out and (guided / ".harness/bin/mutate.py").exists(), out
 # A flag is an answer: it is not asked again. Declining at the end changes nothing.
 declined = project("declined", WEB_AND_API)
-out, asked = gantry("init", "--runtime", "cursor", "--scope", "backend", "--project", declined, answers=["", "", "", "n"])
-assert len(asked) == 4 and "Nothing was changed." in out and not (declined / ".harness").exists(), (asked, out)
+out, asked = gantry("init", "--runtime", "cursor", "--scope", "backend", "--project", declined, answers=["", "", "", "", "n"])
+assert len(asked) == 5 and "Nothing was changed." in out and not (declined / ".harness").exists(), (asked, out)
 # No tool in the project or named: init says how to name one instead of guessing.
 empty = project("empty")
 real_which, cli.shutil.which = cli.shutil.which, lambda name: None
@@ -174,6 +174,45 @@ assert out.startswith("DOCTOR: FAIL") and "The installation is 0.9.0; this CLI i
 assert "route.py` does not run: boom" in out and "Missing managed file: .claude/agents/reviewer.md" in out and "fix: gantry upgrade" in out, out
 gantry("upgrade", "--project", plain)
 assert gantry("doctor", "--project", plain)[0].count("fix: gantry upgrade") == 0
+
+# Git hooks: what git itself refuses, in any tool and for a person. Tried with real commits.
+def git(root, *arguments, expect=0):
+    proc = subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid", *arguments], cwd=root, capture_output=True, text=True)
+    assert proc.returncode == expect, (arguments, proc.returncode, proc.stdout, proc.stderr)
+    return proc.stdout + proc.stderr
+
+hooked = project("hooked", (("src/app.ts", "export const a = 1;\n"),))
+out, _ = gantry("install", "--runtime", "cursor", "--git-hooks", "--project", hooked)
+assert "not a git repository yet" in out and "git_hooks: true" in config(hooked), out
+git(hooked, "init", "-q", "-b", "main")
+assert "pre-commit and pre-push does not reach the harness" in gantry("doctor", "--project", hooked)[0]
+out, _ = gantry("upgrade", "--project", hooked)  # a fresh clone gets them the same way
+assert "git hook: pre-commit" in out and "git hook: pre-push" in out, out
+assert "does not reach the harness" not in gantry("doctor", "--project", hooked)[0]
+assert "git hook:" not in gantry("upgrade", "--project", hooked)[0]  # nothing to rewrite the second time
+git(hooked, "add", "-A")
+git(hooked, "commit", "-q", "-m", "base")
+git(hooked, "checkout", "-q", "-b", "feature")
+token = "gh" + "p_" + "a1B2" * 9  # built from pieces so this file holds nothing a scanner would stop
+(hooked / "src/app.ts").write_text(f'export const token = "{token}";\n')
+out = git(hooked, "commit", "-q", "-am", "leak", expect=1)
+assert "looks like a secret (GitHub token at src/app.ts:1); the commit was refused" in out and token not in out, out
+(hooked / "src/app.ts").write_text(f'export const token = "{token}"; // gantry:allow documented example\n')
+git(hooked, "commit", "-q", "-am", "an example a person will confirm at the gate")
+(hooked / "src/app.ts").write_text("export const a = 2;\n")
+git(hooked, "commit", "-q", "-am", "clean")
+# A project's own hook is never overwritten; it is told the line to add, and doctor accepts it once it calls the harness.
+own = hooked / ".git/hooks/pre-commit"
+own.write_text("#!/bin/sh\necho mine\n")
+out, _ = gantry("upgrade", "--project", hooked)
+assert "keep: your own pre-commit hook" in out and "python3 .harness/bin/githook.py pre-commit" in out and own.read_text() == "#!/bin/sh\necho mine\n", out
+assert "pre-commit does not reach the harness" in gantry("doctor", "--project", hooked)[0]
+own.write_text("#!/bin/sh\necho mine\npython3 .harness/bin/githook.py pre-commit\n")
+assert "does not reach the harness" not in gantry("doctor", "--project", hooked)[0]
+# Turning them off removes the harness's hook and leaves the project's own.
+out, _ = gantry("install", "--runtime", "cursor", "--no-git-hooks", "--project", hooked)
+assert "remove git hook: pre-push" in out and not (hooked / ".git/hooks/pre-push").exists() and own.exists(), out
+assert "git_hooks: false" in config(hooked)
 
 shutil.rmtree(tmp)
 print("CLI TESTS: PASS")

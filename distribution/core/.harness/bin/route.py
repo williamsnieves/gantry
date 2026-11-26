@@ -206,7 +206,8 @@ GUARDRAILS = (
      "the edit and `--no-verify` are denied (not in the lean profile)"),
     ("build", "a secret does not leave in the change",
      "`scan.py` reads every added line; the final gate blocks on a credential in a provider's format or a private key, "
-     "and carries a condition for anything that may be one", "`git commit` and `git push` are denied while one is there"),
+     "and carries a condition for anything that may be one; with the git hooks installed, git refuses the commit and the push "
+     "whoever runs them", "`git commit` and `git push` are denied while one is there"),
     ("build", "code that needs a security reviewer gets one",
      "a risky pattern in the added lines adds the SECURITY trigger to the routing plan, which routes the Security gate", ""),
     ("build", "code that needs a performance reviewer gets one",
