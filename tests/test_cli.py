@@ -71,16 +71,17 @@ assert "install shared-core: .harness/bin/route.py" in gantry("install", "--runt
 
 # In a terminal it asks, with what it found as the default, and a wrong answer is asked again.
 guided = project("guided", WEB_AND_API)
-out, asked = gantry("init", "--project", guided, answers=["nope", "claude,codex", "", "lean", "n", ""])
+out, asked = gantry("init", "--project", guided, answers=["nope", "claude,codex", "", "lean", "n", "y", ""])
 assert "Unsupported runtime(s): nope" in out and "found CLAUDE.md" in out, out
 assert [prompt.split(" [")[1] for prompt in asked[:3]] == ["claude]: ", "claude]: ", "fullstack]: "], asked
 assert "scope_profile: fullstack" in config(guided) and "delivery_profile: lean" in config(guided)
 assert (guided / ".codex/agents/reviewer.toml").exists()
 assert not (guided / ".claude/settings.json").exists()  # hooks were declined
+assert "receipts: true" in config(guided) and "Review receipts are on" in out, out
 # A flag is an answer: it is not asked again. Declining at the end changes nothing.
 declined = project("declined", WEB_AND_API)
-out, asked = gantry("init", "--runtime", "cursor", "--scope", "backend", "--project", declined, answers=["", "n"])
-assert len(asked) == 2 and "Nothing was changed." in out and not (declined / ".harness").exists(), (asked, out)
+out, asked = gantry("init", "--runtime", "cursor", "--scope", "backend", "--project", declined, answers=["", "", "n"])
+assert len(asked) == 3 and "Nothing was changed." in out and not (declined / ".harness").exists(), (asked, out)
 # No tool in the project or named: init says how to name one instead of guessing.
 empty = project("empty")
 real_which, cli.shutil.which = cli.shutil.which, lambda name: None
@@ -102,7 +103,15 @@ assert "delivery_profile: standard" in config(declined)
 # Upgrade: same runtimes, scope, profile and hook choice, without naming any of them.
 out, _ = gantry("upgrade", "--project", guided)
 assert "for claude, codex (hooks stay off" in out and "delivery_profile: lean" in config(guided), out
-assert not (guided / ".claude/settings.json").exists()
+assert not (guided / ".claude/settings.json").exists() and "receipts: true" in config(guided)  # receipts stay on too
+# Receipts that nothing checks are reported, until a CI file runs the verification; they can be turned off again.
+out, _ = gantry("doctor", "--project", guided)
+assert "no CI file runs `route.py verify`" in out, out
+(guided / ".github/workflows").mkdir(parents=True)
+(guided / ".github/workflows/ci.yml").write_text("steps:\n  - run: python3 .harness/bin/route.py verify --base origin/main\n")
+assert "route.py verify" not in gantry("doctor", "--project", guided)[0]
+gantry("install", "--runtime", "claude", "--no-hooks", "--no-receipts", "--project", guided)
+assert "receipts: false" in config(guided)
 assert "permissionMode: plan\n" in (guided / ".claude/agents/qa.md").read_text()
 out, _ = gantry("upgrade", "--project", empty, expect=1)
 assert "run `gantry init`" in out

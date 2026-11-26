@@ -292,6 +292,80 @@ with tempfile.TemporaryDirectory() as tmp:
         gate(agent, "PASS")
     assert "a person must review: eslint.config.js" in ready("PRE_PR_PASS_WITH_CONDITIONS")
 
+# Review receipts: what CI can check about a pull request is that its content is the content that was reviewed.
+with tempfile.TemporaryDirectory() as tmp:
+    project = Path(tmp)
+    git(project, "init", "-q", "-b", "main")
+    (project / "src").mkdir()
+    (project / "src/app.ts").write_text("export const a = 1;\n")
+    (project / ".harness").mkdir()
+    (project / ".harness/.gitignore").write_text("runtime/\n")
+    (project / ".harness/harness.config.yaml").write_text("pre_pr:\n  receipts: false\n")
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "base")
+    git(project, "checkout", "-q", "-b", "feature")
+    verify = lambda *extra, expect=0: run("verify", *extra, cwd=project, expect=expect).stdout
+    assert "NOTHING TO VERIFY" in verify()
+    (project / "src/app.ts").write_text("export const a = 2;\n")
+    reports = project / ".harness/runtime/claude/artifacts"
+    reports.mkdir(parents=True)
+
+    def review():
+        run("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND", cwd=project)
+        for agent in ("validator", "backend-code-review", "detail-analyst", "reviewer"):
+            (reports / f"{agent}-report.md").write_text(f"# {agent}\n")
+            run("gate", "--runtime", "claude", "--agent", agent, "--decision", "PASS",
+                "--report", f".harness/runtime/claude/artifacts/{agent}-report.md", cwd=project)
+        return run("ready", "--runtime", "claude", cwd=project).stdout
+
+    receipts = lambda: sorted(p.name for p in (project / ".harness/receipts").glob("*.json"))
+    # Off unless the project asked for them: nothing is written, and CI says how to turn them on.
+    assert "receipt:" not in review() and not (project / ".harness/receipts").exists()
+    out = verify(expect=1)
+    assert "REVIEW RECEIPT: FAIL" in out and "no receipt for this version of the change" in out and "--receipts" in out, out
+    (project / ".harness/harness.config.yaml").write_text("pre_pr:\n  receipts: true\n")
+    git(project, "commit", "-q", "-am", "turn receipts on")  # as an install on the default branch would have
+    out = review()
+    assert "receipt: .harness/receipts/" in out and len(receipts()) == 1, out
+    first = receipts()[0]
+    written = json.loads((project / ".harness/receipts" / first).read_text())
+    assert written["status"] == "PRE_PR_PASS" and written["gates"]["reviewer"] == "PASS" and written["lane"] == "DIRECT", written
+    assert written["change"] == "sha256:" + first[:-5]
+    # The receipt is not part of the change it describes: writing and committing it leaves the review valid.
+    assert review().splitlines()[0] == "PRE_PR_PASS" and receipts() == [first]
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "change")
+    out = verify("--base", "main")
+    assert out.startswith("REVIEW RECEIPT: PASS (PRE_PR_PASS, 2 files, gates: validator, backend-code-review, detail-analyst, reviewer)"), out
+    # An edit after the review is a version nobody reviewed, committed or not.
+    (project / "src/app.ts").write_text("export const a = 3;\n")
+    assert "edited after the review" in verify("--base", "main", expect=1)
+    # Reviewing it again replaces this change's receipt; one that came from the base branch stays.
+    git(project, "commit", "-q", "-am", "edit")
+    git(project, "checkout", "-q", "main")
+    (project / ".harness/receipts").mkdir()
+    (project / ".harness/receipts/0000000000000000.json").write_text("{}\n")
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "an earlier change, merged")
+    git(project, "checkout", "-q", "feature")
+    git(project, "merge", "-q", "main", "-m", "merge main")
+    out = review()
+    assert receipts() == sorted(["0000000000000000.json", receipts()[-1]]) and first not in receipts(), (receipts(), first)
+    assert "REVIEW RECEIPT: PASS" in verify("--base", "main")
+    # A receipt written by hand for another outcome, an unknown base, and a shallow checkout do not pass.
+    mine = project / ".harness/receipts" / receipts()[-1]
+    mine.write_text(mine.read_text().replace("PRE_PR_PASS", "PRE_PR_BLOCKED"))
+    assert "does not record a passed review" in verify("--base", "main", expect=1)
+    assert "cannot find where this change leaves origin/nope" in verify("--base", "origin/nope", expect=1)
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "all")
+    shallow = Path(tmp + "-shallow")
+    subprocess.run(["git", "clone", "-q", "--depth", "1", "file://" + str(project), str(shallow)], check=True, capture_output=True)
+    assert "the checkout is shallow" in run("verify", cwd=shallow, expect=1).stdout
+    import shutil
+    shutil.rmtree(shallow)
+assert route.protection(".harness/receipts/abc.json")[0] == "harness"
+
 # Protected paths.
 for path, kind in ((".harness/core/routing/ROUTING-POLICY.md", "harness"), (".harness/bin/route.py", "harness"),
                    ("./.claude/settings.json", "harness"), (".harness/runtime/claude/routing-plan.yaml", "harness"),
