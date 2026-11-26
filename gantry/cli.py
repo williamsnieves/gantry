@@ -48,6 +48,19 @@ COMPACT_DESCRIPTION = (
 )
 NATIVE_SKILL_DIRS = {"claude": ".claude/skills"}
 
+# A stage is a preset of the options below, chosen by a person: how much process the project carries today.
+# It never touches what is not optional: the secret scan, the project's own checks, and the gates a change's
+# risk routes are the same in both. An explicit flag wins over the preset.
+STAGES = {
+    "mvp": {"profile": "lean", "receipts": False, "mutation": False, "git_hooks": True},
+    "product": {"profile": "standard", "receipts": True, "mutation": True, "git_hooks": True},
+}
+STAGE_MEANING = {
+    "mvp": "prove the idea: lean hooks, no review receipts, no mutation testing",
+    "product": "people depend on it: standard hooks, review receipts for CI, mutation testing",
+    "custom": "choose each option yourself",
+}
+
 # What `gantry inspect` found in the project: its stack and the commands that check it.
 PROJECT_FILE = ".harness/project.yaml"
 
@@ -414,13 +427,15 @@ def remove_agents_block(project: Path, *, dry_run: bool):
         else:
             path.unlink()
 
-def write_harness_config(project: Path, runtimes: list[str], scope: str, profile: str, *, dry_run: bool, receipts: bool = False, mutation: bool = False, git_hooks: bool = False):
+def write_harness_config(project: Path, runtimes: list[str], scope: str, profile: str, *, dry_run: bool, receipts: bool = False, mutation: bool = False, git_hooks: bool = False,
+                         stage: str = "custom"):
     config_path = project / ".harness/harness.config.yaml"
     config = {
         "harness_version": VERSION,
         "project": {
             "scope_profile": scope,
             "delivery_profile": profile,
+            "stage": stage,
         },
         "routing": {
             "scope_profile_is_advisory": True,
@@ -492,6 +507,22 @@ def saved_config(project: Path) -> tuple[str | None, str | None]:
     scope, profile = (m.group(1) if m else None for m in found)
     profile = RETIRED_PROFILES.get(profile, profile)
     return (scope if scope in SCOPES else None), (profile if profile in PROFILES else None)
+
+def saved_stage(project: Path) -> str:
+    """The stage the installation was set to: `mvp`, `product`, or `custom` when none was chosen."""
+    path = project / ".harness/harness.config.yaml"
+    match = re.search(r"^\s+[\"']?stage[\"']?\s*:\s*[\"']?(\w+)", path.read_text(encoding="utf-8") if path.is_file() else "", re.M)
+    return match.group(1) if match and match.group(1) in STAGES else "custom"
+
+def staged(args, project: Path) -> tuple[str, str, bool, bool, bool]:
+    """(stage, profile, receipts, mutation, git_hooks): an explicit flag, else the stage just chosen, else what is installed."""
+    chosen = getattr(args, "stage", None)
+    preset = STAGES.get(chosen, {})
+    pick = lambda name, saved: getattr(args, name, None) if getattr(args, name, None) is not None else preset.get(name, saved)
+    return (chosen or saved_stage(project),
+            getattr(args, "profile", None) or preset.get("profile") or saved_config(project)[1] or "standard",
+            pick("receipts", saved_receipts(project)), pick("mutation", saved_option(project, "mutation")),
+            pick("git_hooks", saved_option(project, "git_hooks")))
 
 def saved_option(project: Path, name: str) -> bool:
     """Whether an opt-in of this installation is on (`pre_pr.<name>` in the harness config)."""
@@ -570,10 +601,8 @@ def cmd_install(args):
     state.setdefault("runtimes", [])
     saved_scope, saved_profile = saved_config(project)
     scope = args.scope or saved_scope or "mixed"
-    profile = args.profile or saved_profile or "standard"
-    receipts = saved_receipts(project) if getattr(args, "receipts", None) is None else args.receipts
-    mutation = saved_option(project, "mutation") if getattr(args, "mutation", None) is None else args.mutation
-    git_hooks = saved_option(project, "git_hooks") if getattr(args, "git_hooks", None) is None else args.git_hooks
+    was_stage = saved_stage(project)
+    stage, profile, receipts, mutation, git_hooks = staged(args, project)
 
     # Look before writing: a refusal halfway would leave files the install state does not know about.
     if not args.force:
@@ -593,7 +622,8 @@ def cmd_install(args):
 
     final_runtimes = sorted(set(state["runtimes"]) | set(runtimes), key=RUNTIMES.index)
     write_harness_config(
-        project, final_runtimes, scope, profile, dry_run=args.dry_run, receipts=receipts, mutation=mutation, git_hooks=git_hooks
+        project, final_runtimes, scope, profile, dry_run=args.dry_run, receipts=receipts, mutation=mutation, git_hooks=git_hooks,
+        stage=stage
     )
     if git_hooks:
         install_git_hooks(project, dry_run=args.dry_run)
@@ -626,8 +656,13 @@ def cmd_install(args):
     print()
     print("\n".join(detect.summary(description)))
     print()
-    print(f"Installed runtimes: {', '.join(final_runtimes)}  (scope {scope}, profile {profile})")
+    print(f"Installed runtimes: {', '.join(final_runtimes)}  (scope {scope}, profile {profile}{'' if stage == 'custom' else ', stage ' + stage})")
     print_entrypoints(final_runtimes)
+    if stage == "mvp":
+        print("Stage mvp: the secret scan, the project's checks and the gates a change's risk calls for are the same as in product.\n"
+              "Promote when people depend on it: `gantry install --runtime <tool> --stage product`.")
+    if stage == "product" and was_stage == "mvp":
+        print("Promoted from mvp to product. `gantry doctor` lists what product expects that this project does not have yet.")
     if mutation:
         print("Mutation testing is on: `python3 .harness/bin/mutate.py` changes each line a change adds and runs "
               + (f"`{description['checks']['test']['command']}`" if "test" in description["checks"] else "the project's tests")
@@ -686,11 +721,8 @@ def cmd_init(args):
     found = suggest_runtimes(project, state)
     runtimes = parse_runtimes(args.runtime) if args.runtime else [r for r, _ in found]
     scope = args.scope or saved_scope or suggest_scope(description)
-    profile = args.profile or saved_profile or "standard"
     hooks = not args.no_hooks
-    receipts = saved_receipts(project) if args.receipts is None else args.receipts
-    mutation = saved_option(project, "mutation") if args.mutation is None else args.mutation
-    git_hooks = saved_option(project, "git_hooks") if args.git_hooks is None else args.git_hooks
+    stage, profile, receipts, mutation, git_hooks = staged(args, project)
     proposal = f"--runtime {','.join(runtimes) or '<tool>'} --scope {scope} --profile {profile}"
 
     if args.yes or (args.runtime and not interactive()):
@@ -717,7 +749,16 @@ def cmd_init(args):
         if not args.scope:
             print("\nWhat does the project cover? This is context for routing; it never hides a reviewer a change needs.")
             scope = ask_choice(f"Scope ({', '.join(SCOPES)})", SCOPES, scope)
-        if not args.profile:
+        if not args.stage:
+            print("\nWhat stage is the project in? It sets the options below at once; every one can be changed later.")
+            for name, meaning in STAGE_MEANING.items():
+                print(f"  {name:9} {meaning}")
+            stage = ask_choice("Stage", tuple(STAGE_MEANING), stage)
+            if stage != "custom":   # the preset answers the questions that follow, except those a flag already answered
+                args.stage = stage
+                _, profile, receipts, mutation, git_hooks = staged(args, project)
+        preset = stage != "custom"
+        if not args.profile and not preset:
             print("\nHow much should the hooks refuse? The Final Pre-PR Gate is the same in every profile.")
             for name in PROFILES:
                 print(f"  {name:9} {PROFILE_MEANING[name]}")
@@ -727,27 +768,28 @@ def cmd_init(args):
             print(f"\nGuard hooks can be registered in {', '.join(HOOK_SETTINGS[r] for r in hookable)}. They stop the agent, not you;")
             print("without them the same rules are only checked at the Final Pre-PR Gate.")
             hooks = ask_yes("Register the hooks?")
-        if args.receipts is None:
+        if args.receipts is None and not preset:
             print("\nShould CI be able to check that what is merged is what was reviewed? The final gate then writes a small receipt")
             print("per change, which you commit with it, and `route.py verify` fails a pull request whose content has none.")
             receipts = ask_yes("Keep review receipts?", default=receipts)
-        if args.git_hooks is None:
+        if args.git_hooks is None and not preset:
             print("\nShould git itself refuse a commit or a push that adds a secret? That holds for every tool and for people,")
             print("in this clone; a project with its own git hooks is told the line to add instead.")
             git_hooks = ask_yes("Install the git hooks?", default=git_hooks)
-        if args.mutation is None:
+        if args.mutation is None and not preset:
             print("\nShould the review check that the tests would notice if the new lines were wrong? It changes each added line")
             print("(`>=` to `>`, `&&` to `||`) and runs your tests against it: about a dozen extra test runs per review.")
             mutation = ask_yes("Turn mutation testing on?", default=mutation)
         hook_note = f", hooks {'on' if hooks else 'off'}" if hookable else "; none of these tools has hooks, so the rules are checked at the Final Pre-PR Gate"
-        print(f"\nInstall for {', '.join(runtimes)} with scope {scope}, profile {profile}{hook_note}{', review receipts on' if receipts else ''}{', mutation testing on' if mutation else ''}{', git hooks on' if git_hooks else ''}.")
+        print(f"\nInstall for {', '.join(runtimes)} with scope {scope}, {'' if stage == 'custom' else 'stage ' + stage + ', '}profile {profile}{hook_note}{', review receipts on' if receipts else ''}{', mutation testing on' if mutation else ''}{', git hooks on' if git_hooks else ''}.")
         if not ask_yes("Go ahead?"):
             print("Nothing was changed.")
             return
         print()
 
     cmd_install(argparse.Namespace(project=str(project), runtime=",".join(runtimes), scope=scope, profile=profile,
-                                   force=args.force, dry_run=args.dry_run, no_hooks=not hooks, receipts=receipts, mutation=mutation, git_hooks=git_hooks))
+                                   force=args.force, dry_run=args.dry_run, no_hooks=not hooks, receipts=receipts, mutation=mutation, git_hooks=git_hooks,
+                                   stage=None if stage == "custom" else stage))
 
 def cmd_upgrade(args):
     """Reinstall what is installed with this version of Gantry, keeping the runtimes, scope, profile and hook choice."""
@@ -819,7 +861,7 @@ def cmd_status(args):
     print(f"Harness version: {state.get('harness_version') or 'not installed'}")
     print("Installed runtimes:", ", ".join(state.get("runtimes") or []) or "none")
     if scope or profile:
-        print(f"Scope: {scope}  Profile: {profile}")
+        print(f"Scope: {scope}  Profile: {profile}  Stage: {saved_stage(project)}")
     for runtime in state.get("runtimes") or []:
         if runtime in HOOK_SETTINGS:
             print(f"Hooks ({runtime}): {'registered' if hooks_registered(project, runtime) else 'not registered'}")
@@ -977,6 +1019,21 @@ def cmd_doctor(args):
             warnings.append(("Mutation testing is on, but no test command is recorded, so it cannot run.",
                              f"add it under `checks:` in {PROJECT_FILE}; or turn it off with `gantry install --runtime <tool> --no-mutation`"))
 
+        # The stage is a promise about which options are on; say where the installation departs from it.
+        stage = saved_stage(project)
+        if stage == "mvp":
+            notes.append(("Stage mvp: lean hooks, no review receipts, no mutation testing. Secrets, the project's checks and "
+                          "risk-routed gates are not relaxed.", "when people depend on it: gantry install --runtime <tool> --stage product"))
+        elif stage == "product":
+            now = {"profile": saved_config(project)[1], **{name: saved_option(project, name) for name in ("receipts", "mutation", "git_hooks")}}
+            off = [name.replace("_", " ") for name, value in STAGES["product"].items() if now[name] != value]
+            if off:
+                warnings.append((f"Stage is product, but these differ from what product sets: {', '.join(off)}.",
+                                 "gantry install --runtime <tool> --stage product, or keep it if that was a decision"))
+            if not (project / "docs/conventions.md").is_file():
+                warnings.append(("Stage is product, but docs/conventions.md is not written: reviewers judge against nothing the project agreed.",
+                                 "run the harness-onboard skill in your agent"))
+
         # What the Validator will run.
         described = project / PROJECT_FILE
         if not described.is_file():
@@ -1107,7 +1164,7 @@ def cmd_uninstall(args):
                 except Exception:
                     pass
             write_harness_config(project, remaining, scope, profile, dry_run=False, receipts=saved_receipts(project), mutation=saved_option(project, "mutation"),
-                                 git_hooks=saved_option(project, "git_hooks"))
+                                 git_hooks=saved_option(project, "git_hooks"), stage=saved_stage(project))
             save_state(project, state)
         elif args.purge_shared:
             sp = state_path(project)
@@ -1132,6 +1189,8 @@ def build_parser():
         sp.add_argument("--scope", choices=SCOPES, help="default: what is installed, else mixed")
         sp.add_argument("--profile", choices=PROFILES, type=lambda value: RETIRED_PROFILES.get(value, value),
                         help="default: what is installed, else standard")
+        sp.add_argument("--stage", choices=tuple(STAGES), help="preset of profile, receipts, mutation and git hooks: "
+                        "mvp (lean, receipts and mutation off) or product (standard, all on); a flag for one option wins")
         sp.add_argument("--force", action="store_true", help="replace files that were edited or that the harness does not own")
         sp.add_argument("--dry-run", action="store_true")
         sp.add_argument("--no-hooks", action="store_true", help="do not register the harness guard hooks")
