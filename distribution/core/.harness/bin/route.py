@@ -233,6 +233,15 @@ GUARDRAILS = (
     ("operate", "what happened after shipping is written down, and a failure names the risk nobody declared",
      "`release.py record` appends to docs/releases.md; nothing forces it to be run", ""),
 )
+# What every change is judged for: (pillar, the gates that judge it, the triggers that route the ones that are not
+# always there). Quality is judged on every change; the security scan runs on every change; the specialists for
+# security, performance and scalability run when the change's risk calls for them. The final gate says which did.
+PILLARS = (
+    ("quality", ("validator", "backend-code-review", "frontend-code-review", "qa", "detail-analyst", "reviewer"), ()),
+    ("security", ("security",), ("SECURITY",)),
+    ("performance", ("performance",), ("PERFORMANCE",)),
+    ("scalability", ("performance", "infrastructure"), ("PERFORMANCE", "INFRASTRUCTURE")),
+)
 GENERATED_STATE = ("routing-plan.yaml", "gates.json")
 QUALITY_CONFIG_NAMES = (
     ".eslintignore", ".prettierignore", "biome.json", "biome.jsonc", "ruff.toml", ".ruff.toml", ".flake8",
@@ -1061,6 +1070,22 @@ def readiness(root: Path, runtime: str) -> tuple[str, list[str], list[str]]:
     return ("PRE_PR_PASS_WITH_CONDITIONS" if conditions else "PRE_PR_PASS"), [], conditions
 
 
+def pillars(root: Path, runtime: str) -> list[str]:
+    """One line per pillar for a change that passed: which gates judged it, or that none did and why."""
+    plan = parse((state_dir(root, runtime) / "routing-plan.yaml").read_text(encoding="utf-8"))
+    gates = load_gates(root, runtime)
+    required = [e["agent"] for e in plan["agents"] if e["applicability"] == "REQUIRED"]
+    lines = []
+    for name, judges, triggers in PILLARS:
+        ran = [f"{agent} {gates[agent]['decision']}" for agent in required if agent in judges and agent in gates]
+        scanned = "added lines scanned for secrets and risky patterns; " if name == "security" else ""
+        if ran:
+            lines.append(f"{name}: {scanned}{', '.join(ran)}")
+        else:
+            lines.append(f"{name}: {scanned}no specialist gate ran, no {' or '.join(triggers)} trigger was declared or detected")
+    return lines
+
+
 def receipts_enabled(root: Path) -> bool:
     try:
         text = (root / ".harness/harness.config.yaml").read_text(encoding="utf-8")
@@ -1099,6 +1124,7 @@ def write_receipt(root: Path, runtime: str, status: str, conditions: list[str]) 
         "risk_triggers": sorted({t.get("dimension") for t in plan.get("risk_triggers") or []}),
         "gates": {e["agent"]: gates[e["agent"]]["decision"] for e in plan["agents"]
                   if e["applicability"] == "REQUIRED" and e["agent"] in gates},
+        "pillars": pillars(root, runtime),
     }
     (root / target).write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     return target
@@ -1140,6 +1166,8 @@ def cmd_verify(args: argparse.Namespace) -> int:
     if not isinstance(receipt, dict) or receipt.get("change") != identity["value"] or receipt.get("status") not in READY:
         return fail(f"{target} does not record a passed review of this change")
     print(f"REVIEW RECEIPT: PASS ({receipt['status']}, {len(paths)} files, gates: {', '.join(receipt.get('gates') or {}) or 'none'})")
+    for line in receipt.get("pillars") or []:
+        print(f"  pillar: {line}")
     for condition in receipt.get("conditions") or []:
         print(f"  condition: {condition}")
     return 0
@@ -1154,6 +1182,8 @@ def cmd_ready(args: argparse.Namespace) -> int:
     for condition in conditions:
         print(f"  condition: {condition}")
     if status != "PRE_PR_BLOCKED":
+        for line in pillars(root, args.runtime):
+            print(f"  pillar: {line}")
         print(f"  next: before the change is merged or deployed, run `python3 .harness/bin/release.py check --runtime {args.runtime}`")
         written = write_receipt(root, args.runtime, status, conditions) if receipts_enabled(root) else None
         if written:

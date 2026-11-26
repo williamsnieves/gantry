@@ -17,7 +17,7 @@ python3 .harness/bin/release.py check --runtime <runtime>
 - `RELEASE_READY_WITH_CONDITIONS`: put every condition in the pull request description, unchanged. A condition is for a person to decide; do not resolve it by rewording it.
 - `RELEASE_READY`: go on.
 
-The pull request description states what the change does, the conditions, and the rollout when there is one.
+The pull request description states what the change does, the conditions, the `pillar:` lines of `route.py ready` unchanged, and the rollout when there is one.
 
 ## 2. Merge and deploy
 
