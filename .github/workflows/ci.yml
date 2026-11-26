@@ -24,6 +24,8 @@ jobs:
         run: python tests/check_distribution.py
       - name: Installer smoke test
         run: python tests/smoke_test.py
+      - name: Guided install, upgrade and doctor
+        run: python tests/test_cli.py
       - name: Router
         run: python tests/test_route.py
       - name: Guard hook
