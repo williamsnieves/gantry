@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory() as tmp:
     (project / ".gitignore").write_text("__pycache__/\n")
     (project / ".harness/.gitignore").write_text("runtime/\n")
     (project / ".harness/harness.config.yaml").write_text("pre_pr:\n  mutation: false\n")
-    (project / ".harness/project.yaml").write_text(f'checks:\n  test:\n    command: "{py} -m unittest discover -s tests -q"\n')
+    (project / ".harness/project.yaml").write_text(f'checks:\n  test:\n    command: "{py} -B -m unittest discover -s tests -q"\n')
     (project / "src/__init__.py").write_text("")
     (project / "src/pricing.py").write_text(OLD)
     (project / "tests/test_pricing.py").write_text(TESTS)

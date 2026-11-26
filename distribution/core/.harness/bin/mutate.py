@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shlex
 import signal
@@ -129,7 +130,10 @@ def test_command(root: Path) -> str | None:
 def run_tests(root: Path, command: str, limit: float) -> str:
     """`pass`, `fail` or `timeout` for one run of the project's tests."""
     try:
-        proc = subprocess.run(shlex.split(command), cwd=root, capture_output=True, timeout=limit)
+        # No Python bytecode is written: a mutant of the same size, written within the same second as the last one,
+        # would otherwise be run from the cache of the previous version and be judged for code that is not there.
+        proc = subprocess.run(shlex.split(command), cwd=root, capture_output=True, timeout=limit,
+                              env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"})
     except subprocess.TimeoutExpired:
         return "timeout"
     except OSError:
