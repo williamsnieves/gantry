@@ -1,0 +1,723 @@
+{
+ "adapting-backend-rules-to-existing-code": {
+  "findings": [
+   "long"
+  ],
+  "lines": 853
+ },
+ "analyzing-algorithmic-complexity": {
+  "findings": [
+   "long",
+   "no-steps",
+   "no-recovery"
+  ],
+  "lines": 1810
+ },
+ "analyzing-architecture-tradeoffs": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 976
+ },
+ "analyzing-dead-code": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "analyzing-details": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "applying-frontend-engineering-standard": {
+  "findings": [
+   "long",
+   "no-recovery"
+  ],
+  "lines": 844
+ },
+ "auditing-code": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "classifying-frontend-architecture-profile": {
+  "findings": [
+   "long",
+   "no-recovery"
+  ],
+  "lines": 863
+ },
+ "composing-frontend-dependencies": {
+  "findings": [
+   "long"
+  ],
+  "lines": 992
+ },
+ "composing-react-feature-containers": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1238
+ },
+ "creating-openspec-changes": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "creating-product-requirement-documents": {
+  "findings": [
+   "long",
+   "no-steps",
+   "no-recovery"
+  ],
+  "lines": 1145
+ },
+ "defining-functional-requirements": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1063
+ },
+ "defining-non-functional-requirements": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1102
+ },
+ "defining-quality-attributes": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1027
+ },
+ "designing-accessible-forms": {
+  "findings": [
+   "long"
+  ],
+  "lines": 1723
+ },
+ "designing-accessible-web-interfaces": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 802
+ },
+ "designing-application-dtos": {
+  "findings": [
+   "long"
+  ],
+  "lines": 757
+ },
+ "designing-application-use-cases": {
+  "findings": [
+   "long"
+  ],
+  "lines": 698
+ },
+ "designing-component-variants": {
+  "findings": [
+   "long",
+   "no-steps",
+   "no-recovery"
+  ],
+  "lines": 1442
+ },
+ "designing-domain-repositories": {
+  "findings": [
+   "long"
+  ],
+  "lines": 670
+ },
+ "designing-domain-services": {
+  "findings": [
+   "long"
+  ],
+  "lines": 558
+ },
+ "designing-external-service-ports": {
+  "findings": [
+   "long"
+  ],
+  "lines": 845
+ },
+ "designing-frontend-dtos-and-view-data": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1250
+ },
+ "designing-frontend-ports": {
+  "findings": [
+   "long"
+  ],
+  "lines": 1433
+ },
+ "designing-frontend-use-cases": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1334
+ },
+ "designing-react-components": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 891
+ },
+ "designing-react-custom-hooks": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 937
+ },
+ "designing-react-effects": {
+  "findings": [
+   "long"
+  ],
+  "lines": 832
+ },
+ "designing-responsive-layouts": {
+  "findings": [
+   "long",
+   "no-recovery"
+  ],
+  "lines": 1378
+ },
+ "designing-software-system": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1315
+ },
+ "designing-system-architecture": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 812
+ },
+ "editing-openspec-changes": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "eliciting-software-requirements": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1332
+ },
+ "enriching-user-stories": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "exploring-openspec-changes": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "extracting-domain-model-from-legacy-code": {
+  "findings": [
+   "long"
+  ],
+  "lines": 920
+ },
+ "harness-evaluate": {
+  "findings": [
+   "no-steps",
+   "no-recovery"
+  ]
+ },
+ "harness-onboard": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "harness-run": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "harness-ship": {
+  "findings": [
+   "no-steps"
+  ]
+ },
+ "harness-start": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "identifying-architecture-drivers": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 983
+ },
+ "implementing-backend-inside-out": {
+  "findings": [
+   "long"
+  ],
+  "lines": 914
+ },
+ "implementing-css-modules-ui": {
+  "findings": [
+   "long",
+   "no-steps",
+   "no-recovery"
+  ],
+  "lines": 1332
+ },
+ "implementing-external-service-adapters": {
+  "findings": [
+   "long"
+  ],
+  "lines": 632
+ },
+ "implementing-frontend-change": {
+  "findings": [
+   "long"
+  ],
+  "lines": 1297
+ },
+ "implementing-frontend-http-clients": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1253
+ },
+ "implementing-frontend-repository-adapters": {
+  "findings": [
+   "long"
+  ],
+  "lines": 774
+ },
+ "implementing-http-controllers": {
+  "findings": [
+   "long"
+  ],
+  "lines": 634
+ },
+ "implementing-repository-adapters": {
+  "findings": [
+   "long"
+  ],
+  "lines": 638
+ },
+ "implementing-tailwind-ui": {
+  "findings": [
+   "long",
+   "no-recovery"
+  ],
+  "lines": 1474
+ },
+ "integrating-frontend-server-state": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1602
+ },
+ "integrating-headless-ui-primitives": {
+  "findings": [
+   "long",
+   "no-steps",
+   "no-recovery"
+  ],
+  "lines": 1346
+ },
+ "managing-frontend-design-tokens": {
+  "findings": [
+   "long",
+   "no-recovery"
+  ],
+  "lines": 1398
+ },
+ "migrating-to-frontend-vertical-slices": {
+  "findings": [
+   "long",
+   "no-recovery"
+  ],
+  "lines": 1457
+ },
+ "modeling-c4-architecture": {
+  "findings": [
+   "long"
+  ],
+  "lines": 989
+ },
+ "modeling-data-flows": {
+  "findings": [
+   "long",
+   "no-steps",
+   "no-recovery"
+  ],
+  "lines": 1144
+ },
+ "modeling-deployment-architecture": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1262
+ },
+ "modeling-domain-data": {
+  "findings": [
+   "long",
+   "no-steps",
+   "no-recovery"
+  ],
+  "lines": 1060
+ },
+ "modeling-domain-entities": {
+  "findings": [
+   "long"
+  ],
+  "lines": 618
+ },
+ "modeling-domain-value-objects": {
+  "findings": [
+   "long"
+  ],
+  "lines": 568
+ },
+ "modeling-event-flows": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1230
+ },
+ "modeling-frontend-async-state": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1642
+ },
+ "modeling-frontend-domain": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 993
+ },
+ "modeling-process-flows": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 907
+ },
+ "modeling-state-machines": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 976
+ },
+ "modeling-system-sequences": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 978
+ },
+ "modeling-use-cases": {
+  "findings": [
+   "long"
+  ],
+  "lines": 1017
+ },
+ "planning-backend-vertical-slices": {
+  "findings": [
+   "long",
+   "no-recovery"
+  ],
+  "lines": 519
+ },
+ "planning-frontend-test-strategy": {
+  "findings": [
+   "long",
+   "no-steps",
+   "no-recovery"
+  ],
+  "lines": 945
+ },
+ "planning-frontend-vertical-slices": {
+  "findings": [
+   "long",
+   "no-recovery"
+  ],
+  "lines": 807
+ },
+ "practicing-backend-tdd": {
+  "findings": [
+   "long"
+  ],
+  "lines": 630
+ },
+ "preparing-full-stack-change": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1052
+ },
+ "recording-architecture-decisions": {
+  "findings": [
+   "long",
+   "no-steps",
+   "no-recovery"
+  ],
+  "lines": 804
+ },
+ "refactoring-backend-toward-hexagonal-architecture": {
+  "findings": [
+   "long"
+  ],
+  "lines": 819
+ },
+ "refactoring-react-features": {
+  "findings": [
+   "long"
+  ],
+  "lines": 1246
+ },
+ "reviewing-adversarially": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "reviewing-application-security": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1279
+ },
+ "reviewing-backend-architecture": {
+  "findings": [
+   "long",
+   "no-recovery"
+  ],
+  "lines": 711
+ },
+ "reviewing-backend-code": {
+  "findings": [
+   "long"
+  ],
+  "lines": 819
+ },
+ "reviewing-frontend-architecture": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1232
+ },
+ "reviewing-frontend-performance": {
+  "findings": [
+   "long",
+   "no-recovery"
+  ],
+  "lines": 1598
+ },
+ "reviewing-frontend-privacy-and-analytics": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1264
+ },
+ "reviewing-frontend-security": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1638
+ },
+ "reviewing-full-stack-change": {
+  "findings": [
+   "long"
+  ],
+  "lines": 986
+ },
+ "reviewing-web-accessibility": {
+  "findings": [
+   "long"
+  ],
+  "lines": 1400
+ },
+ "selecting-frontend-styling-profile": {
+  "findings": [
+   "long",
+   "no-recovery"
+  ],
+  "lines": 1047
+ },
+ "skill-authoring-template-pack": {
+  "findings": [
+   "unreachable"
+  ]
+ },
+ "syncing-openspec-specs": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "testing-application-use-cases": {
+  "findings": [
+   "long"
+  ],
+  "lines": 757
+ },
+ "testing-backend-http-e2e": {
+  "findings": [
+   "long"
+  ],
+  "lines": 818
+ },
+ "testing-domain-models": {
+  "findings": [
+   "long"
+  ],
+  "lines": 620
+ },
+ "testing-external-service-adapters": {
+  "findings": [
+   "long"
+  ],
+  "lines": 874
+ },
+ "testing-frontend-adapters": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1360
+ },
+ "testing-frontend-domain-and-use-cases": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1171
+ },
+ "testing-frontend-user-journeys": {
+  "findings": [
+   "long"
+  ],
+  "lines": 1523
+ },
+ "testing-frontend-visual-regressions": {
+  "findings": [
+   "long"
+  ],
+  "lines": 1334
+ },
+ "testing-react-components": {
+  "findings": [
+   "long"
+  ],
+  "lines": 874
+ },
+ "testing-react-hooks": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 997
+ },
+ "testing-repository-adapters": {
+  "findings": [
+   "long"
+  ],
+  "lines": 741
+ },
+ "threat-modeling-with-stride": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 995
+ },
+ "updating-documentation": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "validating-architecture-design": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1411
+ },
+ "validating-backend-architecture": {
+  "findings": [
+   "long"
+  ],
+  "lines": 1033
+ },
+ "validating-backend-change": {
+  "findings": [
+   "long"
+  ],
+  "lines": 682
+ },
+ "validating-changes": {
+  "findings": [
+   "no-recovery"
+  ]
+ },
+ "validating-external-frontend-data": {
+  "findings": [
+   "long",
+   "no-steps"
+  ],
+  "lines": 1142
+ },
+ "validating-frontend-architecture": {
+  "findings": [
+   "long",
+   "no-steps",
+   "no-recovery"
+  ],
+  "lines": 1033
+ },
+ "verifying-security-controls": {
+  "findings": [
+   "long"
+  ],
+  "lines": 1335
+ },
+ "wiring-backend-composition": {
+  "findings": [
+   "long"
+  ],
+  "lines": 794
+ },
+ "writing-skills": {
+  "findings": [
+   "no-recovery",
+   "unreachable"
+  ]
+ }
+}

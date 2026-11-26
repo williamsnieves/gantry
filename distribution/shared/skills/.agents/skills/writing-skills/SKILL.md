@@ -46,6 +46,7 @@ Create or revise one bounded, discoverable, context-efficient, and evaluated age
 The skill is valid only when:
 
 - frontmatter and directory names match;
+- `gantry skills` reports no finding for it: at most 500 lines, numbered steps, something concrete to run or produce, a heading for failures, and an agent or skill that names it;
 - discovery cases pass;
 - every meaningful procedure branch is tested;
 - validation evidence is required before completion;
