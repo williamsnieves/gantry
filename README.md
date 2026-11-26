@@ -178,6 +178,8 @@ claude:
   deep: ""        # empty: the session's own model
 ```
 
+Measured on Claude Code with the lead on the most capable model and every gate on Sonnet: two planted defects were found and a clean change passed, at between a third and a half of the cost of running every gate on the lead's model (one trial per case, one fixture; `evals/BASELINE.md`). That is a reasonable starting point, not a guarantee.
+
 The installer writes the file with every tier empty, which runs every gate on the session's model as before, and never overwrites it. With a tier filled in, `route.py plan` shows the model beside each gate and the `next:` line is followed by `models: launch validator=haiku`. On Claude Code the hook launches the gate on that model whatever the launch asked for; on other runtimes the lead follows the `models:` line where the runtime lets it choose.
 
 ## Shipping, and what happened after

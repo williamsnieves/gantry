@@ -404,3 +404,48 @@ Run over 40 Terraform files from two unrelated local projects, with no model, on
 | Reported by the other rules (public storage, any action, encryption off, public database) | 0 |
 
 All six reports are `ingress` blocks of security groups, and all seven lines left out are `egress` blocks or routes, read by hand. Some of the six are a public load balancer on ports 80 and 443, which is intended: the rule is a reason for the Security gate to look, not a verdict. The other four rules found nothing here, so they are only exercised by the fixture in `tests/test_scan.py`.
+
+## Cheaper gates, one check run, and a cheap classifier (2026-11-26)
+
+Claude Code headless, the lead on `claude-fable-5-2`, `--execute`, one trial each. `--tier-model fast=haiku --tier-model standard=sonnet --tier-model deep=sonnet`. Both changes are in the `DESIGN` lane, where the Validator's tier is `standard`, so every gate ran on `claude-sonnet-5-5` and no gate ran on Haiku.
+
+### Gates on Sonnet
+
+| Case | Every gate on the lead's model (2026-11-25) | Gates on Sonnet | Result with gates on Sonnet |
+|---|---|---|---|
+| Tenant leak | $3.05 | $0.83, 84 s | Defect found; `PRE_PR_BLOCKED` |
+| Clean control | $3.70 | $1.79, 218 s | 7 of 7 gates pass, no false alarm |
+
+Cost by model, gates on Sonnet: tenant leak, lead $0.77 and gates $0.06; clean control, lead $1.32 and gates $0.47. The lead is 74% to 92% of the cost.
+
+The tenant-leak run stopped at the first gate: the Validator ran the checks, saw them pass, and returned `CHANGES_REQUIRED` for the leak, which it found by reading the diff. That is outside its contract, which says a mechanical pass is a pass, and it is why this run cost less than a third of the clean one. On 2026-11-25, on the lead's model, the Validator passed the same change and three specialists found the leak. So the defect was found, but not by the gates the routing intends; the Security gate, which the lead had routed, never ran.
+
+With the unlabelled-control trial of 2026-11-25, that is two planted defects found and one clean change passed with every gate on Sonnet, one trial each, on one fixture.
+
+### `check.py`: one run of the checks instead of three
+
+In the two runs above the eval session refused `check.py` (it was not in the session's allowed commands), so they measure the behaviour without it. The clean control was run again with it allowed.
+
+| Clean control, gates on Sonnet | Without `check.py` | With `check.py` |
+|---|---|---|
+| Runs of the test, lint and type commands | lead 3, Validator 3 | once, by `check.py` |
+| What the Validator did | ran the three commands | read `check.py status` |
+| Cost | $1.79 | $1.32 |
+| Wall time | 218 s | 160 s |
+| Final gate | pass, with three conditions from the Reviewer about the missing check record | pass, with only the router's condition |
+
+One trial each. The difference in cost also includes run-to-run variation, which one trial cannot separate; the count of command runs is the direct evidence.
+
+### A cheap classifier for risk triggers
+
+Question: does a small model that reads the diff add risk triggers that the deterministic rules miss? One call to `claude-haiku-5-5` per case, with the trigger vocabulary and the diff (about 11,000 characters), asked for triggers with evidence.
+
+| Case | Triggers from the rules | Triggers from the classifier | Cost, time |
+|---|---|---|---|
+| Clean control | none | BEHAVIORAL, COMPATIBILITY | $0.005, 6 s |
+| Tenant leak | none | SECURITY (names the dropped tenant condition), BEHAVIORAL, COMPATIBILITY | $0.004, 6 s |
+| Unlabelled control | none | BEHAVIORAL, COMPATIBILITY | $0.004, 6 s |
+
+The classifier named SECURITY on the one change that has a security defect and on neither of the two that do not. The rules cannot see that defect: no path or pattern marks it.
+
+What this does not show: in the live runs the lead declared the same triggers itself, SECURITY included, so on Claude Code with a strong lead the classifier added nothing the plan did not already have. Its possible place is where the classification is weak or absent: a cheaper lead, a tool where the lead does not follow the skill, or a check in CI. Three cases on one fixture, one call each.
