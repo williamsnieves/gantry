@@ -58,7 +58,7 @@ with tempfile.TemporaryDirectory() as tmp:
     (project / "tools/lint.py").write_text("import pathlib, sys\nbad = 'TODO' in pathlib.Path('src/pricing.py').read_text()\nprint('src/pricing.py: TODO left in code' if bad else 'clean')\nsys.exit(bad)\n")
     (project / ".harness/project.yaml").write_text(
         "kind: \"brownfield\"\nnotes: []\nchecks:\n"
-        f"  test:\n    command: \"{py} -m unittest discover -s tests -q\"\n    source: \"x\"\n"
+        f"  test:\n    command: \"{py} -B -m unittest discover -s tests -q\"\n    source: \"x\"\n"
         f"  lint:\n    command: \"{py} tools/lint.py\"\n    source: \"x\"\n"
         f"  build:\n    command: '{py} -c pass'\n    source: \"x\"\n")
     (project / "src/__init__.py").write_text("")

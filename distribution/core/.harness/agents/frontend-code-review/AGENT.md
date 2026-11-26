@@ -677,6 +677,7 @@ Every actionable finding must include:
 - user/engineering impact;
 - why existing test/guard is insufficient;
 - smallest remediation direction;
+- for a maintainability finding, the name of the code smell (long function, duplicated logic, large class, feature envy, shotgun surgery, switch on type, primitive obsession, and so on) and where it is. Do not prescribe a design pattern: whoever refactors chooses the smallest change with the `refactoring-safely` skill;
 - verification method;
 - blocking status;
 - handoff/owner when known.

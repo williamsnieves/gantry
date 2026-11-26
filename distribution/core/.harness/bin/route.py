@@ -207,6 +207,9 @@ GUARDRAILS = (
     ("build", "the project's own format, lint, type, test and build commands pass on the version that is reviewed",
      "`check.py` runs the commands recorded in .harness/project.yaml and ties the result to the change's digest; "
      "`check.py status` prints it again without running anything; the final gate blocks on one that failed on the current version", ""),
+    ("build", "a refactoring is judged by tests that passed before the code was touched",
+     "`refactor.py pin` refuses once runtime code is changed, runs the tests and records every test file; "
+     "the final gate carries a condition for a pinned test edited or removed since, and for a version the tests were not run on", ""),
     ("build", "a secret does not leave in the change",
      "`scan.py` reads every added line; the final gate blocks on a credential in a provider's format or a private key, "
      "and carries a condition for anything that may be one; with the git hooks installed, git refuses the commit and the push "
@@ -258,7 +261,7 @@ PILLARS = (
 )
 # Rules the project learned from changes that went wrong: paths that add a risk trigger. See learn.py.
 LEARNED_FILE = "docs/learned.md"
-GENERATED_STATE = ("routing-plan.yaml", "gates.json", "mutation.json", "mutation-backup.json", "checks.json")
+GENERATED_STATE = ("routing-plan.yaml", "gates.json", "mutation.json", "mutation-backup.json", "checks.json", "refactor.json")
 QUALITY_CONFIG_NAMES = (
     ".eslintignore", ".prettierignore", "biome.json", "biome.jsonc", "ruff.toml", ".ruff.toml", ".flake8",
     "mypy.ini", ".pylintrc", "tox.ini", "pytest.ini", ".pre-commit-config.yaml", ".gitlab-ci.yml", "Jenkinsfile",
@@ -1116,6 +1119,7 @@ def readiness(root: Path, runtime: str) -> tuple[str, list[str], list[str]]:
     if scanned["suspect"]:
         conditions.append("possible credential, a person must look: " + scan.summary(scanned["suspect"]))
     blockers += checks(root, identity)[0]
+    conditions += refactoring(root, identity)[0]
     left, mutation_conditions, _ = mutation(root, identity, paths)
     if left:
         blockers.append(left)
@@ -1140,7 +1144,8 @@ def pillars(root: Path, runtime: str) -> list[str]:
                    "performance": "added lines scanned for queries in loops and unbounded reads; "}.get(name, "")
         if name == "quality":
             identity, paths = change_identity(root)
-            ran += [summary for summary in (checks(root, identity)[1], mutation(root, identity, paths)[2]) if summary]
+            ran += [summary for summary in (checks(root, identity)[1], refactoring(root, identity)[1],
+                                            mutation(root, identity, paths)[2]) if summary]
         if ran:
             lines.append(f"{name}: {scanned}{', '.join(ran)}")
         else:
@@ -1246,6 +1251,27 @@ def checks(root: Path, identity: dict) -> tuple[list[str], str]:
     blockers = [f"the project's `{name}` check fails on this version of the change (`{result['checks'][name]['command']}`); "
                 "fix the code and run `python3 .harness/bin/check.py`" for name in failed]
     return blockers, (f"checks run by check.py: {', '.join(passed)} passed" if passed and not failed else "")
+
+
+def refactoring(root: Path, identity: dict) -> tuple[list[str], str]:
+    """(conditions, summary) for a change that was started with `refactor.py pin`. Empty for any other change."""
+    import check  # here, not at the top: these modules import this one
+    import refactor
+    found = refactor.state(root)
+    if found is None:
+        return [], ""
+    conditions = []
+    changed = [f"{path} (edited)" for path in found["edited"]] + [f"{path} (removed)" for path in found["removed"]]
+    if changed:
+        shown = ", ".join(changed[:6]) + (f" and {len(changed) - 6} more" if len(changed) > 6 else "")
+        conditions.append("this refactoring changed tests that were pinned before it started, so they no longer show the behaviour was kept: "
+                          f"{shown}; a person confirms each still checks the same thing")
+    result = check.current(root, identity)
+    if not result or result["checks"].get("test", {}).get("status") != "pass":
+        conditions.append("the tests pinned before this refactoring were not run on this version of the change; "
+                          "run `python3 .harness/bin/check.py`")
+    kept = found["pinned"] - len(changed)
+    return conditions, f"refactoring: {kept} of {found['pinned']} test files pinned before the change are unchanged"
 
 
 def mutation(root: Path, identity: dict, paths: list[str]) -> tuple[str | None, list[str], str]:
