@@ -45,6 +45,7 @@ PR_MERGE = re.compile(r"(^|[\s;&|(])gh\s+pr\s+merge\b")
 NO_VERIFY = re.compile(r"(^|\s)--no-verify\b")
 COMMIT_OR_PUSH = re.compile(r"(^|[\s;&|(])git\s+(?:-\S+\s+\S+\s+)*(commit|push)\b")
 APPROVE = re.compile(r"\bspec\.py[\"']?\s+approve\b")
+LEARN = re.compile(r"\blearn\.py[\"']?\s+(?:add|remove)\b")
 SUBAGENT_TOOLS = ("Agent", "Task")
 REPORT = re.compile(r"\.harness/runtime/([a-z]+)/artifacts/([a-z-]+)-report\.md")
 ASK_USER = "If the change is really needed, stop and ask the user to make it or to approve it; do not work around this."
@@ -84,6 +85,9 @@ def confirm(event: dict) -> str | None:
     if APPROVE.search(str((event.get("tool_input") or {}).get("command") or "")):
         return ("Gantry: this records that you approved the specification as it is written now. "
                 "Confirm only if you have read it and agree with its design.")
+    if LEARN.search(str((event.get("tool_input") or {}).get("command") or "")):
+        return ("Gantry: this changes the rules this project learned, which decide how later changes are routed. "
+                "Confirm only if the rule and the paths it applies to are what you want.")
     return None
 
 

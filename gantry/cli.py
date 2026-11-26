@@ -792,6 +792,7 @@ def cmd_doctor(args):
         ".harness/bin/scan.py",
         ".harness/bin/release.py",
         ".harness/bin/mutate.py",
+        ".harness/bin/learn.py",
         ".harness/core/pre-pr/FINAL-PRE-PR-GATE.md",
         ".harness/agents/reviewer/AGENT.md",
         ".harness/evals/end-to-end/E2E-ORACLE.md",

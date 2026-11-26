@@ -42,6 +42,8 @@ jobs:
         run: python tests/test_mutate.py
       - name: Release gate
         run: python tests/test_release.py
+      - name: Learned rules
+        run: python tests/test_learn.py
 
   secrets:
     runs-on: ubuntu-latest

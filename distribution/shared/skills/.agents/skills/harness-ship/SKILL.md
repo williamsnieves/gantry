@@ -46,6 +46,8 @@ python3 .harness/bin/release.py record --outcome INCIDENT --change "<reference>"
 
 Then fix it as `REMEDIATION` work with the `harness-start` skill, starting from a test that fails the way production did.
 
+When a missed risk was recorded, run `python3 .harness/bin/learn.py propose` and show the user what it prints. It proposes a rule that routes that risk whenever a later change touches the same code. The user decides the path it applies to and whether to add it; run the `learn.py add` command only with their answer, and never write `docs/learned.md` yourself.
+
 ## Rules
 
 - The record states what happened, not what was intended. Do not record an outcome you did not observe.
