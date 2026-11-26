@@ -71,7 +71,7 @@ assert "install shared-core: .harness/bin/route.py" in gantry("install", "--runt
 
 # In a terminal it asks, with what it found as the default, and a wrong answer is asked again.
 guided = project("guided", WEB_AND_API)
-out, asked = gantry("init", "--project", guided, answers=["nope", "claude,codex", "", "lean", "n", "y", "", "y", ""])
+out, asked = gantry("init", "--project", guided, answers=["nope", "claude,codex", "", "", "lean", "n", "y", "", "y", ""])
 assert "Unsupported runtime(s): nope" in out and "found CLAUDE.md" in out, out
 assert [prompt.split(" [")[1] for prompt in asked[:3]] == ["claude]: ", "claude]: ", "fullstack]: "], asked
 assert "scope_profile: fullstack" in config(guided) and "delivery_profile: lean" in config(guided)
@@ -81,8 +81,8 @@ assert "receipts: true" in config(guided) and "Review receipts are on" in out, o
 assert "mutation: true" in config(guided) and "Mutation testing is on" in out and (guided / ".harness/bin/mutate.py").exists(), out
 # A flag is an answer: it is not asked again. Declining at the end changes nothing.
 declined = project("declined", WEB_AND_API)
-out, asked = gantry("init", "--runtime", "cursor", "--scope", "backend", "--project", declined, answers=["", "", "", "", "n"])
-assert len(asked) == 5 and "Nothing was changed." in out and not (declined / ".harness").exists(), (asked, out)
+out, asked = gantry("init", "--runtime", "cursor", "--scope", "backend", "--project", declined, answers=["", "", "", "", "", "n"])
+assert len(asked) == 6 and "Nothing was changed." in out and not (declined / ".harness").exists(), (asked, out)
 # No tool in the project or named: init says how to name one instead of guessing.
 empty = project("empty")
 real_which, cli.shutil.which = cli.shutil.which, lambda name: None
@@ -213,6 +213,26 @@ assert "does not reach the harness" not in gantry("doctor", "--project", hooked)
 out, _ = gantry("install", "--runtime", "cursor", "--no-git-hooks", "--project", hooked)
 assert "remove git hook: pre-push" in out and not (hooked / ".git/hooks/pre-push").exists() and own.exists(), out
 assert "git_hooks: false" in config(hooked)
+
+# A stage sets profile, receipts, mutation and git hooks at once; a flag for one option wins; a reinstall keeps it.
+staged = project("staged", WEB_AND_API)
+out, _ = gantry("install", "--runtime", "claude", "--stage", "mvp", "--project", staged)
+assert "profile lean, stage mvp" in out and "Promote when people depend on it" in out, out
+assert all(line in config(staged) for line in ("stage: mvp", "delivery_profile: lean", "receipts: false", "mutation: false", "git_hooks: true"))
+assert "Stage: mvp" in gantry("status", "--project", staged)[0] and "Stage mvp: lean hooks" in gantry("doctor", "--project", staged)[0]
+gantry("upgrade", "--project", staged)
+assert "stage: mvp" in config(staged) and "delivery_profile: lean" in config(staged)
+out, _ = gantry("install", "--runtime", "claude", "--stage", "product", "--no-mutation", "--project", staged)
+assert "Promoted from mvp to product" in out and "Review receipts are on" in out, out
+assert all(line in config(staged) for line in ("stage: product", "delivery_profile: standard", "receipts: true", "mutation: false"))
+out, _ = gantry("doctor", "--project", staged)
+assert "Stage is product, but these differ from what product sets: mutation." in out and "no CI file runs `route.py verify`" in out, out
+assert "Stage is product, but docs/conventions.md is not written" in out, out
+# In the guided install the stage answers the option questions; without one, each is asked as before.
+quick = project("quick", WEB_AND_API)
+out, asked = gantry("init", "--project", quick, answers=["claude", "", "mvp", "n", "y"])
+assert len(asked) == 5 and "stage mvp, profile lean" in out and "stage: mvp" in config(quick), (asked, out)
+assert "stage: custom" in config(guided) and "Stage: custom" in gantry("status", "--project", guided)[0]
 
 # `gantry check` runs the commands the project recorded, with no model, and exits non-zero when one fails.
 (plain / ".harness/project.yaml").write_text(f'checks:\n  lint:\n    command: "{sys.executable} -c pass"\n')

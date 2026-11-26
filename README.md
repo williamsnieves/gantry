@@ -265,6 +265,29 @@ This is advisory context for routing, **not a hard gate suppressor**.
 
 A frontend project can still activate Security or Infrastructure if the actual change creates those risks.
 
+## Project stage: MVP or product
+
+```bash
+gantry install --runtime claude --stage mvp        # proving an idea
+gantry install --runtime claude --stage product    # people depend on it
+```
+
+The harness measures the risk of each change; how much process the project carries is a person's decision. A stage sets the optional parts at once:
+
+| | `mvp` | `product` |
+|---|---|---|
+| Delivery profile (what the hooks refuse) | `lean` | `standard` |
+| Review receipts checked in CI | off | on |
+| Mutation testing of the change | off | on |
+| Git hooks that refuse a secret | on | on |
+
+- **What a stage never relaxes:** the secret scan, the project's own checks, and the gates a change's risk routes. An MVP change that touches authentication still gets the Security gate, and the Final Pre-PR Gate is the same in both.
+- **A flag for one option wins:** `--stage product --no-mutation` is a product without mutation testing, and `gantry doctor` says where the installation differs from its stage.
+- **Promotion:** installing with `--stage product` over an `mvp` turns the options on; `gantry doctor` then lists what product expects and the project lacks (no CI step for receipts, no test command for mutation, no written conventions).
+- **No stage:** `gantry init` also offers `custom`, which asks for each option, and an installation made without `--stage` stays as it was.
+
+The harness keeps no record of what an MVP skipped: a change reviewed without receipts or mutation testing is not reviewed again on promotion.
+
 ## Delivery profiles
 
 ```text
