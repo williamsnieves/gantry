@@ -138,7 +138,11 @@ out, _ = gantry("doctor", "--project", plain)
 assert out.startswith("DOCTOR: PASS WITH WARNINGS") and "not a git repository" in out and "fix: git init" in out, out
 assert "docs/conventions.md is not written yet" in out and "every gate runs on the session's model" in out, out
 subprocess.run(["git", "init", "-q"], cwd=plain, check=True)
-(plain / ".gitignore").write_text(".harness/runtime/\n")
+# The review state of the change in progress is local: the installation keeps it out of git by itself.
+(plain / ".harness/runtime/claude").mkdir(parents=True)
+(plain / ".harness/runtime/claude/routing-plan.yaml").write_text("lane: SPEC\n")
+listed = subprocess.run(["git", "status", "--porcelain", "--untracked-files=all"], cwd=plain, capture_output=True, text=True).stdout
+assert ".harness/bin/route.py" in listed and ".harness/runtime" not in listed, listed
 (plain / ".harness/models.yaml").write_text("claude:\n  fast: haiku\n  quick: haiku\n")
 (plain / "docs").mkdir()
 (plain / "docs/conventions.md").write_text("# Conventions\n")

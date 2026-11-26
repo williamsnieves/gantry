@@ -825,8 +825,8 @@ def cmd_doctor(args):
         if not inside:
             warnings.append(("This is not a git repository; the router cannot tell what a change contains, so every review covers nothing.", "git init"))
         elif subprocess.run(["git", "check-ignore", "-q", ".harness/runtime/x"], cwd=project).returncode != 0:
-            notes.append((".harness/runtime/ (routing plans, gate reports, approvals) is not ignored by git, so it will appear in your commits.",
-                          "add `.harness/runtime/` to .gitignore unless you want review state versioned"))
+            warnings.append((".harness/runtime/ (routing plan, gate reports, approvals) is not ignored by git; it is local review state "
+                             "and every branch writes the same files.", "gantry upgrade, which installs .harness/.gitignore"))
 
         # What the Validator will run.
         described = project / PROJECT_FILE

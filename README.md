@@ -157,6 +157,10 @@ python3 .harness/bin/release.py record --outcome INCIDENT --change "#42" --note 
 
 `record` appends a line to `docs/releases.md`. A rollback or an incident says what happened and, with `--missed`, which risk nobody declared when the change was routed. The harness does not deploy and does not watch production: the record is written by whoever saw the outcome. It is the list of what got past the review.
 
+## What goes into git
+
+Commit the installation: `.harness/`, `.agents/skills/`, the runtime folders and `AGENTS.md`, so everyone on the project works with the same harness. `.harness/runtime/` is the exception and the installation ignores it by itself: it holds the routing plan, the gate reports and the approvals of the change in progress, which are local to a working copy. What a reviewer needs from them goes in the pull request, where `harness-ship` puts the conditions.
+
 ## Project scope
 
 ```text
