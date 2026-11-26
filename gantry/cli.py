@@ -32,7 +32,9 @@ ALIASES = {
     "open-code": "opencode",
 }
 SCOPES = ("fullstack", "backend", "frontend", "architecture", "infrastructure", "mixed")
-PROFILES = ("lean", "standard", "strict")
+PROFILES = ("lean", "standard")
+# Accepted and installed as `standard`: it never did anything else.
+RETIRED_PROFILES = {"strict": "standard"}
 
 # Skills live once in distribution/shared and are rendered at install time. The
 # shared catalogue gets compact descriptions: specialist agents read a skill by
@@ -94,7 +96,6 @@ BACKEND = {"express", "fastify", "nestjs", "hono", "prisma", "drizzle", "typeorm
 PROFILE_MEANING = {
     "lean": "the hooks deny only edits to the harness and committing a secret",
     "standard": "the hooks also deny weakening a check, skipping a review stage, and a pull request before the review passes",
-    "strict": "the same as standard today",
 }
 
 # Set by --verbose: print one line per file instead of a count per group.
@@ -476,6 +477,7 @@ def saved_config(project: Path) -> tuple[str | None, str | None]:
     text = path.read_text(encoding="utf-8") if path.is_file() else ""
     found = [re.search(rf"[\"']?{key}[\"']?\s*:\s*[\"']?([\w-]+)", text) for key in ("scope_profile", "delivery_profile")]
     scope, profile = (m.group(1) if m else None for m in found)
+    profile = RETIRED_PROFILES.get(profile, profile)
     return (scope if scope in SCOPES else None), (profile if profile in PROFILES else None)
 
 def hooks_registered(project: Path, runtime: str) -> bool:
@@ -977,7 +979,8 @@ def build_parser():
         sp.add_argument("--project", default=".")
         sp.add_argument("--runtime", required=runtime_required, help="claude,codex,cursor,opencode,omp or all")
         sp.add_argument("--scope", choices=SCOPES, help="default: what is installed, else mixed")
-        sp.add_argument("--profile", choices=PROFILES, help="default: what is installed, else standard")
+        sp.add_argument("--profile", choices=PROFILES, type=lambda value: RETIRED_PROFILES.get(value, value),
+                        help="default: what is installed, else standard")
         sp.add_argument("--force", action="store_true", help="replace files that were edited or that the harness does not own")
         sp.add_argument("--dry-run", action="store_true")
         sp.add_argument("--no-hooks", action="store_true", help="do not register the harness guard hooks")

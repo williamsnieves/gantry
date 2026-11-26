@@ -49,4 +49,3 @@ project_scopes:
 delivery_profiles:
 - lean
 - standard
-- strict

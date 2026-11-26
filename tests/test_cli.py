@@ -92,6 +92,13 @@ assert "Name one: gantry init --runtime" in out and not (empty / ".harness").exi
 gantry("install", "--runtime", "claude", "--no-hooks", "--project", guided)
 assert "scope_profile: fullstack" in config(guided) and "delivery_profile: lean" in config(guided)
 
+# The retired `strict` profile is accepted and installed as `standard`, from a flag or from an older installation.
+gantry("install", "--runtime", "codex", "--profile", "strict", "--project", declined)
+assert "delivery_profile: standard" in config(declined)
+(declined / ".harness/harness.config.yaml").write_text(config(declined).replace("delivery_profile: standard", "delivery_profile: strict"))
+gantry("upgrade", "--project", declined)
+assert "delivery_profile: standard" in config(declined)
+
 # Upgrade: same runtimes, scope, profile and hook choice, without naming any of them.
 out, _ = gantry("upgrade", "--project", guided)
 assert "for claude, codex (hooks stay off" in out and "delivery_profile: lean" in config(guided), out

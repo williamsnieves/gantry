@@ -177,10 +177,9 @@ A frontend project can still activate Security or Infrastructure if the actual c
 ```text
 lean
 standard
-strict
 ```
 
-The profile decides how much the hooks refuse; the routing and the Final Pre-PR Gate are the same in all three. `lean` denies only edits to the harness and committing a secret. `standard` also denies weakening a check, launching a gate after the review stopped, and opening or merging a pull request before its gate passes. `strict` is the same as `standard` today.
+The profile decides how much the hooks refuse; the routing and the Final Pre-PR Gate are the same in both. `lean` denies only edits to the harness and committing a secret. `standard` also denies weakening a check, launching a gate after the review stopped, and opening or merging a pull request before its gate passes. A `strict` profile existed and did the same as `standard`; it is still accepted and installed as `standard`.
 
 ## Guardrails
 
