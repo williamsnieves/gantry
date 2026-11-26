@@ -777,6 +777,18 @@ def cmd_inspect(args):
         (project / PROJECT_FILE).write_text(detect.render(description), encoding="utf-8")
         print(f"write: {PROJECT_FILE}")
 
+def cmd_check(args):
+    """Run the project's own checks with the installed check.py."""
+    project = ensure_project(args.project)
+    runner = project / ".harness/bin/check.py"
+    if not runner.is_file():
+        raise SystemExit("The harness is not installed in this project, or is older than this command; run `gantry upgrade`.")
+    extra = (["status"] if args.status else []) + (["--only", args.only] if args.only else [])
+    # Progress goes to the terminal as it happens (stderr); the result is printed when the run ends.
+    proc = subprocess.run([sys.executable, str(runner), *extra, "--project", str(project)], cwd=project, stdout=subprocess.PIPE, text=True)
+    print(proc.stdout, end="")
+    raise SystemExit(proc.returncode)
+
 def print_entrypoints(runtimes):
     prefix = {"codex": "$"}
     print("Commands:")
@@ -861,6 +873,7 @@ def cmd_doctor(args):
         ".harness/bin/scan.py",
         ".harness/bin/release.py",
         ".harness/bin/mutate.py",
+        ".harness/bin/check.py",
         ".harness/bin/learn.py",
         ".harness/bin/githook.py",
         ".harness/core/pre-pr/FINAL-PRE-PR-GATE.md",
@@ -1153,6 +1166,12 @@ def build_parser():
     insp.add_argument("--json", action="store_true")
     insp.add_argument("--write", action="store_true", help=f"save the result to {PROJECT_FILE}")
     insp.set_defaults(func=cmd_inspect)
+
+    chk = sub.add_parser("check", help="Run the project's format, lint, type, test and build commands and say which pass")
+    chk.add_argument("--project", default=".")
+    chk.add_argument("--only", help="comma-separated check names, for example lint,test")
+    chk.add_argument("--status", action="store_true", help="print the last result for this version of the change without running anything")
+    chk.set_defaults(func=cmd_check)
 
     un = sub.add_parser("uninstall", help="Remove selected runtime overlays")
     un.add_argument("--project", default=".")

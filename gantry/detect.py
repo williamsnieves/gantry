@@ -36,12 +36,14 @@ NODE_FRAMEWORKS = {
     "@playwright/test": "playwright", "cypress": "cypress", "eslint": "eslint", "typescript": "typescript",
     "@biomejs/biome": "biome",
 }
-PYTHON_FRAMEWORKS = ("fastapi", "django", "flask", "sqlalchemy", "pydantic", "pytest", "ruff", "mypy", "pyright")
+PYTHON_FRAMEWORKS = ("fastapi", "django", "flask", "sqlalchemy", "pydantic", "pytest", "ruff", "black", "mypy", "pyright")
 NODE_SCRIPTS = {
     "test": ("test", "test:unit"),
     "lint": ("lint",),
     "typecheck": ("typecheck", "type-check", "check-types", "tsc"),
     "build": ("build",),
+    # Only a script that checks: one named `format` usually rewrites the files, which a check must not do.
+    "format": ("format:check", "format-check", "check-format", "check:format", "fmt:check", "prettier:check"),
 }
 TEST_DIRS = {"test", "tests", "__tests__", "spec", "specs", "e2e"}
 # Directories two levels down are what a person means by "where things go" in most repositories.
@@ -139,6 +141,10 @@ def python(root: Path, found: dict) -> None:
         found["checks"].setdefault("test", {"command": f"{prefix}pytest", "source": f"pytest in {where}"})
     if "ruff" in present:
         found["checks"].setdefault("lint", {"command": f"{prefix}ruff check .", "source": f"ruff in {where}"})
+    if "black" in present:
+        found["checks"].setdefault("format", {"command": f"{prefix}black --check .", "source": f"black in {where}"})
+    elif "ruff" in present and "[tool.ruff.format]" in text:
+        found["checks"].setdefault("format", {"command": f"{prefix}ruff format --check .", "source": f"[tool.ruff.format] in {where}"})
     for checker, command in (("mypy", "mypy ."), ("pyright", "pyright")):
         if checker in present:
             found["checks"].setdefault("typecheck", {"command": f"{prefix}{command}", "source": f"{checker} in {where}"})
@@ -155,6 +161,7 @@ def others(root: Path, found: dict) -> None:
         found["checks"].setdefault("test", {"command": "cargo test", "source": "Cargo.toml"})
         found["checks"].setdefault("lint", {"command": "cargo clippy -- -D warnings", "source": "Cargo.toml"})
         found["checks"].setdefault("build", {"command": "cargo build", "source": "Cargo.toml"})
+        found["checks"].setdefault("format", {"command": "cargo fmt --check", "source": "Cargo.toml"})
     if (root / "pom.xml").is_file():
         found["package_managers"].append("maven")
         found["checks"].setdefault("test", {"command": "mvn -q test", "source": "pom.xml"})
@@ -166,6 +173,9 @@ def others(root: Path, found: dict) -> None:
     for check in ("test", "lint", "typecheck", "build"):
         if re.search(rf"^{check}:", makefile, re.M):
             found["checks"].setdefault(check, {"command": f"make {check}", "source": f"Makefile target `{check}`"})
+    for target in ("format-check", "fmt-check", "check-format"):
+        if re.search(rf"^{target}:", makefile, re.M):
+            found["checks"].setdefault("format", {"command": f"make {target}", "source": f"Makefile target `{target}`"})
 
 
 def detect(project: Path) -> dict:
@@ -213,7 +223,7 @@ def detect(project: Path) -> dict:
         "layout": layout,
         "docs": [name for name in DOC_FILES if (root / name).exists()],
         "ci": [label for path, label in CI_FILES if (root / path).exists()],
-        "checks": {check: found["checks"][check] for check in ("test", "lint", "typecheck", "build") if check in found["checks"]},
+        "checks": {check: found["checks"][check] for check in ("test", "lint", "typecheck", "build", "format") if check in found["checks"]},
         "notes": found["notes"],
     }
 
@@ -261,7 +271,7 @@ def summary(description: dict) -> list[str]:
         f"  tests live:       {description['tests']}",
         f"  largest areas:    {join([area['path'] for area in description['layout'][:4]])}",
     ]
-    for name in ("test", "lint", "typecheck", "build"):
+    for name in ("test", "lint", "typecheck", "build", "format"):
         check = description["checks"].get(name)
         lines.append(f"  {name + ':':17} {check['command'] + '  (' + check['source'] + ')' if check else 'not detected'}")
     lines += [f"  note: {note}" for note in description["notes"]]

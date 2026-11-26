@@ -214,5 +214,15 @@ out, _ = gantry("install", "--runtime", "cursor", "--no-git-hooks", "--project",
 assert "remove git hook: pre-push" in out and not (hooked / ".git/hooks/pre-push").exists() and own.exists(), out
 assert "git_hooks: false" in config(hooked)
 
+# `gantry check` runs the commands the project recorded, with no model, and exits non-zero when one fails.
+(plain / ".harness/project.yaml").write_text(f'checks:\n  lint:\n    command: "{sys.executable} -c pass"\n')
+out, _ = gantry("check", "--project", plain)
+assert "check: lint       PASS" in out and "CHECKS: PASS (passed: lint)" in out, out
+assert "CHECKS: PASS (passed: lint)" in gantry("check", "--status", "--project", plain)[0]
+(plain / ".harness/project.yaml").write_text(f'checks:\n  lint:\n    command: "{sys.executable} -c raise(SystemExit(3))"\n')
+out, _ = gantry("check", "--only", "lint", "--project", plain, expect=1)
+assert "check: lint       FAIL (exit 3)" in out, out
+assert "older than this command" in gantry("check", "--project", empty, expect=1)[0]
+
 shutil.rmtree(tmp)
 print("CLI TESTS: PASS")

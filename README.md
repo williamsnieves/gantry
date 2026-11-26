@@ -90,14 +90,38 @@ Oh My Pi   → /harness-run
 
 ## Project description
 
-`gantry install` looks at the project once and writes what it finds to `.harness/project.yaml`: whether the project is new or existing, its languages, package managers and frameworks, its CI, and the commands that run its tests, lint, type checks and build. Nothing is executed and no model is called.
+`gantry install` looks at the project once and writes what it finds to `.harness/project.yaml`: whether the project is new or existing, its languages, package managers and frameworks, its CI, and the commands that run its tests, lint, type checks, build and format check. Nothing is executed and no model is called.
 
 ```bash
 gantry inspect --project ~/code/my-app          # print it
 gantry inspect --project ~/code/my-app --write  # refresh the saved file after changing tooling
 ```
 
-The Validator starts from those commands instead of rediscovering them on every run. Agents cannot edit the file: the commands that judge a change are not chosen by the agent being judged. Correct it by hand when detection is wrong; a reinstall keeps your version and `inspect --write` replaces it. A command is listed only when the project declares it (a script, a dependency, a build file); anything else is reported as not detected.
+The Validator starts from those commands instead of rediscovering them on every run. Agents cannot edit the file: the commands that judge a change are not chosen by the agent being judged. Correct it by hand when detection is wrong; a reinstall keeps your version and `inspect --write` replaces it. A command is listed only when the project declares it (a script, a dependency, a build file); anything else is reported as not detected. A format command is listed only when it checks without rewriting files (`format:check`, `black --check`, `cargo fmt --check`).
+
+## Do the checks pass? One command, no model
+
+```bash
+gantry check --project ~/code/my-app     # or, inside the project: python3 .harness/bin/check.py
+```
+
+It runs every command under `checks:` in `.harness/project.yaml` (format, lint, types, tests, build, and any other you add there) and says which pass, with the end of the output of each one that fails. No model is called, so it costs nothing and gives the same answer to whoever runs it: you before a commit, an agent in any tool, or a CI step.
+
+```text
+check: lint       FAIL (exit 1)  `npm run lint`  3.1 s
+    src/cart.ts:14:7  error  'total' is assigned a value but never used
+check: typecheck  PASS  `npm run typecheck`  6.4 s
+check: test       PASS  `npm test`  21.8 s
+CHECKS: FAIL (failed: lint; passed: typecheck, test)
+```
+
+- **All of them, fastest first:** a failure does not stop the run, so one run says everything that is wrong.
+- **The commands are not arguments:** they come from the file agents cannot edit. `--only lint,test` picks among them; it cannot add one.
+- **Run once per version of the change:** the result is saved with the digest of the change. `check.py status` (or `gantry check --status`) prints it again without running anything, and says `STALE` after an edit. The agent that builds the change runs it before the review, and the Validator reads that result instead of running the commands again.
+- **At the final gate:** a check that failed on the current version blocks the pull request, whatever the gates decided. A result that was never produced blocks nothing: the Validator still runs the checks.
+- **No shell:** each command is run as written, without a shell. Put a pipeline or `&&` in a script and record the script.
+
+Add a check by writing it under `checks:` yourself, for example `terraform validate` or an end-to-end suite; `gantry inspect --write` detects the usual ones again and replaces the file.
 
 ## Onboarding
 
@@ -296,6 +320,8 @@ BUILD
   a failing check is fixed in the code, not by weakening the check
     every runtime: the final gate carries a condition naming any lint, type, test or CI configuration the change edits
     with hooks: the edit and `--no-verify` are denied (not in the lean profile)
+  the project's own format, lint, type, test and build commands pass on the version that is reviewed
+    every runtime: `check.py` runs the commands recorded in .harness/project.yaml and ties the result to the change's digest; `check.py status` prints it again without running anything; the final gate blocks on one that failed on the current version
   a secret does not leave in the change
     every runtime: `scan.py` reads every added line; the final gate blocks on a credential in a provider's format or a private key, and carries a condition for anything that may be one; with the git hooks installed, git refuses the commit and the push whoever runs them
     with hooks: `git commit` and `git push` are denied while one is there
@@ -378,6 +404,7 @@ gantry upgrade     bring the installation to this version, keeping its choices
 gantry doctor      check the installation and say how to fix it
 gantry status      what is installed
 gantry inspect     what the project is; --write saves it
+gantry check       run the project's format, lint, type, test and build commands; --status reads the last result
 gantry uninstall   remove runtimes; --purge-shared removes everything
 ```
 
@@ -410,6 +437,7 @@ python3 tests/test_detect.py          # project detection
 python3 tests/test_spec.py            # specification check
 python3 tests/test_scan.py            # security scan of added lines
 python3 tests/test_mutate.py          # mutation testing of added lines
+python3 tests/test_check.py           # the project's own checks, run once per version
 python3 tests/test_release.py         # release gate and release record
 python3 tests/test_learn.py           # rules learned from incidents
 python3 tests/test_eval_scoring.py    # scenario scorer
