@@ -98,6 +98,16 @@ PROFILE_MEANING = {
     "standard": "the hooks also deny weakening a check, skipping a review stage, and a pull request before the review passes",
 }
 
+# Hooks of git itself, which act on whoever commits or pushes, in any tool. See distribution/core/.harness/bin/githook.py.
+GIT_HOOKS = ("pre-commit", "pre-push")
+GIT_HOOK_MARK = "# gantry:"
+GIT_HOOK_SCRIPT = """#!/bin/sh
+{mark} installed by `gantry install --git-hooks`; remove with `gantry install --runtime <tool> --no-git-hooks`
+[ -f "{prefix}.harness/bin/githook.py" ] || exit 0
+command -v python3 >/dev/null 2>&1 || exit 0
+exec python3 "{prefix}.harness/bin/githook.py" {name} "$@"
+"""
+
 # Set by --verbose: print one line per file instead of a count per group.
 VERBOSE = False
 
@@ -404,7 +414,7 @@ def remove_agents_block(project: Path, *, dry_run: bool):
         else:
             path.unlink()
 
-def write_harness_config(project: Path, runtimes: list[str], scope: str, profile: str, *, dry_run: bool, receipts: bool = False, mutation: bool = False):
+def write_harness_config(project: Path, runtimes: list[str], scope: str, profile: str, *, dry_run: bool, receipts: bool = False, mutation: bool = False, git_hooks: bool = False):
     config_path = project / ".harness/harness.config.yaml"
     config = {
         "harness_version": VERSION,
@@ -428,6 +438,7 @@ def write_harness_config(project: Path, runtimes: list[str], scope: str, profile
             "allow_pass_with_conditions": True,
             "receipts": receipts,
             "mutation": mutation,
+            "git_hooks": git_hooks,
         },
         "installed_runtimes": runtimes,
     }
@@ -495,6 +506,54 @@ def hooks_registered(project: Path, runtime: str) -> bool:
     path = project / HOOK_SETTINGS[runtime]
     return path.is_file() and HOOK_MARKER in path.read_text(encoding="utf-8", errors="replace")
 
+def git_out(project: Path, *arguments: str) -> str | None:
+    try:
+        proc = subprocess.run(["git", *arguments], cwd=project, capture_output=True, text=True)
+    except OSError:
+        return None
+    return proc.stdout.strip() if proc.returncode == 0 else None
+
+def git_hook_files(project: Path) -> dict[str, Path] | None:
+    """Where git looks for each hook in this clone (it honours core.hooksPath), or None outside a repository."""
+    folder = git_out(project, "rev-parse", "--git-path", "hooks")
+    if folder is None:
+        return None
+    return {name: (project / folder / name) for name in GIT_HOOKS}
+
+def git_hooks_wired(project: Path) -> list[str]:
+    """The hooks that do not reach the harness: missing, or the project's own without a call to githook.py."""
+    files = git_hook_files(project) or {}
+    return [name for name, path in files.items()
+            if not path.is_file() or "githook.py" not in path.read_text(encoding="utf-8", errors="replace")]
+
+def install_git_hooks(project: Path, *, dry_run: bool):
+    files = git_hook_files(project)
+    if files is None:
+        print("git hooks: not installed, this is not a git repository yet; run `gantry upgrade` after `git init`")
+        return
+    prefix = git_out(project, "rev-parse", "--show-prefix") or ""
+    for name, path in files.items():
+        text = path.read_text(encoding="utf-8", errors="replace") if path.is_file() else ""
+        if text and GIT_HOOK_MARK not in text:
+            if "githook.py" not in text:
+                print(f"keep: your own {name} hook ({path.relative_to(project) if path.is_relative_to(project) else path}). "
+                      f"To add the harness's check, call from it: python3 {prefix}.harness/bin/githook.py {name}")
+            continue
+        script = GIT_HOOK_SCRIPT.format(mark=GIT_HOOK_MARK, prefix=prefix, name=name)
+        if text != script:
+            print(f"{'[DRY-RUN] ' if dry_run else ''}git hook: {name}")
+            if not dry_run:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(script, encoding="utf-8")
+                path.chmod(0o755)
+
+def remove_git_hooks(project: Path, *, dry_run: bool):
+    for name, path in (git_hook_files(project) or {}).items():
+        if path.is_file() and GIT_HOOK_MARK in path.read_text(encoding="utf-8", errors="replace"):
+            print(f"{'[DRY-RUN] ' if dry_run else ''}remove git hook: {name}")
+            if not dry_run:
+                path.unlink()
+
 def print_report(state: dict, dry_run: bool):
     for label, counts in state.pop("_report", {}).items():
         changed = ", ".join(f"{n} {kind}" for kind, n in counts.items() if n and kind != "unchanged") or "unchanged"
@@ -514,6 +573,7 @@ def cmd_install(args):
     profile = args.profile or saved_profile or "standard"
     receipts = saved_receipts(project) if getattr(args, "receipts", None) is None else args.receipts
     mutation = saved_option(project, "mutation") if getattr(args, "mutation", None) is None else args.mutation
+    git_hooks = saved_option(project, "git_hooks") if getattr(args, "git_hooks", None) is None else args.git_hooks
 
     # Look before writing: a refusal halfway would leave files the install state does not know about.
     if not args.force:
@@ -533,8 +593,12 @@ def cmd_install(args):
 
     final_runtimes = sorted(set(state["runtimes"]) | set(runtimes), key=RUNTIMES.index)
     write_harness_config(
-        project, final_runtimes, scope, profile, dry_run=args.dry_run, receipts=receipts, mutation=mutation
+        project, final_runtimes, scope, profile, dry_run=args.dry_run, receipts=receipts, mutation=mutation, git_hooks=git_hooks
     )
+    if git_hooks:
+        install_git_hooks(project, dry_run=args.dry_run)
+    elif getattr(args, "git_hooks", None) is False:
+        remove_git_hooks(project, dry_run=args.dry_run)
 
     models = project / MODELS_FILE
     if models.exists():
@@ -626,6 +690,7 @@ def cmd_init(args):
     hooks = not args.no_hooks
     receipts = saved_receipts(project) if args.receipts is None else args.receipts
     mutation = saved_option(project, "mutation") if args.mutation is None else args.mutation
+    git_hooks = saved_option(project, "git_hooks") if args.git_hooks is None else args.git_hooks
     proposal = f"--runtime {','.join(runtimes) or '<tool>'} --scope {scope} --profile {profile}"
 
     if args.yes or (args.runtime and not interactive()):
@@ -666,19 +731,23 @@ def cmd_init(args):
             print("\nShould CI be able to check that what is merged is what was reviewed? The final gate then writes a small receipt")
             print("per change, which you commit with it, and `route.py verify` fails a pull request whose content has none.")
             receipts = ask_yes("Keep review receipts?", default=receipts)
+        if args.git_hooks is None:
+            print("\nShould git itself refuse a commit or a push that adds a secret? That holds for every tool and for people,")
+            print("in this clone; a project with its own git hooks is told the line to add instead.")
+            git_hooks = ask_yes("Install the git hooks?", default=git_hooks)
         if args.mutation is None:
             print("\nShould the review check that the tests would notice if the new lines were wrong? It changes each added line")
             print("(`>=` to `>`, `&&` to `||`) and runs your tests against it: about a dozen extra test runs per review.")
             mutation = ask_yes("Turn mutation testing on?", default=mutation)
         hook_note = f", hooks {'on' if hooks else 'off'}" if hookable else "; none of these tools has hooks, so the rules are checked at the Final Pre-PR Gate"
-        print(f"\nInstall for {', '.join(runtimes)} with scope {scope}, profile {profile}{hook_note}{', review receipts on' if receipts else ''}{', mutation testing on' if mutation else ''}.")
+        print(f"\nInstall for {', '.join(runtimes)} with scope {scope}, profile {profile}{hook_note}{', review receipts on' if receipts else ''}{', mutation testing on' if mutation else ''}{', git hooks on' if git_hooks else ''}.")
         if not ask_yes("Go ahead?"):
             print("Nothing was changed.")
             return
         print()
 
     cmd_install(argparse.Namespace(project=str(project), runtime=",".join(runtimes), scope=scope, profile=profile,
-                                   force=args.force, dry_run=args.dry_run, no_hooks=not hooks, receipts=receipts, mutation=mutation))
+                                   force=args.force, dry_run=args.dry_run, no_hooks=not hooks, receipts=receipts, mutation=mutation, git_hooks=git_hooks))
 
 def cmd_upgrade(args):
     """Reinstall what is installed with this version of Gantry, keeping the runtimes, scope, profile and hook choice."""
@@ -692,7 +761,7 @@ def cmd_upgrade(args):
     print(f"Gantry {state.get('harness_version') or 'unknown'} -> {VERSION} for {', '.join(runtimes)}"
           f"{' (hooks stay off; turn them on with `gantry install`)' if no_hooks else ''}")
     cmd_install(argparse.Namespace(project=str(project), runtime=",".join(runtimes), scope=scope, profile=profile,
-                                   force=args.force, dry_run=args.dry_run, no_hooks=no_hooks, receipts=None, mutation=None))
+                                   force=args.force, dry_run=args.dry_run, no_hooks=no_hooks, receipts=None, mutation=None, git_hooks=None))
 
 
 def cmd_inspect(args):
@@ -793,6 +862,7 @@ def cmd_doctor(args):
         ".harness/bin/release.py",
         ".harness/bin/mutate.py",
         ".harness/bin/learn.py",
+        ".harness/bin/githook.py",
         ".harness/core/pre-pr/FINAL-PRE-PR-GATE.md",
         ".harness/agents/reviewer/AGENT.md",
         ".harness/evals/end-to-end/E2E-ORACLE.md",
@@ -859,6 +929,14 @@ def cmd_doctor(args):
         elif subprocess.run(["git", "check-ignore", "-q", ".harness/runtime/x"], cwd=project).returncode != 0:
             warnings.append((".harness/runtime/ (routing plan, gate reports, approvals) is not ignored by git; it is local review state "
                              "and every branch writes the same files.", "gantry upgrade, which installs .harness/.gitignore"))
+
+        # Git hooks live in each clone, not in the repository: a fresh clone has none until it is upgraded.
+        if saved_option(project, "git_hooks") and inside:
+            unwired = git_hooks_wired(project)
+            if unwired:
+                warnings.append((f"Git hooks are on, but in this clone {' and '.join(unwired)} does not reach the harness.",
+                                 "gantry upgrade; if the project has its own hook there, call "
+                                 "`python3 .harness/bin/githook.py <hook name>` from it"))
 
         # Receipts are only worth committing if something checks them.
         if saved_receipts(project):
@@ -985,6 +1063,7 @@ def cmd_uninstall(args):
                     if not args.dry_run:
                         state["managed_files"].pop(key, None)
         remove_agents_block(project, dry_run=args.dry_run)
+        remove_git_hooks(project, dry_run=args.dry_run)
         if not args.dry_run:
             state["shared_installed"] = False
 
@@ -1002,7 +1081,8 @@ def cmd_uninstall(args):
                     profile = data.get("project", {}).get("delivery_profile", profile)
                 except Exception:
                     pass
-            write_harness_config(project, remaining, scope, profile, dry_run=False, receipts=saved_receipts(project), mutation=saved_option(project, "mutation"))
+            write_harness_config(project, remaining, scope, profile, dry_run=False, receipts=saved_receipts(project), mutation=saved_option(project, "mutation"),
+                                 git_hooks=saved_option(project, "git_hooks"))
             save_state(project, state)
         elif args.purge_shared:
             sp = state_path(project)
@@ -1036,6 +1116,9 @@ def build_parser():
 
         sp.add_argument("--mutation", action=argparse.BooleanOptionalAction, default=None,
                         help="mutate the lines a change adds and run the tests against them; default: what is installed, else off")
+
+        sp.add_argument("--git-hooks", action=argparse.BooleanOptionalAction, default=None,
+                        help="make git refuse a commit or push that adds a secret, in any tool; default: what is installed, else off")
 
     init = sub.add_parser("init", help="Guided install: proposes the tools, scope and profile it finds, and asks")
     common_install(init, runtime_required=False)
