@@ -125,4 +125,69 @@ for name, pattern in scan.RISKY:
     for line in QUIET:
         assert not pattern.search(line), (name, line)
 
+# Performance rules read the lines around the added one: a loop of the same function counts, a loop elsewhere does not.
+def slow(code, number=None):
+    lines = code.strip("\n").split("\n")
+    return [what for n in ([number] if number else range(1, len(lines) + 1)) for what in scan.slow(lines, n)]
+
+LOOPED = [
+    "for (const id of ids) {\n  const user = await this.userRepository.findById(id);\n}",
+    "const users = await Promise.all(ids.map(async (id) => await prisma.user.findUnique({ where: { id } })));",
+    "items.forEach(async (item) => {\n  if (item.stale) {\n    await fetch(item.url);\n  }\n});",
+    "for row in rows:\n    owner = session.query(User).get(row.owner_id)",
+    "while page:\n    for item in page:\n        requests.post(url, json=item)",
+]
+NOT_LOOPED = [
+    "const user = await this.userRepository.findById(id);",
+    "await outboxRepository.markProcessed(events.map((e) => e.id));",                    # the loop builds the argument
+    "for (const id of ids) {\n  total += 1;\n}\nconst user = await prisma.user.count();",  # the loop already ended
+    "for (const id of ids) {\n  run(async function load() {\n    await fetch(url);\n  });\n}",  # another function's body
+    "for row in rows:\n    total += row.amount\nrequests.post(url, json=total)",
+    "// for (const id of ids) await prisma.user.findUnique(id)",
+]
+for code in LOOPED:
+    assert "query or request inside a loop" in slow(code), code
+for code in NOT_LOOPED:
+    assert "query or request inside a loop" not in slow(code), code
+UNBOUNDED = ["const rows = await prisma.incident.findMany({ where: { tenantId } });",
+             "const rows = await prisma.incident.findMany({\n  where: { tenantId },\n  orderBy: { createdAt: \"desc\" },\n});",
+             "const all = await Incident.find({});", "const all = await repo.find();"]
+BOUNDED = ["const rows = await prisma.incident.findMany({ where: { tenantId }, take: 50 });",
+           "const rows = await prisma.incident.findMany({\n  where: { tenantId },\n  take: limit,\n  cursor,\n});",
+           "const all = await Incident.find({}).limit(20);", "const one = items.find((i) => i.id === id);"]
+for code in UNBOUNDED:
+    assert slow(code, 1) == ["list read without a limit"], code
+for code in BOUNDED:
+    assert slow(code) == [], code
+
+# In a change: only added lines of runtime code count, and the finding routes the Performance gate until a person dismisses it.
+with tempfile.TemporaryDirectory() as tmp:
+    project = Path(tmp).resolve()
+    (project / "src").mkdir()
+    (project / "src/list.ts").write_text("export async function old(ids) {\n  for (const id of ids) {\n    await db.get(id);\n  }\n}\n")
+    git(project, "init", "-q", "-b", "main")
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "base")
+    git(project, "checkout", "-q", "-b", "feature")
+    with (project / "src/list.ts").open("a") as file:
+        file.write("export const label = 'x';\n")
+    (project / "tests").mkdir()
+    (project / "tests/list.test.ts").write_text("for (const id of ids) {\n  await db.get(id);\n}\n")
+    assert "SECURITY SCAN: PASS" in run("scan.py", cwd=project)  # the old loop and the test are not the change's doing
+    (project / "src/owners.ts").write_text("export async function owners(rows) {\n  for (const row of rows) {\n    row.owner = await db.user.get(row.ownerId);\n  }\n}\n")
+    out = run("scan.py", cwd=project)
+    assert "slow: query or request inside a loop at src/owners.ts:3 (routes the Performance gate)" in out, out
+    # Rewriting a line that was already slow adds nothing; a second one in the same file does.
+    (project / "src/list.ts").write_text("export async function old(ids) {\n  for (const id of ids) {\n    await db.get(id, { fresh: true });\n  }\n}\n")
+    assert "src/list.ts" not in run("scan.py", cwd=project)
+    with (project / "src/list.ts").open("a") as file:
+        file.write("export async function more(ids) {\n  for (const id of ids) {\n    await db.put(id);\n  }\n}\n")
+    assert run("scan.py", cwd=project).count("src/list.ts") == 1
+    (project / "src/list.ts").write_text("export async function old(ids) {\n  for (const id of ids) {\n    await db.get(id);\n  }\n}\n")
+    plan = ("plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND")
+    out = run("route.py", *plan, cwd=project)
+    assert "PERFORMANCE (the scan found query or request inside a loop at src/owners.ts:3" in out and "REQUIRED        performance" in out, out
+    out = run("route.py", *plan, "--dismiss", "PERFORMANCE=rows is at most three", cwd=project)
+    assert "REQUIRED        performance" not in out, out
+
 print("SCAN TESTS: PASS")

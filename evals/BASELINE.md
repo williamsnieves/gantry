@@ -366,3 +366,16 @@ One trial of the unlabelled-control case, `--execute`, the lead on `claude-fable
 - The lead named the model itself in all four launches, following the `models:` line, so the hook had nothing to rewrite.
 
 This is not the shipped policy. In the `DESIGN` lane the policy keeps reviewers on `deep`; the trial mapped `deep` to the cheaper model on purpose, to see whether the defect survives it. One trial of one case with a defect: it says a cheaper model can find this defect, not that it finds defects as often. The two runs also differ in whether the checks were executable. Not measured: the planted leak and the control on the cheaper model, `haiku` for the Validator in a real review, and a false alarm rate.
+
+## Performance rules: false alarms before shipping them
+
+The scan gained two performance rules (a query or request inside a loop; a list read without a limit). Before wiring them to the router, every runtime code file of two projects was scanned as if all its lines were new, which is the worst case: a real change adds a few lines.
+
+| Project | Runtime code files | Findings | What they were |
+|---|---|---|---|
+| A TypeScript full-stack application (Express, Prisma, React) | 66 | 4, then 3 | Three list reads with no limit, each filtered by an owner key: real, though two are bounded in practice by how many teams a user has. One false alarm, `await repo.save(items.map(...))`, where the loop builds the argument; the rule was corrected and it no longer fires |
+| This repository (Python, plus the TypeScript fixtures) | 34 | 5 | The same unbounded list read, once per copy of the fixture's repository file |
+
+The second row exposed a cost: the three review cases rewrite a list read that the fixture already had, and the rule counted it as new, which would have added a Performance gate to every one of those reviews. A finding now counts only where the file has more of its kind than it had at the base of the change. With that, the clean control case produces no finding.
+
+No model was called. Not measured: what the rules miss, how often the trigger is dismissed, the cost of the Performance gate they route, and any language but TypeScript in real code; the Python patterns are covered by `tests/test_scan.py` only.

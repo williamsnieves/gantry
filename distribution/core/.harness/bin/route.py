@@ -208,6 +208,9 @@ GUARDRAILS = (
      "and carries a condition for anything that may be one", "`git commit` and `git push` are denied while one is there"),
     ("build", "code that needs a security reviewer gets one",
      "a risky pattern in the added lines adds the SECURITY trigger to the routing plan, which routes the Security gate", ""),
+    ("build", "code that needs a performance reviewer gets one",
+     "a query or request inside a loop, or a list read without a limit, in the added lines adds the PERFORMANCE trigger "
+     "to the routing plan, which routes the Performance gate; `route.py plan --dismiss` drops it with a written reason", ""),
     ("review", "a reviewer reports and does not fix; a report is what the reviewer wrote",
      "the final gate rejects a report changed after its result was recorded",
      "a reviewer can write only its own report, and nobody else can write it"),
@@ -489,9 +492,11 @@ def scan_change(root: Path, paths: list[str]) -> dict[str, list[dict]]:
 def detect_signals(paths: list[str], root: Path | None = None) -> list[dict]:
     """Triggers the change itself shows: from the paths it touches and, with `root`, from the lines it adds."""
     signals = []
-    risky = scan_change(root, paths)["risky"] if root else []
-    if risky:
-        signals.append({"dimension": "SECURITY", "evidence": "the security scan found " + scan.summary(risky)})
+    scanned = scan_change(root, paths) if root else {}
+    if scanned.get("risky"):
+        signals.append({"dimension": "SECURITY", "evidence": "the security scan found " + scan.summary(scanned["risky"])})
+    if scanned.get("slow"):
+        signals.append({"dimension": "PERFORMANCE", "evidence": "the scan found " + scan.summary(scanned["slow"])})
     for dimension, description, matches in PATH_SIGNALS:
         hits = [p for p in paths if matches(p)]
         if hits:
@@ -1078,7 +1083,8 @@ def pillars(root: Path, runtime: str) -> list[str]:
     lines = []
     for name, judges, triggers in PILLARS:
         ran = [f"{agent} {gates[agent]['decision']}" for agent in required if agent in judges and agent in gates]
-        scanned = "added lines scanned for secrets and risky patterns; " if name == "security" else ""
+        scanned = {"security": "added lines scanned for secrets and risky patterns; ",
+                   "performance": "added lines scanned for queries in loops and unbounded reads; "}.get(name, "")
         if ran:
             lines.append(f"{name}: {scanned}{', '.join(ran)}")
         else:
