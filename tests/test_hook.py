@@ -162,6 +162,27 @@ with tempfile.TemporaryDirectory() as tmp:
     (project / "src/app.ts").write_text("export const a = 3;\n")  # a post-gate edit makes readiness stale
     assert "edited after the routing plan" in denied("Bash", command="gh pr create --fill")
 
+    # A gate is launched on the model the project maps its tier to, whatever the launch asked for.
+    def launched(agent, **extra):
+        payload = json.dumps({"hook_event_name": "PreToolUse", "tool_name": "Agent", "cwd": str(project),
+                              "tool_input": {"subagent_type": agent, "prompt": "review", **extra}})
+        proc = subprocess.run([sys.executable, str(project / ".harness/bin/hook.py"), "claude"], input=payload, capture_output=True, text=True)
+        assert proc.returncode == 0 and not proc.stderr, proc.stderr
+        return json.loads(proc.stdout)["hookSpecificOutput"] if proc.stdout.strip() else None
+
+    subprocess.run([*route, "plan", "--runtime", "claude", "--work-mode", "IMPLEMENTATION", "--scope", "BACKEND",
+                    "--trigger", "BEHAVIORAL=x"], cwd=project, check=True, capture_output=True)
+    assert launched("validator") is None  # the installed file maps nothing
+    assert 'fast: ""' in (project / ".harness/models.yaml").read_text()
+    denied("Edit", file_path=".harness/models.yaml")
+    (project / ".harness/models.yaml").write_text("claude:\n  fast: haiku\n  standard: sonnet\n")
+    out = launched("validator", model="opus")
+    assert out["permissionDecision"] == "allow" and out["updatedInput"] == {"subagent_type": "validator", "prompt": "review", "model": "haiku"}, out
+    assert launched("qa")["updatedInput"]["model"] == "sonnet"
+    assert launched("validator", model="haiku") is None and launched("reviewer") is None and launched("general-purpose") is None
+    record("validator", "CHANGES_REQUIRED")
+    assert launched("qa")["permissionDecision"] == "deny"  # a stopped review is still stopped
+
     # The lean profile keeps only the protection of the harness itself.
     gantry("install", "--runtime", "claude", "--profile", "lean", "--project", str(project))
     allowed("Edit", file_path="eslint.config.js")

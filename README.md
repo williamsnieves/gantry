@@ -119,6 +119,27 @@ The lane comes from `python3 .harness/bin/route.py lane`, from the same risk tri
 
 The routing plan records the lane. When a `SPEC` or `DESIGN` change reaches the Final Pre-PR Gate without an existing file passed as `--behavior-source`, the gate still passes but carries a condition saying the accepted behavior was not written down, so a person sees it in the pull request.
 
+## Which model runs each gate
+
+The router gives every gate a tier, from the gate's job and the lane of the change:
+
+| Gate | `DIRECT` and `SPEC` lanes | `DESIGN` lane |
+|---|---|---|
+| Validator | `fast` | `standard` |
+| Code reviews, QA, Performance, Infrastructure, Detail Analyst | `standard` | `deep` |
+| Security, Architecture reviews, Reviewer | `deep` | `deep` |
+
+The tier follows the risk, so nothing is saved on a risky change or on the gates that judge risk. Which model a tier means is the project's decision, in `.harness/models.yaml`:
+
+```yaml
+claude:
+  fast: haiku
+  standard: sonnet
+  deep: ""        # empty: the session's own model
+```
+
+The installer writes the file with every tier empty, which runs every gate on the session's model as before, and never overwrites it. With a tier filled in, `route.py plan` shows the model beside each gate and the `next:` line is followed by `models: launch validator=haiku`. On Claude Code the hook launches the gate on that model whatever the launch asked for; on other runtimes the lead follows the `models:` line where the runtime lets it choose.
+
 ## Shipping, and what happened after
 
 The `harness-ship` skill takes a reviewed change out and closes the loop on it.
@@ -190,6 +211,9 @@ REVIEW
   a reviewer reports and does not fix; a report is what the reviewer wrote
     every runtime: the final gate rejects a report changed after its result was recorded
     with hooks: a reviewer can write only its own report, and nobody else can write it
+  each gate runs on the model its job and the change's risk call for, when the project maps tiers to models
+    every runtime: `route.py plan` records a tier per gate and `next:` names the model to launch
+    with hooks: the gate is launched on that model whatever was asked
   the review stops at the first stage that does not pass
     every runtime: `route.py next`; the final gate stays blocked
     with hooks: launching a later gate is denied (not in the lean profile)

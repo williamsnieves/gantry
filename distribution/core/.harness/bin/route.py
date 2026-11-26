@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -144,6 +145,17 @@ LANES = {
 }
 DESIGN_TRIGGERS = ("ARCHITECTURE", "SECURITY", "DATA_INTEGRITY", "MIGRATION", "COMPATIBILITY")
 NOT_BUILDING = ("DISCOVERY", "REVIEW_ONLY")
+# How capable a model each gate needs. The tier follows the gate's job and the lane, so it follows the risk:
+# nothing is saved on a change in the DESIGN lane or on the gates that judge security, architecture and the whole.
+TIERS = {
+    "fast": "runs the project's checks and reports them",
+    "standard": "reviews code against known rules",
+    "deep": "judges risk, design or the change as a whole",
+}
+DEEP_AGENTS = ("security", "backend-architecture-review", "frontend-architecture-review", "reviewer")
+# Which model each tier runs on, per runtime. The user's file; empty means the session's own model.
+MODELS_FILE = ".harness/models.yaml"
+
 # Changes that cannot simply be merged: something has to happen in order, be verified and be undoable.
 ROLLOUT_TRIGGERS = ("MIGRATION", "INFRASTRUCTURE", "DATA_INTEGRITY")
 ROLLOUT_MODES = ("MIGRATION", "RELEASE_ONLY")
@@ -167,7 +179,7 @@ PASSING = ("PASS", "PASS_WITH_CONDITIONS")
 # always protected from agent edits; quality configuration is protected unless the
 # delivery profile is lean.
 HARNESS_PROTECTED = (".harness/core/", ".harness/bin/", ".harness/agents/", ".harness/evals/")
-HARNESS_PROTECTED_FILES = (".harness/harness.config.yaml", ".harness/project.yaml", ".harness/install-state.json",
+HARNESS_PROTECTED_FILES = (".harness/harness.config.yaml", ".harness/project.yaml", ".harness/models.yaml", ".harness/install-state.json",
                            ".harness/runtime/approvals.json", ".claude/settings.json")
 # Written by `spec.py approve`: which specifications a person approved, by content.
 APPROVALS_FILE = ".harness/runtime/approvals.json"
@@ -195,6 +207,8 @@ GUARDRAILS = (
     ("review", "a reviewer reports and does not fix; a report is what the reviewer wrote",
      "the final gate rejects a report changed after its result was recorded",
      "a reviewer can write only its own report, and nobody else can write it"),
+    ("review", "each gate runs on the model its job and the change's risk call for, when the project maps tiers to models",
+     "`route.py plan` records a tier per gate and `next:` names the model to launch", "the gate is launched on that model whatever was asked"),
     ("review", "the review stops at the first stage that does not pass",
      "`route.py next`; the final gate stays blocked", "launching a later gate is denied (not in the lean profile)"),
     ("review", "a risk a gate sees outside its own scope is not lost under its pass",
@@ -591,6 +605,46 @@ def lane(work_mode: str, triggers: list[dict]) -> tuple[str, str]:
     return "DIRECT", "no risk trigger: behavior, data and interfaces stay as they are"
 
 
+def tier(agent: str, lane_name: str) -> str:
+    """The model tier a gate runs on for a change in this lane."""
+    if agent in DEEP_AGENTS:
+        return "deep"
+    if agent == "validator":
+        return "standard" if lane_name == "DESIGN" else "fast"
+    return "deep" if lane_name == "DESIGN" else "standard"
+
+
+def configured_models(root: Path, runtime: str) -> dict[str, str]:
+    """{tier: model} from the project's models file for this runtime; tiers left empty are absent."""
+    try:
+        text = (root / MODELS_FILE).read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    models, section = {}, None
+    for line in text.splitlines():
+        line = line.split("#", 1)[0].rstrip()
+        header = re.fullmatch(r"([\w-]+):", line)
+        entry = re.fullmatch(r"\s+(\w+):\s*[\"']?([^\"'\s]*)[\"']?", line)
+        if header:
+            section = header.group(1)
+        elif entry and section == runtime and entry.group(1) in TIERS and entry.group(2):
+            models[entry.group(1)] = entry.group(2)
+    return models
+
+
+def gate_models(root: Path, runtime: str) -> dict[str, str]:
+    """{agent: model} for the required gates of the current plan whose tier has a model configured."""
+    models = configured_models(root, runtime)
+    if not models:
+        return {}
+    try:
+        plan = parse((state_dir(root, runtime) / "routing-plan.yaml").read_text(encoding="utf-8"))
+    except (OSError, RouteError):
+        return {}
+    return {e["agent"]: models[e["model_tier"]] for e in plan.get("agents", [])
+            if e.get("applicability") == "REQUIRED" and e.get("model_tier") in models}
+
+
 def needs_rollout(work_mode: str, triggers: list[dict]) -> str | None:
     """Why this change needs a written rollout, or None."""
     if work_mode in ROLLOUT_MODES:
@@ -654,6 +708,7 @@ def build_plan(args: argparse.Namespace, root: Path) -> dict:
         raise RouteError(f"--dismiss given for {', '.join(unused)}, but nothing in the changed files signals it")
 
     decisions = route(work_mode, scopes, triggers)
+    lane_name = lane(work_mode, triggers)[0]
     states = {agent: decisions[agent][0] for agent in AGENTS}
     deps = dependencies(states)
     plan = {
@@ -664,7 +719,7 @@ def build_plan(args: argparse.Namespace, root: Path) -> dict:
         "work_mode": work_mode,
         "scopes": scopes,
         "risk_triggers": triggers,
-        "lane": lane(work_mode, triggers)[0],
+        "lane": lane_name,
         "dismissed_signals": dismissed,
         "accepted_behavior_sources": list(args.behavior_source or []),
         "existing_gate_results": [],
@@ -674,6 +729,7 @@ def build_plan(args: argparse.Namespace, root: Path) -> dict:
                 "applicability": decisions[agent][0],
                 "reason": decisions[agent][1],
                 "trigger_source": decisions[agent][2],
+                "model_tier": tier(agent, lane_name),
                 "required_inputs": [],
                 "expected_output": f"{agent}-report.md",
                 "minimal_dependencies": deps[agent] if decisions[agent][0] == "REQUIRED" else [],
@@ -710,6 +766,9 @@ def validate(plan: dict) -> list[str]:
     elif not problems:
         expected = route(plan["work_mode"], plan["scopes"], triggers)
         for entry in agents:
+            if entry.get("model_tier") != tier(entry["agent"], plan.get("lane", "")):
+                problems.append(f"{entry['agent']} has model tier {entry.get('model_tier')!r} but the lane gives "
+                                f"{tier(entry['agent'], plan.get('lane', ''))}")
             if entry.get("applicability") != expected[entry["agent"]][0]:
                 problems.append(
                     f"{entry['agent']} is {entry.get('applicability')} but the routing rules give {expected[entry['agent']][0]}"
@@ -755,8 +814,12 @@ def cmd_plan(args: argparse.Namespace) -> int:
     for trigger in plan["risk_triggers"]:
         if trigger["source"] == "detected":
             print(f"Added from the changed files: {trigger['dimension']} ({trigger['evidence']})")
+    models = configured_models(root, args.runtime)
     for entry in plan["agents"]:
-        print(f"  {entry['applicability']:15} {entry['agent']:30} {entry['reason']}")
+        on = ""
+        if entry["applicability"] == "REQUIRED":
+            on = f" [{entry['model_tier']}" + (f": {models[entry['model_tier']]}]" if entry["model_tier"] in models else "]")
+        print(f"  {entry['applicability']:15} {entry['agent']:30} {entry['reason']}{on}")
     if not args.out:
         print(describe_next(root, args.runtime))
     return 0
@@ -864,7 +927,9 @@ def describe_next(root: Path, runtime: str) -> str:
                 f"Rerun `route.py plan` with the same arguments plus {flags}, then run the gates it adds.")
     kind, agents, skipped = next_step(root, runtime)
     if kind == "RUN":
-        return "next: run " + ", ".join(agents)
+        models = gate_models(root, runtime)
+        chosen = [f"{agent}={models[agent]}" for agent in agents if agent in models]
+        return "next: run " + ", ".join(agents) + ("\nmodels: launch " + ", ".join(chosen) if chosen else "")
     if kind == "STOP":
         text = "next: stop. " + ", ".join(agents) + " did not pass"
         if skipped:

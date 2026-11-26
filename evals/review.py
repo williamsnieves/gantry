@@ -93,11 +93,11 @@ def collect(sandbox: Path, runtime: str) -> tuple[list[str], dict, dict[str, str
 
 
 def run_trial(case_dir: Path, case: dict, args: argparse.Namespace, parent: Path, out: Path, trial: int) -> dict:
-    sandbox = run.build_sandbox(case_dir, args.runtime, parent, args.dependencies)
+    sandbox = run.build_sandbox(case_dir, args.runtime, parent, args.dependencies, args.tier_models)
     prompt = PROMPT.format(request=case["request"].strip() + "\n", runtime=args.runtime,
                            checks=EXECUTABLE if args.execute else NOT_EXECUTABLE)
     record: dict = {"case": case_dir.name, "trial": trial, "runtime": args.runtime, "has_defect": bool(case.get("defect")),
-                    "checks_executable": args.execute}
+                    "checks_executable": args.execute, "tier_models": args.tier_models}
     if args.dry_run:
         record.update(dry_run=True, sandbox=str(sandbox), prompt=prompt)
         return record
@@ -156,6 +156,8 @@ def main() -> int:
     parser.add_argument("--timeout", type=int, default=2400, help="per-trial timeout in seconds")
     parser.add_argument("--out", type=Path, help="results directory; default evals/results/<timestamp>-<runtime>-review")
     parser.add_argument("--keep-sandboxes", action="store_true")
+    parser.add_argument("--tier-model", action="append", metavar="TIER=MODEL",
+                        help="repeatable: run the gates of a tier on this model, as .harness/models.yaml would (default: the session's model)")
     parser.add_argument("--execute", action="store_true",
                         help="install the fixture's dependencies (needs npm and network, once) so the gates can run its checks")
     parser.add_argument("--dry-run", action="store_true", help="build sandboxes and print prompts without calling the runtime")
@@ -171,6 +173,12 @@ def main() -> int:
     out = args.out or ROOT / "evals/results" / f"{stamp}-{args.runtime}-review"
     parent = Path(tempfile.mkdtemp(prefix="gantry-review-"))
     args.dependencies = run.install_dependencies() if args.execute else None
+    args.tier_models = {}
+    for pair in (args.tier_model or []):
+        name, _, model = pair.partition("=")
+        if name not in route.TIERS or not model:
+            parser.error(f"--tier-model takes TIER=MODEL with TIER one of {', '.join(route.TIERS)}; got {pair!r}")
+        args.tier_models[name] = model
     if not args.dry_run:
         out.mkdir(parents=True, exist_ok=True)
     records = []
