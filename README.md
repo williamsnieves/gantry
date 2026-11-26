@@ -215,7 +215,7 @@ Every change is judged for the same four things, and the Final Pre-PR Gate says 
 PRE_PR_PASS
   pillar: quality: validator PASS, backend-code-review PASS, qa PASS, detail-analyst PASS, reviewer PASS
   pillar: security: added lines scanned for secrets and risky patterns; security PASS
-  pillar: performance: no specialist gate ran, no PERFORMANCE trigger was declared or detected
+  pillar: performance: added lines scanned for queries in loops and unbounded reads; no specialist gate ran, no PERFORMANCE trigger was declared or detected
   pillar: scalability: no specialist gate ran, no PERFORMANCE or INFRASTRUCTURE trigger was declared or detected
 ```
 
@@ -223,10 +223,10 @@ PRE_PR_PASS
 |---|---|---|
 | Quality | The project's own checks (Validator), a code review, the Detail Analyst and the Reviewer | QA, when behavior, data integrity, compatibility or user impact changes |
 | Security | A scan of every added line: a secret blocks, a risky pattern routes the Security gate | The Security gate (STRIDE, OWASP Top 10, CWE Top 25, OWASP ASVS), on a `SECURITY` trigger |
-| Performance | Nothing by rule | The Performance gate, on a `PERFORMANCE` trigger: a target, a measured regression, data growth, a sensitive path |
-| Scalability | Nothing by rule | The Performance gate for load and capacity, the Infrastructure gate for how it is deployed and scaled |
+| Performance | A scan of every added line of runtime code: a query or request inside a loop, or a list read without a limit, routes the Performance gate | The Performance gate, on a `PERFORMANCE` trigger: a target, a measured regression, data growth, a sensitive path |
+| Scalability | The same scan: both patterns are costs that grow with the data | The Performance gate for load and capacity, the Infrastructure gate for how it is deployed and scaled |
 
-The lines go into the pull request unchanged, and into the review receipt when the project keeps them. A pillar that no specialist judged is stated, not left out: the person reading the pull request decides whether that is right for this change. Performance and scalability have no rule that detects them from the code, as the security scan does; they are reviewed when the agent or the person declares the trigger.
+The lines go into the pull request unchanged, and into the review receipt when the project keeps them. A pillar that no specialist judged is stated, not left out: the person reading the pull request decides whether that is right for this change. The performance rules are two, on purpose: they are the patterns a line of code shows by itself. A slow algorithm, a missing index or a heavy bundle is not something a rule over added lines can see, so those are reviewed when the agent or the person declares the trigger. A finding is a reason to look, not a verdict: `route.py plan --dismiss "PERFORMANCE=why"` drops it with a written reason, and tests, scripts, seeds and migrations are not scanned for it.
 
 ## Guardrails
 
@@ -256,6 +256,8 @@ BUILD
     with hooks: `git commit` and `git push` are denied while one is there
   code that needs a security reviewer gets one
     every runtime: a risky pattern in the added lines adds the SECURITY trigger to the routing plan, which routes the Security gate
+  code that needs a performance reviewer gets one
+    every runtime: a query or request inside a loop, or a list read without a limit, in the added lines adds the PERFORMANCE trigger to the routing plan, which routes the Performance gate; `route.py plan --dismiss` drops it with a written reason
 REVIEW
   a reviewer reports and does not fix; a report is what the reviewer wrote
     every runtime: the final gate rejects a report changed after its result was recorded
@@ -286,7 +288,7 @@ OPERATE
     every runtime: `release.py record` appends to docs/releases.md; nothing forces it to be run
 ```
 
-The security scan (`python3 .harness/bin/scan.py`) reads only the lines the change adds. A credential in a format a provider issues, or a private key, blocks the final gate; a line marked `gantry:allow` becomes a condition a person confirms. A value that may be a credential is a condition. A risky code pattern (dynamic code execution, unescaped markup, queries or shell commands built from strings, unsafe deserialization, disabled TLS verification, weak hashes, wildcard CORS) is not a verdict: it adds the `SECURITY` trigger, so the Security gate, which works from STRIDE, the OWASP Top 10, the CWE Top 25 and OWASP ASVS, reviews the change.
+The security scan (`python3 .harness/bin/scan.py`) reads only the lines the change adds. A credential in a format a provider issues, or a private key, blocks the final gate; a line marked `gantry:allow` becomes a condition a person confirms. A value that may be a credential is a condition. A risky code pattern (dynamic code execution, unescaped markup, queries or shell commands built from strings, unsafe deserialization, disabled TLS verification, weak hashes, wildcard CORS) is not a verdict: it adds the `SECURITY` trigger, so the Security gate, which works from STRIDE, the OWASP Top 10, the CWE Top 25 and OWASP ASVS, reviews the change. The same scan reads added lines of runtime code for a query or request inside a loop and for a list read without a limit; either adds the `PERFORMANCE` trigger, so the Performance gate reviews the change.
 
 "Every runtime" is what holds on any tool, because the router computes it. "With hooks" is what a runtime with command hooks adds by refusing the action when it is attempted; today that is Claude Code. A hook is a first barrier, not a boundary: a shell command can still write a file, which is why each guardrail also has a check at the final gate.
 
