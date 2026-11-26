@@ -379,3 +379,16 @@ The scan gained two performance rules (a query or request inside a loop; a list 
 The second row exposed a cost: the three review cases rewrite a list read that the fixture already had, and the rule counted it as new, which would have added a Performance gate to every one of those reviews. A finding now counts only where the file has more of its kind than it had at the base of the change. With that, the clean control case produces no finding.
 
 No model was called. Not measured: what the rules miss, how often the trigger is dismissed, the cost of the Performance gate they route, and any language but TypeScript in real code; the Python patterns are covered by `tests/test_scan.py` only.
+
+## Mutation testing on the review cases
+
+`mutate.py` was run on the runnable fixture with two of the review cases applied, with the project's own `npm test` judging each mutant. No model was called.
+
+| Case | Mutants of the added lines | Killed | Time |
+|---|---|---|---|
+| `severity-filter-clean` | 2 | 2 | 12 s |
+| `severity-filter-tenant-leak` | 2 | 2 | about the same |
+
+Both changes add about twenty lines and the operators apply to two of them: a negation in the controller and an equality in the component. The tests of both cases notice both.
+
+The planted tenant leak is not found, and is not what this measures: the leak is in which fields a query filters by, and no operator changes that. Mutation testing says whether the tests check the decisions the new lines make; the leak is found by the reviewers. Not measured: a change whose tests are weak in a real project, the cost on a slow test suite, and any stack but this one.

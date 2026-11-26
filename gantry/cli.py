@@ -404,7 +404,7 @@ def remove_agents_block(project: Path, *, dry_run: bool):
         else:
             path.unlink()
 
-def write_harness_config(project: Path, runtimes: list[str], scope: str, profile: str, *, dry_run: bool, receipts: bool = False):
+def write_harness_config(project: Path, runtimes: list[str], scope: str, profile: str, *, dry_run: bool, receipts: bool = False, mutation: bool = False):
     config_path = project / ".harness/harness.config.yaml"
     config = {
         "harness_version": VERSION,
@@ -427,6 +427,7 @@ def write_harness_config(project: Path, runtimes: list[str], scope: str, profile
             "enabled": True,
             "allow_pass_with_conditions": True,
             "receipts": receipts,
+            "mutation": mutation,
         },
         "installed_runtimes": runtimes,
     }
@@ -481,11 +482,14 @@ def saved_config(project: Path) -> tuple[str | None, str | None]:
     profile = RETIRED_PROFILES.get(profile, profile)
     return (scope if scope in SCOPES else None), (profile if profile in PROFILES else None)
 
-def saved_receipts(project: Path) -> bool:
-    """Whether this installation keeps review receipts (`pre_pr.receipts` in the harness config)."""
+def saved_option(project: Path, name: str) -> bool:
+    """Whether an opt-in of this installation is on (`pre_pr.<name>` in the harness config)."""
     path = project / ".harness/harness.config.yaml"
     text = path.read_text(encoding="utf-8") if path.is_file() else ""
-    return bool(re.search(r"^\s*[\"']?receipts[\"']?\s*:\s*true\b", text, re.M))
+    return bool(re.search(rf"^\s*[\"']?{name}[\"']?\s*:\s*true\b", text, re.M))
+
+def saved_receipts(project: Path) -> bool:
+    return saved_option(project, "receipts")
 
 def hooks_registered(project: Path, runtime: str) -> bool:
     path = project / HOOK_SETTINGS[runtime]
@@ -509,6 +513,7 @@ def cmd_install(args):
     scope = args.scope or saved_scope or "mixed"
     profile = args.profile or saved_profile or "standard"
     receipts = saved_receipts(project) if getattr(args, "receipts", None) is None else args.receipts
+    mutation = saved_option(project, "mutation") if getattr(args, "mutation", None) is None else args.mutation
 
     # Look before writing: a refusal halfway would leave files the install state does not know about.
     if not args.force:
@@ -528,7 +533,7 @@ def cmd_install(args):
 
     final_runtimes = sorted(set(state["runtimes"]) | set(runtimes), key=RUNTIMES.index)
     write_harness_config(
-        project, final_runtimes, scope, profile, dry_run=args.dry_run, receipts=receipts
+        project, final_runtimes, scope, profile, dry_run=args.dry_run, receipts=receipts, mutation=mutation
     )
 
     models = project / MODELS_FILE
@@ -559,6 +564,10 @@ def cmd_install(args):
     print()
     print(f"Installed runtimes: {', '.join(final_runtimes)}  (scope {scope}, profile {profile})")
     print_entrypoints(final_runtimes)
+    if mutation:
+        print("Mutation testing is on: `python3 .harness/bin/mutate.py` changes each line a change adds and runs "
+              + (f"`{description['checks']['test']['command']}`" if "test" in description["checks"] else "the project's tests")
+              + " against it.\nThe review runs it; what the tests did not notice becomes a condition at the Final Pre-PR Gate.")
     if receipts:
         print("Review receipts are on: `route.py ready` writes one per reviewed change under .harness/receipts/. Commit it with the\n"
               "change and make CI run `python3 .harness/bin/route.py verify --base origin/<default branch>` on pull requests.")
@@ -616,6 +625,7 @@ def cmd_init(args):
     profile = args.profile or saved_profile or "standard"
     hooks = not args.no_hooks
     receipts = saved_receipts(project) if args.receipts is None else args.receipts
+    mutation = saved_option(project, "mutation") if args.mutation is None else args.mutation
     proposal = f"--runtime {','.join(runtimes) or '<tool>'} --scope {scope} --profile {profile}"
 
     if args.yes or (args.runtime and not interactive()):
@@ -656,15 +666,19 @@ def cmd_init(args):
             print("\nShould CI be able to check that what is merged is what was reviewed? The final gate then writes a small receipt")
             print("per change, which you commit with it, and `route.py verify` fails a pull request whose content has none.")
             receipts = ask_yes("Keep review receipts?", default=receipts)
+        if args.mutation is None:
+            print("\nShould the review check that the tests would notice if the new lines were wrong? It changes each added line")
+            print("(`>=` to `>`, `&&` to `||`) and runs your tests against it: about a dozen extra test runs per review.")
+            mutation = ask_yes("Turn mutation testing on?", default=mutation)
         hook_note = f", hooks {'on' if hooks else 'off'}" if hookable else "; none of these tools has hooks, so the rules are checked at the Final Pre-PR Gate"
-        print(f"\nInstall for {', '.join(runtimes)} with scope {scope}, profile {profile}{hook_note}{', review receipts on' if receipts else ''}.")
+        print(f"\nInstall for {', '.join(runtimes)} with scope {scope}, profile {profile}{hook_note}{', review receipts on' if receipts else ''}{', mutation testing on' if mutation else ''}.")
         if not ask_yes("Go ahead?"):
             print("Nothing was changed.")
             return
         print()
 
     cmd_install(argparse.Namespace(project=str(project), runtime=",".join(runtimes), scope=scope, profile=profile,
-                                   force=args.force, dry_run=args.dry_run, no_hooks=not hooks, receipts=receipts))
+                                   force=args.force, dry_run=args.dry_run, no_hooks=not hooks, receipts=receipts, mutation=mutation))
 
 def cmd_upgrade(args):
     """Reinstall what is installed with this version of Gantry, keeping the runtimes, scope, profile and hook choice."""
@@ -678,7 +692,7 @@ def cmd_upgrade(args):
     print(f"Gantry {state.get('harness_version') or 'unknown'} -> {VERSION} for {', '.join(runtimes)}"
           f"{' (hooks stay off; turn them on with `gantry install`)' if no_hooks else ''}")
     cmd_install(argparse.Namespace(project=str(project), runtime=",".join(runtimes), scope=scope, profile=profile,
-                                   force=args.force, dry_run=args.dry_run, no_hooks=no_hooks, receipts=None))
+                                   force=args.force, dry_run=args.dry_run, no_hooks=no_hooks, receipts=None, mutation=None))
 
 
 def cmd_inspect(args):
@@ -777,6 +791,7 @@ def cmd_doctor(args):
         ".harness/bin/hook.py",
         ".harness/bin/scan.py",
         ".harness/bin/release.py",
+        ".harness/bin/mutate.py",
         ".harness/core/pre-pr/FINAL-PRE-PR-GATE.md",
         ".harness/agents/reviewer/AGENT.md",
         ".harness/evals/end-to-end/E2E-ORACLE.md",
@@ -852,6 +867,11 @@ def cmd_doctor(args):
                 warnings.append(("Review receipts are on, but no CI file runs `route.py verify`, so nothing checks them.",
                                  "run `python3 .harness/bin/route.py verify --base origin/<default branch>` on pull requests, "
                                  "with the full history fetched; or turn them off with `gantry install --runtime <tool> --no-receipts`"))
+
+        if saved_option(project, "mutation") and not re.search(
+                r"^  test:", (project / PROJECT_FILE).read_text(encoding="utf-8") if (project / PROJECT_FILE).is_file() else "", re.M):
+            warnings.append(("Mutation testing is on, but no test command is recorded, so it cannot run.",
+                             f"add it under `checks:` in {PROJECT_FILE}; or turn it off with `gantry install --runtime <tool> --no-mutation`"))
 
         # What the Validator will run.
         described = project / PROJECT_FILE
@@ -981,7 +1001,7 @@ def cmd_uninstall(args):
                     profile = data.get("project", {}).get("delivery_profile", profile)
                 except Exception:
                     pass
-            write_harness_config(project, remaining, scope, profile, dry_run=False, receipts=saved_receipts(project))
+            write_harness_config(project, remaining, scope, profile, dry_run=False, receipts=saved_receipts(project), mutation=saved_option(project, "mutation"))
             save_state(project, state)
         elif args.purge_shared:
             sp = state_path(project)
@@ -1012,6 +1032,9 @@ def build_parser():
         sp.add_argument("--verbose", action="store_true", help="print every file")
         sp.add_argument("--receipts", action=argparse.BooleanOptionalAction, default=None,
                         help="keep a receipt per reviewed change so CI can verify it; default: what is installed, else off")
+
+        sp.add_argument("--mutation", action=argparse.BooleanOptionalAction, default=None,
+                        help="mutate the lines a change adds and run the tests against them; default: what is installed, else off")
 
     init = sub.add_parser("init", help="Guided install: proposes the tools, scope and profile it finds, and asks")
     common_install(init, runtime_required=False)

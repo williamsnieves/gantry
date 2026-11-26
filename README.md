@@ -221,12 +221,37 @@ PRE_PR_PASS
 
 | Pillar | On every change | When the risk calls for it |
 |---|---|---|
-| Quality | The project's own checks (Validator), a code review, the Detail Analyst and the Reviewer | QA, when behavior, data integrity, compatibility or user impact changes |
+| Quality | The project's own checks (Validator), a code review, the Detail Analyst and the Reviewer | QA, when behavior, data integrity, compatibility or user impact changes; mutation testing of the added lines, when the project turned it on |
 | Security | A scan of every added line: a secret blocks, a risky pattern routes the Security gate | The Security gate (STRIDE, OWASP Top 10, CWE Top 25, OWASP ASVS), on a `SECURITY` trigger |
 | Performance | A scan of every added line of runtime code: a query or request inside a loop, or a list read without a limit, routes the Performance gate | The Performance gate, on a `PERFORMANCE` trigger: a target, a measured regression, data growth, a sensitive path |
 | Scalability | The same scan: both patterns are costs that grow with the data | The Performance gate for load and capacity, the Infrastructure gate for how it is deployed and scaled |
 
 The lines go into the pull request unchanged, and into the review receipt when the project keeps them. A pillar that no specialist judged is stated, not left out: the person reading the pull request decides whether that is right for this change. The performance rules are two, on purpose: they are the patterns a line of code shows by itself. A slow algorithm, a missing index or a heavy bundle is not something a rule over added lines can see, so those are reviewed when the agent or the person declares the trigger. A finding is a reason to look, not a verdict: `route.py plan --dismiss "PERFORMANCE=why"` drops it with a written reason, and tests, scripts, seeds and migrations are not scanned for it.
+
+## Would the tests notice? Mutation testing of the change
+
+Tests that execute a line do not necessarily check what it decides. With mutation testing on, the review changes each line the change adds, one small change at a time, and runs the project's own tests against it:
+
+```bash
+./gantry.sh install --runtime claude --mutation --project .
+python3 .harness/bin/mutate.py
+```
+
+```text
+MUTATION: SURVIVORS (0 of 1 mutants killed)
+  survived: src/pricing.py:6 `>=` changed to `>`
+  next: for each survivor, add the test that fails on that change, or say in the pull request why the change makes no difference; then run this again
+```
+
+Here the tests tried a total of 99 and of 101; nothing tried 100, so nothing would notice the boundary moving. A survivor is a condition at the Final Pre-PR Gate, not a blocker: a mutant can be equivalent to the original, and a person or QA decides. The quality line of the gate carries the count (`mutation: 4 of 5 changes to the added lines were caught by the tests`).
+
+- **What is mutated:** only added lines of runtime code, never tests, scripts or migrations. Operators: comparison boundaries, equality, `&&`/`||`, a removed negation, `true`/`false`, `+ - *`. Strings, imports and types are left alone.
+- **What judges it:** the test command recorded in `.harness/project.yaml`. It is not an argument, so the agent being judged does not choose it, and the tests must pass before any mutation.
+- **Bounded:** at most `--max` mutants (12), spread over the added lines, within `--budget` seconds (600). What was not run is said in the same line.
+- **Safe to interrupt:** the file is saved before each mutant and put back after it. If a run is killed, the next run or `mutate.py restore` puts it back, and the final gate blocks while a mutant is in the code.
+- **A result is for one version:** edit the change, including adding the missing test, and the gate asks for a new run.
+
+It is off unless you turn it on, because it costs test runs: about a dozen per review. It measures whether the tests check what the new lines decide; it does not find defects the operators do not model. In the review cases of this repository it kills every mutant of the change with the planted tenant leak, because the leak is not a boundary or a negation.
 
 ## Guardrails
 
@@ -258,6 +283,8 @@ BUILD
     every runtime: a risky pattern in the added lines adds the SECURITY trigger to the routing plan, which routes the Security gate
   code that needs a performance reviewer gets one
     every runtime: a query or request inside a loop, or a list read without a limit, in the added lines adds the PERFORMANCE trigger to the routing plan, which routes the Performance gate; `route.py plan --dismiss` drops it with a written reason
+  the tests of a change would notice if its lines were wrong, when the project turned mutation testing on
+    every runtime: `mutate.py` changes each added line and runs the project's tests; the final gate carries a condition for every change the tests did not notice, and for a version that was not mutated; it blocks while a mutant is left in the code
 REVIEW
   a reviewer reports and does not fix; a report is what the reviewer wrote
     every runtime: the final gate rejects a report changed after its result was recorded
@@ -347,6 +374,7 @@ python3 tests/test_cli.py             # guided install, upgrade and doctor
 python3 tests/test_detect.py          # project detection
 python3 tests/test_spec.py            # specification check
 python3 tests/test_scan.py            # security scan of added lines
+python3 tests/test_mutate.py          # mutation testing of added lines
 python3 tests/test_release.py         # release gate and release record
 python3 tests/test_eval_scoring.py    # scenario scorer
 python3 tests/test_route.py           # deterministic router
