@@ -18,6 +18,7 @@ Standard library only, so it runs in any project with Python 3.9+.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import hashlib
 import json
 import re
@@ -214,6 +215,9 @@ GUARDRAILS = (
     ("build", "the tests of a change would notice if its lines were wrong, when the project turned mutation testing on",
      "`mutate.py` changes each added line and runs the project's tests; the final gate carries a condition for every change "
      "the tests did not notice, and for a version that was not mutated; it blocks while a mutant is left in the code", ""),
+    ("build", "a mistake this project already made is looked for where it was made",
+     "a rule in docs/learned.md adds its risk trigger to the routing plan of any change that touches its paths, "
+     "and the routed gate reads the lesson; the final gate carries a condition when a change edits the rules", "an agent's edit of the rules is denied (not in the lean profile), and `learn.py add` asks the person to confirm"),
     ("review", "a reviewer reports and does not fix; a report is what the reviewer wrote",
      "the final gate rejects a report changed after its result was recorded",
      "a reviewer can write only its own report, and nobody else can write it"),
@@ -248,6 +252,8 @@ PILLARS = (
     ("performance", ("performance",), ("PERFORMANCE",)),
     ("scalability", ("performance", "infrastructure"), ("PERFORMANCE", "INFRASTRUCTURE")),
 )
+# Rules the project learned from changes that went wrong: paths that add a risk trigger. See learn.py.
+LEARNED_FILE = "docs/learned.md"
 GENERATED_STATE = ("routing-plan.yaml", "gates.json", "mutation.json", "mutation-backup.json")
 QUALITY_CONFIG_NAMES = (
     ".eslintignore", ".prettierignore", "biome.json", "biome.jsonc", "ruff.toml", ".ruff.toml", ".flake8",
@@ -271,6 +277,8 @@ def protection(path: str) -> tuple[str, str] | None:
         return "harness", "it is part of the harness that judges this work"
     if path.startswith(".harness/runtime/") and name in GENERATED_STATE:
         return "harness", "it is written only by .harness/bin/route.py"
+    if path == LEARNED_FILE:
+        return "quality-config", "it holds the rules this project learned, which decide how a change is routed"
     if name in QUALITY_CONFIG_NAMES or name.startswith(QUALITY_CONFIG_PREFIXES) or path.startswith(QUALITY_CONFIG_DIRS):
         return "quality-config", "it configures the checks (lint, types, tests, CI) that judge this work"
     return None
@@ -492,6 +500,28 @@ def scan_change(root: Path, paths: list[str]) -> dict[str, list[dict]]:
                 "suspect": [{"what": f"the security scan could not run ({error!r})", "path": "scan.py", "line": 0}]}
 
 
+def rule_matches(pattern: str, path: str) -> bool:
+    return path.startswith(pattern) if pattern.endswith("/") else path == pattern or fnmatch.fnmatchcase(path, pattern)
+
+
+def learned_rules(root: Path) -> list[dict]:
+    """The rows of docs/learned.md that are rules: {id, paths, trigger, because, source}. Anything else is ignored."""
+    try:
+        text = (root / LEARNED_FILE).read_text(encoding="utf-8")
+    except OSError:
+        return []
+    rules = []
+    for line in text.splitlines():
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 4 or not re.fullmatch(r"L-\d+", cells[0]) or cells[2] not in TRIGGERS:
+            continue
+        paths = [p.strip().strip("`").lstrip("./") for p in cells[1].split(",") if p.strip().strip("`")]
+        if paths and cells[3]:
+            rules.append({"id": cells[0], "paths": paths, "trigger": cells[2], "because": cells[3],
+                          "source": cells[4] if len(cells) > 4 else ""})
+    return rules
+
+
 def detect_signals(paths: list[str], root: Path | None = None) -> list[dict]:
     """Triggers the change itself shows: from the paths it touches and, with `root`, from the lines it adds."""
     signals = []
@@ -505,6 +535,11 @@ def detect_signals(paths: list[str], root: Path | None = None) -> list[dict]:
         if hits:
             shown = ", ".join(hits[:3]) + (f" and {len(hits) - 3} more" if len(hits) > 3 else "")
             signals.append({"dimension": dimension, "evidence": f"{description}: {shown}"})
+    for rule in learned_rules(root) if root else []:
+        hits = [p for p in paths if p != LEARNED_FILE and any(rule_matches(pattern, p) for pattern in rule["paths"])]
+        if hits:
+            signals.append({"dimension": rule["trigger"], "learned": True,
+                            "evidence": f"learned rule {rule['id']}, this project was caught here before: {rule['because']} ({hits[0]})"})
     return signals
 
 
@@ -725,8 +760,14 @@ def build_plan(args: argparse.Namespace, root: Path) -> dict:
     dismissed_dims = {d["dimension"] for d in dismissed}
     detected = detect_signals(paths, root)
     for signal in detected:
-        if signal["dimension"] not in declared and signal["dimension"] not in dismissed_dims and work_mode not in NO_CODE:
+        learned = signal.pop("learned", False)
+        if signal["dimension"] in dismissed_dims or work_mode in NO_CODE:
+            continue
+        present = next((t for t in triggers if t["dimension"] == signal["dimension"]), None)
+        if present is None:
             triggers.append({**signal, "source": "detected"})
+        elif learned:  # the risk is already routed; the gate still gets the lesson
+            present["evidence"] += "; " + signal["evidence"]
     unused = sorted(dismissed_dims - {s["dimension"] for s in detected})
     if unused:
         raise RouteError(f"--dismiss given for {', '.join(unused)}, but nothing in the changed files signals it")

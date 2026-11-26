@@ -129,6 +129,8 @@ def cmd_record(args: argparse.Namespace) -> int:
     if outcome != "SHIPPED":
         print("  next: reproduce it with a failing test, then fix it as REMEDIATION work with the harness-start skill"
               + ("" if missed else "; if a risk trigger should have been declared for the original change, record it with --missed"))
+        if missed:
+            print("  next: so the next change to that code is reviewed for it, run `python3 .harness/bin/learn.py propose`")
     return 0
 
 

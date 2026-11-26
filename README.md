@@ -183,6 +183,26 @@ What a receipt proves is that the router reached a pass for exactly this content
 
 Commit the installation: `.harness/`, `.agents/skills/`, the runtime folders and `AGENTS.md`, so everyone on the project works with the same harness, and `.harness/receipts/` when you keep review receipts. `.harness/runtime/` is the exception and the installation ignores it by itself: it holds the routing plan, the gate reports and the approvals of the change in progress, which are local to a working copy. What a reviewer needs from them goes in the pull request, where `harness-ship` puts the conditions.
 
+## What the project learned
+
+A change that was rolled back or caused an incident is evidence that the review missed something. `release.py record --missed <RISK>` writes that down; a learned rule makes the next change to the same code be reviewed for it.
+
+```bash
+python3 .harness/bin/learn.py propose      # incidents that named a missed risk and have no rule yet
+python3 .harness/bin/learn.py add --trigger SECURITY --path apps/api/src/incidents/ \
+    --because "a filtered list showed other tenants: every query keeps the tenant filter" --from "#42"
+python3 .harness/bin/learn.py list         # the rules, and the ones whose code no longer exists
+python3 .harness/bin/learn.py remove L-2
+```
+
+A rule is one row of `docs/learned.md`: when a change touches these paths, add this risk, because of this. `route.py plan` applies it like any signal it reads from the change: the gate that judges that risk is routed, and the lesson reaches it as the trigger's evidence. It can be dismissed like any detected signal, with a recorded reason.
+
+- **The harness proposes, a person decides.** `propose` lists what happened; where the lesson applies is a person's call. On Claude Code the hook asks you to confirm `learn.py add` and denies an agent's edit of the file; on every runtime a change that edits the rules carries a condition at the final gate.
+- **Nothing is loaded that is not needed.** A rule costs no context until a change touches its paths, and then it is one sentence given to the one gate that needs it. A lesson for every change is a convention: it belongs in `docs/conventions.md`, and `add` refuses a path that matches everything.
+- **It is the project's.** The file is a table you review in pull requests, edit by hand, and that stays if the harness is removed. `list` marks a rule as stale when no file matches its paths.
+
+This is the project's memory of its own mistakes. It routes a reviewer to where a mistake was made; it does not tell the reviewer the answer, and it learns only from what a person recorded.
+
 ## Project scope
 
 ```text
@@ -285,6 +305,9 @@ BUILD
     every runtime: a query or request inside a loop, or a list read without a limit, in the added lines adds the PERFORMANCE trigger to the routing plan, which routes the Performance gate; `route.py plan --dismiss` drops it with a written reason
   the tests of a change would notice if its lines were wrong, when the project turned mutation testing on
     every runtime: `mutate.py` changes each added line and runs the project's tests; the final gate carries a condition for every change the tests did not notice, and for a version that was not mutated; it blocks while a mutant is left in the code
+  a mistake this project already made is looked for where it was made
+    every runtime: a rule in docs/learned.md adds its risk trigger to the routing plan of any change that touches its paths, and the routed gate reads the lesson; the final gate carries a condition when a change edits the rules
+    with hooks: an agent's edit of the rules is denied (not in the lean profile), and `learn.py add` asks the person to confirm
 REVIEW
   a reviewer reports and does not fix; a report is what the reviewer wrote
     every runtime: the final gate rejects a report changed after its result was recorded
@@ -376,6 +399,7 @@ python3 tests/test_spec.py            # specification check
 python3 tests/test_scan.py            # security scan of added lines
 python3 tests/test_mutate.py          # mutation testing of added lines
 python3 tests/test_release.py         # release gate and release record
+python3 tests/test_learn.py           # rules learned from incidents
 python3 tests/test_eval_scoring.py    # scenario scorer
 python3 tests/test_route.py           # deterministic router
 python3 tests/test_hook.py            # pre-tool-use guard
