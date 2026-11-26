@@ -929,6 +929,7 @@ def cmd_doctor(args):
         ".harness/bin/release.py",
         ".harness/bin/mutate.py",
         ".harness/bin/check.py",
+        ".harness/bin/refactor.py",
         ".harness/bin/learn.py",
         ".harness/bin/githook.py",
         ".harness/core/pre-pr/FINAL-PRE-PR-GATE.md",

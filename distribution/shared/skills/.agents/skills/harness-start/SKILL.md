@@ -69,6 +69,8 @@ One slice at a time, in order:
 2. Write the code that makes it pass, following `docs/conventions.md`.
 3. Run `python3 .harness/bin/check.py`: it runs every command under `checks` in `.harness/project.yaml` and says which pass. Do not start the next slice with one failing; `--only <name>` reruns one.
 
+A refactoring (the structure changes, the behaviour does not) is built differently: read `.agents/skills/refactoring-safely/SKILL.md` and follow it instead of the slices above.
+
 In the `DIRECT` lane there are no criteria: change the code, keep the existing tests passing, and add a test when you fix a defect.
 
 If building shows the specification was wrong, change the specification first and tell the user what changed.

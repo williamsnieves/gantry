@@ -220,6 +220,26 @@ What a receipt proves is that the router reached a pass for exactly this content
 
 Commit the installation: `.harness/`, `.agents/skills/`, the runtime folders and `AGENTS.md`, so everyone on the project works with the same harness, and `.harness/receipts/` when you keep review receipts. `.harness/runtime/` is the exception and the installation ignores it by itself: it holds the routing plan, the gate reports and the approvals of the change in progress, which are local to a working copy. What a reviewer needs from them goes in the pull request, where `harness-ship` puts the conditions.
 
+## Refactoring: changing the structure, keeping the behaviour
+
+A reviewer that finds code hard to maintain names the smell and where it is (long function, duplicated logic, switch on type), not a design pattern. Removing it is a change of its own, built with the `refactoring-safely` skill, which `harness-start` reads when the work is a refactoring:
+
+1. Name one smell in one place.
+2. Choose the smallest refactoring that removes it. The skill's table lists, for each smell, the refactorings from simplest up, and the one condition under which a pattern (Builder, Facade, Strategy, Adapter, ...) is worth its indirection: a pattern needs two real cases in the code today.
+3. Add tests for what the code does now where it has none.
+4. `python3 .harness/bin/refactor.py pin`.
+5. One refactoring at a time, the tests after each.
+6. Mutation testing on the moved lines, when the project has it on.
+
+The pin is what makes it checkable without a model. A refactoring is proven only by tests that passed on the old code and pass, unchanged, on the new:
+
+- **`pin` refuses when runtime code is already changed**, runs the project's test command, and records a digest of every test file. Tests written for the refactoring go in before the pin, so they are proven against the old behaviour too.
+- **`refactor.py status`** says `HELD` while the pinned tests are unchanged, and lists any that were edited, removed, or added after the pin.
+- **At the final gate** a pinned test that was edited or removed is a condition a person confirms, and so is a version the tests were not run on. It does not block: moving a module changes an import in its test.
+- **A pin belongs to its branch.** Another change is not judged by it, and `refactor.py clear` withdraws it when the work turns out to change behaviour.
+
+A change that was not pinned is reviewed as any other; nothing forces the pin.
+
 ## What the project learned
 
 A change that was rolled back or caused an incident is evidence that the review missed something. `release.py record --missed <RISK>` writes that down; a learned rule makes the next change to the same code be reviewed for it.
@@ -261,7 +281,7 @@ A skill is text an agent pays for each time it reads it, and a skill nothing nam
 
 It reports and exits zero; `--strict` exits non-zero on any finding, for a project that wants its own skills held to the rules.
 
-The catalogue Gantry ships does not meet them yet, and says so: of 113 skills, 94 are over 500 lines, 46 have no numbered steps and 37 no failure heading. Those findings are recorded in `tests/skill-lint-baseline.json`; a test fails when a skill gains a finding or a long one grows, so the catalogue can only get shorter. Whether a shorter skill reviews as well as the long one is a question for a measured run, not for the linter.
+The catalogue Gantry ships does not meet them yet, and says so: of 114 skills, 94 are over 500 lines, 46 have no numbered steps and 37 no failure heading. Those findings are recorded in `tests/skill-lint-baseline.json`; a test fails when a skill gains a finding or a long one grows, so the catalogue can only get shorter. Whether a shorter skill reviews as well as the long one is a question for a measured run, not for the linter.
 
 ## Project scope
 
@@ -381,6 +401,8 @@ BUILD
     with hooks: the edit and `--no-verify` are denied (not in the lean profile)
   the project's own format, lint, type, test and build commands pass on the version that is reviewed
     every runtime: `check.py` runs the commands recorded in .harness/project.yaml and ties the result to the change's digest; `check.py status` prints it again without running anything; the final gate blocks on one that failed on the current version
+  a refactoring is judged by tests that passed before the code was touched
+    every runtime: `refactor.py pin` refuses once runtime code is changed, runs the tests and records every test file; the final gate carries a condition for a pinned test edited or removed since, and for a version the tests were not run on
   a secret does not leave in the change
     every runtime: `scan.py` reads every added line; the final gate blocks on a credential in a provider's format or a private key, and carries a condition for anything that may be one; with the git hooks installed, git refuses the commit and the push whoever runs them
     with hooks: `git commit` and `git push` are denied while one is there
@@ -498,6 +520,7 @@ python3 tests/test_spec.py            # specification check
 python3 tests/test_scan.py            # security scan of added lines
 python3 tests/test_mutate.py          # mutation testing of added lines
 python3 tests/test_check.py           # the project's own checks, run once per version
+python3 tests/test_refactor.py        # refactoring with pinned tests
 python3 tests/test_skill_lint.py      # skill linter, and the catalogue against its baseline
 python3 tests/test_release.py         # release gate and release record
 python3 tests/test_learn.py           # rules learned from incidents
