@@ -227,6 +227,29 @@ A rule is one row of `docs/learned.md`: when a change touches these paths, add t
 
 This is the project's memory of its own mistakes. It routes a reviewer to where a mistake was made; it does not tell the reviewer the answer, and it learns only from what a person recorded.
 
+## Are the skills worth reading? A linter for them
+
+```bash
+gantry skills --project ~/code/my-app            # the installed catalogue, and any skill you added to .agents/skills
+gantry skills --path ./my-skills --verbose       # any directory of skills, every skill named
+```
+
+A skill is text an agent pays for each time it reads it, and a skill nothing names is never read. The linter checks structure, with no model:
+
+| Finding | Meaning |
+|---|---|
+| `long` | `SKILL.md` is over 500 lines. Keep the procedure there; move detail to `references/`, read on demand. |
+| `no-steps` | The procedure is not written as numbered steps. |
+| `no-command` | No code block and no inline code: nothing concrete to run or produce. |
+| `no-recovery` | No heading says what to do when a step fails or the work is blocked. |
+| `unreachable` | No agent, contract or reachable skill names it. |
+| `description` | An entry-point skill's description, which sits in every session, is over 60 words. |
+| `frontmatter` | Name or description missing, or the name is not the directory's. |
+
+It reports and exits zero; `--strict` exits non-zero on any finding, for a project that wants its own skills held to the rules.
+
+The catalogue Gantry ships does not meet them yet, and says so: of 113 skills, 94 are over 500 lines, 46 have no numbered steps and 37 no failure heading. Those findings are recorded in `tests/skill-lint-baseline.json`; a test fails when a skill gains a finding or a long one grows, so the catalogue can only get shorter. Whether a shorter skill reviews as well as the long one is a question for a measured run, not for the linter.
+
 ## Project scope
 
 ```text
@@ -404,6 +427,7 @@ gantry upgrade     bring the installation to this version, keeping its choices
 gantry doctor      check the installation and say how to fix it
 gantry status      what is installed
 gantry inspect     what the project is; --write saves it
+gantry skills      lint skills: length, steps, failure handling, reachability
 gantry check       run the project's format, lint, type, test and build commands; --status reads the last result
 gantry uninstall   remove runtimes; --purge-shared removes everything
 ```
@@ -438,6 +462,7 @@ python3 tests/test_spec.py            # specification check
 python3 tests/test_scan.py            # security scan of added lines
 python3 tests/test_mutate.py          # mutation testing of added lines
 python3 tests/test_check.py           # the project's own checks, run once per version
+python3 tests/test_skill_lint.py      # skill linter, and the catalogue against its baseline
 python3 tests/test_release.py         # release gate and release record
 python3 tests/test_learn.py           # rules learned from incidents
 python3 tests/test_eval_scoring.py    # scenario scorer

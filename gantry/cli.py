@@ -16,7 +16,7 @@ try:
 except Exception:
     yaml = None
 
-from gantry import detect
+from gantry import detect, skill_lint
 
 VERSION = "1.0.0"
 START = "<!-- GANTRY:START -->"
@@ -777,6 +777,18 @@ def cmd_inspect(args):
         (project / PROJECT_FILE).write_text(detect.render(description), encoding="utf-8")
         print(f"write: {PROJECT_FILE}")
 
+def cmd_skills(args):
+    """Lint the skills installed in a project, or any directory of skills."""
+    project = ensure_project(args.project)
+    skills = Path(args.path).resolve() if args.path else project / ".agents/skills"
+    if not skills.is_dir():
+        raise SystemExit(f"No skills directory at {skills}.")
+    sources = [project / name for name in (".harness", "AGENTS.md", "CLAUDE.md", *(f".{r}" for r in RUNTIME_NAMES)) if (project / name).exists()]
+    found = skill_lint.lint(skills, sources, ENTRYPOINT_SKILLS)
+    print("\n".join(skill_lint.summary(found, args.verbose)))
+    if args.strict and any(entry["findings"] for entry in found.values()):
+        raise SystemExit(1)
+
 def cmd_check(args):
     """Run the project's own checks with the installed check.py."""
     project = ensure_project(args.project)
@@ -1172,6 +1184,13 @@ def build_parser():
     chk.add_argument("--only", help="comma-separated check names, for example lint,test")
     chk.add_argument("--status", action="store_true", help="print the last result for this version of the change without running anything")
     chk.set_defaults(func=cmd_check)
+
+    sk = sub.add_parser("skills", help="Lint skills: length, numbered steps, failure handling, and whether anything names them")
+    sk.add_argument("--project", default=".")
+    sk.add_argument("--path", help="a directory of skills; default: the project's .agents/skills")
+    sk.add_argument("--verbose", action="store_true", help="name every skill under each rule")
+    sk.add_argument("--strict", action="store_true", help="exit non-zero when there is any finding")
+    sk.set_defaults(func=cmd_skills)
 
     un = sub.add_parser("uninstall", help="Remove selected runtime overlays")
     un.add_argument("--project", default=".")
