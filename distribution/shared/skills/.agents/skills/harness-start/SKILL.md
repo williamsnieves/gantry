@@ -67,7 +67,7 @@ One slice at a time, in order:
 
 1. Write the test for the slice's criteria and run it. It must fail for the right reason: a test that has never failed proves nothing.
 2. Write the code that makes it pass, following `docs/conventions.md`.
-3. Run the commands under `checks` in `.harness/project.yaml`. Do not start the next slice with one failing.
+3. Run `python3 .harness/bin/check.py`: it runs every command under `checks` in `.harness/project.yaml` and says which pass. Do not start the next slice with one failing; `--only <name>` reruns one.
 
 In the `DIRECT` lane there are no criteria: change the code, keep the existing tests passing, and add a test when you fix a defect.
 

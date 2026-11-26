@@ -39,6 +39,7 @@ Verify them.
 - current working tree or change diff;
 - applicable `AGENTS.md`;
 - `.harness/project.yaml` when present: the project's detected stack and its test, lint, typecheck and build commands. Start the validation matrix from it, and report a command that is missing or wrong instead of replacing it silently;
+- the result of `python3 .harness/bin/check.py status`: those commands as already run on this version of the change. When it prints results, they are your execution evidence for those checks: do not run them again. When it says `NOT RUN`, `STALE` or `INCOMPLETE`, run `python3 .harness/bin/check.py` once and use what it prints. Run by hand only a required check that `.harness/project.yaml` does not list, and report it as missing from that file;
 - project manifests, scripts, CI, and tool configuration;
 - optional OpenSpec change or implementation task list;
 - optional baseline branch, commit, or prior validation evidence;

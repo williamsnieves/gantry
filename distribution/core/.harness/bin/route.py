@@ -204,6 +204,9 @@ GUARDRAILS = (
     ("build", "a failing check is fixed in the code, not by weakening the check",
      "the final gate carries a condition naming any lint, type, test or CI configuration the change edits",
      "the edit and `--no-verify` are denied (not in the lean profile)"),
+    ("build", "the project's own format, lint, type, test and build commands pass on the version that is reviewed",
+     "`check.py` runs the commands recorded in .harness/project.yaml and ties the result to the change's digest; "
+     "`check.py status` prints it again without running anything; the final gate blocks on one that failed on the current version", ""),
     ("build", "a secret does not leave in the change",
      "`scan.py` reads every added line; the final gate blocks on a credential in a provider's format or a private key, "
      "and carries a condition for anything that may be one; with the git hooks installed, git refuses the commit and the push "
@@ -255,7 +258,7 @@ PILLARS = (
 )
 # Rules the project learned from changes that went wrong: paths that add a risk trigger. See learn.py.
 LEARNED_FILE = "docs/learned.md"
-GENERATED_STATE = ("routing-plan.yaml", "gates.json", "mutation.json", "mutation-backup.json")
+GENERATED_STATE = ("routing-plan.yaml", "gates.json", "mutation.json", "mutation-backup.json", "checks.json")
 QUALITY_CONFIG_NAMES = (
     ".eslintignore", ".prettierignore", "biome.json", "biome.jsonc", "ruff.toml", ".ruff.toml", ".flake8",
     "mypy.ini", ".pylintrc", "tox.ini", "pytest.ini", ".pre-commit-config.yaml", ".gitlab-ci.yml", "Jenkinsfile",
@@ -1112,6 +1115,7 @@ def readiness(root: Path, runtime: str) -> tuple[str, list[str], list[str]]:
         conditions.append(f"marked `{scan.ALLOW}`, a person must confirm it is not a real secret: " + scan.summary(scanned["allowed"]))
     if scanned["suspect"]:
         conditions.append("possible credential, a person must look: " + scan.summary(scanned["suspect"]))
+    blockers += checks(root, identity)[0]
     left, mutation_conditions, _ = mutation(root, identity, paths)
     if left:
         blockers.append(left)
@@ -1135,8 +1139,8 @@ def pillars(root: Path, runtime: str) -> list[str]:
         scanned = {"security": "added lines scanned for secrets and risky patterns; ",
                    "performance": "added lines scanned for queries in loops and unbounded reads; "}.get(name, "")
         if name == "quality":
-            summary = mutation(root, *change_identity(root))[2]
-            ran += [summary] if summary else []
+            identity, paths = change_identity(root)
+            ran += [summary for summary in (checks(root, identity)[1], mutation(root, identity, paths)[2]) if summary]
         if ran:
             lines.append(f"{name}: {scanned}{', '.join(ran)}")
         else:
@@ -1229,6 +1233,19 @@ def cmd_verify(args: argparse.Namespace) -> int:
     for condition in receipt.get("conditions") or []:
         print(f"  condition: {condition}")
     return 0
+
+
+def checks(root: Path, identity: dict) -> tuple[list[str], str]:
+    """(blockers, summary) from the project's own checks, when check.py ran them on this version of the change."""
+    import check  # here, not at the top: check.py imports this module
+    result = check.current(root, identity)
+    if not result or not result["checks"]:
+        return [], ""
+    failed = [name for name, entry in result["checks"].items() if entry["status"] != "pass"]
+    passed = [name for name, entry in result["checks"].items() if entry["status"] == "pass"]
+    blockers = [f"the project's `{name}` check fails on this version of the change (`{result['checks'][name]['command']}`); "
+                "fix the code and run `python3 .harness/bin/check.py`" for name in failed]
+    return blockers, (f"checks run by check.py: {', '.join(passed)} passed" if passed and not failed else "")
 
 
 def mutation(root: Path, identity: dict, paths: list[str]) -> tuple[str | None, list[str], str]:
