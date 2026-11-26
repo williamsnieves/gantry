@@ -404,7 +404,7 @@ def remove_agents_block(project: Path, *, dry_run: bool):
         else:
             path.unlink()
 
-def write_harness_config(project: Path, runtimes: list[str], scope: str, profile: str, *, dry_run: bool):
+def write_harness_config(project: Path, runtimes: list[str], scope: str, profile: str, *, dry_run: bool, receipts: bool = False):
     config_path = project / ".harness/harness.config.yaml"
     config = {
         "harness_version": VERSION,
@@ -426,6 +426,7 @@ def write_harness_config(project: Path, runtimes: list[str], scope: str, profile
         "pre_pr": {
             "enabled": True,
             "allow_pass_with_conditions": True,
+            "receipts": receipts,
         },
         "installed_runtimes": runtimes,
     }
@@ -480,6 +481,12 @@ def saved_config(project: Path) -> tuple[str | None, str | None]:
     profile = RETIRED_PROFILES.get(profile, profile)
     return (scope if scope in SCOPES else None), (profile if profile in PROFILES else None)
 
+def saved_receipts(project: Path) -> bool:
+    """Whether this installation keeps review receipts (`pre_pr.receipts` in the harness config)."""
+    path = project / ".harness/harness.config.yaml"
+    text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    return bool(re.search(r"^\s*[\"']?receipts[\"']?\s*:\s*true\b", text, re.M))
+
 def hooks_registered(project: Path, runtime: str) -> bool:
     path = project / HOOK_SETTINGS[runtime]
     return path.is_file() and HOOK_MARKER in path.read_text(encoding="utf-8", errors="replace")
@@ -501,6 +508,7 @@ def cmd_install(args):
     saved_scope, saved_profile = saved_config(project)
     scope = args.scope or saved_scope or "mixed"
     profile = args.profile or saved_profile or "standard"
+    receipts = saved_receipts(project) if getattr(args, "receipts", None) is None else args.receipts
 
     # Look before writing: a refusal halfway would leave files the install state does not know about.
     if not args.force:
@@ -520,7 +528,7 @@ def cmd_install(args):
 
     final_runtimes = sorted(set(state["runtimes"]) | set(runtimes), key=RUNTIMES.index)
     write_harness_config(
-        project, final_runtimes, scope, profile, dry_run=args.dry_run
+        project, final_runtimes, scope, profile, dry_run=args.dry_run, receipts=receipts
     )
 
     models = project / MODELS_FILE
@@ -551,6 +559,9 @@ def cmd_install(args):
     print()
     print(f"Installed runtimes: {', '.join(final_runtimes)}  (scope {scope}, profile {profile})")
     print_entrypoints(final_runtimes)
+    if receipts:
+        print("Review receipts are on: `route.py ready` writes one per reviewed change under .harness/receipts/. Commit it with the\n"
+              "change and make CI run `python3 .harness/bin/route.py verify --base origin/<default branch>` on pull requests.")
     if not args.dry_run:
         print("Check the installation at any time with `gantry doctor`.")
 
@@ -604,6 +615,7 @@ def cmd_init(args):
     scope = args.scope or saved_scope or suggest_scope(description)
     profile = args.profile or saved_profile or "standard"
     hooks = not args.no_hooks
+    receipts = saved_receipts(project) if args.receipts is None else args.receipts
     proposal = f"--runtime {','.join(runtimes) or '<tool>'} --scope {scope} --profile {profile}"
 
     if args.yes or (args.runtime and not interactive()):
@@ -640,15 +652,19 @@ def cmd_init(args):
             print(f"\nGuard hooks can be registered in {', '.join(HOOK_SETTINGS[r] for r in hookable)}. They stop the agent, not you;")
             print("without them the same rules are only checked at the Final Pre-PR Gate.")
             hooks = ask_yes("Register the hooks?")
+        if args.receipts is None:
+            print("\nShould CI be able to check that what is merged is what was reviewed? The final gate then writes a small receipt")
+            print("per change, which you commit with it, and `route.py verify` fails a pull request whose content has none.")
+            receipts = ask_yes("Keep review receipts?", default=receipts)
         hook_note = f", hooks {'on' if hooks else 'off'}" if hookable else "; none of these tools has hooks, so the rules are checked at the Final Pre-PR Gate"
-        print(f"\nInstall for {', '.join(runtimes)} with scope {scope}, profile {profile}{hook_note}.")
+        print(f"\nInstall for {', '.join(runtimes)} with scope {scope}, profile {profile}{hook_note}{', review receipts on' if receipts else ''}.")
         if not ask_yes("Go ahead?"):
             print("Nothing was changed.")
             return
         print()
 
     cmd_install(argparse.Namespace(project=str(project), runtime=",".join(runtimes), scope=scope, profile=profile,
-                                   force=args.force, dry_run=args.dry_run, no_hooks=not hooks))
+                                   force=args.force, dry_run=args.dry_run, no_hooks=not hooks, receipts=receipts))
 
 def cmd_upgrade(args):
     """Reinstall what is installed with this version of Gantry, keeping the runtimes, scope, profile and hook choice."""
@@ -662,7 +678,7 @@ def cmd_upgrade(args):
     print(f"Gantry {state.get('harness_version') or 'unknown'} -> {VERSION} for {', '.join(runtimes)}"
           f"{' (hooks stay off; turn them on with `gantry install`)' if no_hooks else ''}")
     cmd_install(argparse.Namespace(project=str(project), runtime=",".join(runtimes), scope=scope, profile=profile,
-                                   force=args.force, dry_run=args.dry_run, no_hooks=no_hooks))
+                                   force=args.force, dry_run=args.dry_run, no_hooks=no_hooks, receipts=None))
 
 
 def cmd_inspect(args):
@@ -828,6 +844,15 @@ def cmd_doctor(args):
             warnings.append((".harness/runtime/ (routing plan, gate reports, approvals) is not ignored by git; it is local review state "
                              "and every branch writes the same files.", "gantry upgrade, which installs .harness/.gitignore"))
 
+        # Receipts are only worth committing if something checks them.
+        if saved_receipts(project):
+            ci = [f for d in (".github/workflows", ".circleci") if (project / d).is_dir() for f in (project / d).rglob("*") if f.is_file()]
+            ci += [project / name for name in (".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml") if (project / name).is_file()]
+            if not any("route.py verify" in f.read_text(encoding="utf-8", errors="replace") for f in ci):
+                warnings.append(("Review receipts are on, but no CI file runs `route.py verify`, so nothing checks them.",
+                                 "run `python3 .harness/bin/route.py verify --base origin/<default branch>` on pull requests, "
+                                 "with the full history fetched; or turn them off with `gantry install --runtime <tool> --no-receipts`"))
+
         # What the Validator will run.
         described = project / PROJECT_FILE
         if not described.is_file():
@@ -956,7 +981,7 @@ def cmd_uninstall(args):
                     profile = data.get("project", {}).get("delivery_profile", profile)
                 except Exception:
                     pass
-            write_harness_config(project, remaining, scope, profile, dry_run=False)
+            write_harness_config(project, remaining, scope, profile, dry_run=False, receipts=saved_receipts(project))
             save_state(project, state)
         elif args.purge_shared:
             sp = state_path(project)
@@ -985,6 +1010,8 @@ def build_parser():
         sp.add_argument("--dry-run", action="store_true")
         sp.add_argument("--no-hooks", action="store_true", help="do not register the harness guard hooks")
         sp.add_argument("--verbose", action="store_true", help="print every file")
+        sp.add_argument("--receipts", action=argparse.BooleanOptionalAction, default=None,
+                        help="keep a receipt per reviewed change so CI can verify it; default: what is installed, else off")
 
     init = sub.add_parser("init", help="Guided install: proposes the tools, scope and profile it finds, and asks")
     common_install(init, runtime_required=False)

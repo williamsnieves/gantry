@@ -178,11 +178,15 @@ PASSING = ("PASS", "PASS_WITH_CONDITIONS")
 # Files that define how the project's work is judged. The harness's own files are
 # always protected from agent edits; quality configuration is protected unless the
 # delivery profile is lean.
-HARNESS_PROTECTED = (".harness/core/", ".harness/bin/", ".harness/agents/", ".harness/evals/")
+HARNESS_PROTECTED = (".harness/core/", ".harness/bin/", ".harness/agents/", ".harness/evals/", ".harness/receipts/")
 HARNESS_PROTECTED_FILES = (".harness/harness.config.yaml", ".harness/project.yaml", ".harness/models.yaml", ".harness/install-state.json",
                            ".harness/runtime/approvals.json", ".claude/settings.json")
 # Written by `spec.py approve`: which specifications a person approved, by content.
 APPROVALS_FILE = ".harness/runtime/approvals.json"
+# Written by `route.py ready` when the project keeps review receipts: one small file per reviewed change, named after
+# the change's digest and committed with it, so `route.py verify` can tell in CI that what is merged is what was reviewed.
+RECEIPTS_DIR = ".harness/receipts/"
+READY = ("PRE_PR_PASS", "PRE_PR_PASS_WITH_CONDITIONS")
 
 # Every guardrail, by the phase it acts in: (phase, what it guarantees, what enforces it on every runtime,
 # what a runtime with command hooks adds). `route.py guardrails` prints this table.
@@ -218,6 +222,9 @@ GUARDRAILS = (
      "results are tied to a digest of the change; an edit makes them stale", ""),
     ("release", "a pull request is opened only after every required gate passed",
      "`route.py ready` exits non-zero", "`gh pr create` is denied (not in the lean profile)"),
+    ("release", "what is merged is the version that was reviewed, when the project keeps review receipts",
+     "`route.py ready` writes a receipt named after the change's digest, committed with the change; "
+     "`route.py verify`, run in CI, fails when the pull request's content has none", ""),
     ("release", "a change that moves data, schema or infrastructure ships with a written rollout: order, verification, undo",
      "`release.py check` blocks without a `## Rollout` section in the specification",
      "`gh pr merge` is denied while it blocks (not in the lean profile)"),
@@ -415,7 +422,7 @@ def git(root: Path, *arguments: str) -> str | None:
 
 
 def is_harness_path(path: str) -> bool:
-    return path.startswith(".harness/runtime/")
+    return path.startswith((".harness/runtime/", RECEIPTS_DIR))
 
 
 def base_commit(root: Path) -> str | None:
@@ -430,7 +437,7 @@ def base_commit(root: Path) -> str | None:
     return head
 
 
-def change_identity(root: Path) -> tuple[dict, list[str]]:
+def change_identity(root: Path, base: str | None = None) -> tuple[dict, list[str]]:
     """Identify the change by a digest of the content of every file it touches.
 
     The change is everything that differs from the base commit, committed or
@@ -444,7 +451,7 @@ def change_identity(root: Path) -> tuple[dict, list[str]]:
         line[3:].split(" -> ")[-1].strip().strip('"')
         for line in status.splitlines() if line[:2] == "??"
     }
-    base = base_commit(root)
+    base = base or base_commit(root)
     if base:
         paths |= set((git(root, "diff", "--name-only", base) or "").split("\n"))
     else:  # no commits yet: everything staged is the change
@@ -1054,8 +1061,93 @@ def readiness(root: Path, runtime: str) -> tuple[str, list[str], list[str]]:
     return ("PRE_PR_PASS_WITH_CONDITIONS" if conditions else "PRE_PR_PASS"), [], conditions
 
 
+def receipts_enabled(root: Path) -> bool:
+    try:
+        text = (root / ".harness/harness.config.yaml").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return bool(re.search(r"^\s*[\"']?receipts[\"']?\s*:\s*true\b", text, re.M))
+
+
+def receipt_file(identity: dict) -> str:
+    return RECEIPTS_DIR + identity["value"].split(":", 1)[-1] + ".json"
+
+
+def write_receipt(root: Path, runtime: str, status: str, conditions: list[str]) -> str | None:
+    """Record that this exact content passed the Final Pre-PR Gate. Same review in, same file out."""
+    identity, _ = change_identity(root)
+    if identity["type"] != "content":
+        return None
+    plan = parse((state_dir(root, runtime) / "routing-plan.yaml").read_text(encoding="utf-8"))
+    gates = load_gates(root, runtime)
+    target = receipt_file(identity)
+    base = base_commit(root)
+    folder = root / RECEIPTS_DIR
+    folder.mkdir(parents=True, exist_ok=True)
+    # A receipt this change added for an earlier version of itself no longer describes anything.
+    for old in folder.glob("*.json"):
+        name = RECEIPTS_DIR + old.name
+        if name != target and (not base or git(root, "cat-file", "-e", f"{base}:{name}") is None):
+            old.unlink()
+    receipt = {
+        "change": identity["value"],
+        "status": status,
+        "conditions": conditions,
+        "runtime": runtime,
+        "work_mode": plan.get("work_mode"),
+        "lane": plan.get("lane"),
+        "risk_triggers": sorted({t.get("dimension") for t in plan.get("risk_triggers") or []}),
+        "gates": {e["agent"]: gates[e["agent"]]["decision"] for e in plan["agents"]
+                  if e["applicability"] == "REQUIRED" and e["agent"] in gates},
+    }
+    (root / target).write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+    return target
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    """For CI: does the content of this change have a receipt of a review that passed?"""
+    root = Path(args.project).resolve()
+
+    def fail(*lines: str) -> int:
+        print("REVIEW RECEIPT: FAIL")
+        for line in lines:
+            print(f"  {line}")
+        return 1
+
+    if git(root, "rev-parse", "--git-dir") is None:
+        return fail("this is not a git repository, so there is no change to identify")
+    if (git(root, "rev-parse", "--is-shallow-repository") or "").strip() == "true":
+        return fail("the checkout is shallow, so where the change starts cannot be found; fetch the full history "
+                    "(`fetch-depth: 0` in actions/checkout)")
+    base = None
+    if args.base:
+        base = (git(root, "merge-base", "HEAD", args.base) or "").strip()
+        if not base:
+            return fail(f"cannot find where this change leaves {args.base}; fetch that branch first")
+    identity, paths = change_identity(root, base)
+    if identity["type"] != "content":
+        print("REVIEW RECEIPT: NOTHING TO VERIFY (no change against the base)")
+        return 0
+    target = receipt_file(identity)
+    try:
+        receipt = json.loads((root / target).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        hint = ("" if receipts_enabled(root) else
+                "; receipts are off in this project, turn them on with `gantry install --runtime <tool> --receipts`")
+        return fail(f"no receipt for this version of the change ({identity['value']}, {len(paths)} files): {target} is missing",
+                    "it was not reviewed, or it was edited after the review; run the harness-run skill and commit the receipt "
+                    "`route.py ready` writes" + hint)
+    if not isinstance(receipt, dict) or receipt.get("change") != identity["value"] or receipt.get("status") not in READY:
+        return fail(f"{target} does not record a passed review of this change")
+    print(f"REVIEW RECEIPT: PASS ({receipt['status']}, {len(paths)} files, gates: {', '.join(receipt.get('gates') or {}) or 'none'})")
+    for condition in receipt.get("conditions") or []:
+        print(f"  condition: {condition}")
+    return 0
+
+
 def cmd_ready(args: argparse.Namespace) -> int:
-    status, blockers, conditions = readiness(Path(args.project).resolve(), args.runtime)
+    root = Path(args.project).resolve()
+    status, blockers, conditions = readiness(root, args.runtime)
     print(status)
     for blocker in blockers:
         print(f"  blocker: {blocker}")
@@ -1063,6 +1155,9 @@ def cmd_ready(args: argparse.Namespace) -> int:
         print(f"  condition: {condition}")
     if status != "PRE_PR_BLOCKED":
         print(f"  next: before the change is merged or deployed, run `python3 .harness/bin/release.py check --runtime {args.runtime}`")
+        written = write_receipt(root, args.runtime, status, conditions) if receipts_enabled(root) else None
+        if written:
+            print(f"  receipt: {written}; commit it with the change, CI checks it with `route.py verify`")
     return 1 if status == "PRE_PR_BLOCKED" else 0
 
 
@@ -1146,6 +1241,11 @@ def main(argv: list[str] | None = None) -> int:
     ready.add_argument("--runtime", required=True, choices=RUNTIMES)
     ready.add_argument("--project", default=".")
     ready.set_defaults(func=cmd_ready)
+
+    verify = sub.add_parser("verify", help="In CI: fail unless this exact change has a receipt of a passed review")
+    verify.add_argument("--base", help="the branch the change will be merged into, e.g. origin/main; default: the default branch")
+    verify.add_argument("--project", default=".")
+    verify.set_defaults(func=cmd_verify)
 
     following = sub.add_parser("next", help="Which gates to run now, given the results recorded so far")
     following.add_argument("--runtime", required=True, choices=RUNTIMES)

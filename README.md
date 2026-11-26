@@ -157,9 +157,31 @@ python3 .harness/bin/release.py record --outcome INCIDENT --change "#42" --note 
 
 `record` appends a line to `docs/releases.md`. A rollback or an incident says what happened and, with `--missed`, which risk nobody declared when the change was routed. The harness does not deploy and does not watch production: the record is written by whoever saw the outcome. It is the list of what got past the review.
 
+## Checking in CI that what is merged was reviewed
+
+The hooks stop an agent on Claude Code. On every other tool, and for a person, nothing stops a pull request that was never reviewed or that was edited after its review. Review receipts close that gap, and are off unless you ask for them:
+
+```bash
+./gantry.sh install --runtime cursor --receipts --project .
+```
+
+With receipts on, a passing `route.py ready` writes `.harness/receipts/<digest>.json`: the digest of the change's content, the gate status, its conditions, and each required gate's decision. Commit it with the change. The receipt is not part of the change it describes, so committing it does not invalidate the review; reviewing the change again replaces it. In CI, on pull requests:
+
+```yaml
+- uses: actions/checkout@v4
+  with:
+    fetch-depth: 0                                    # the base branch is needed to find where the change starts
+    ref: ${{ github.event.pull_request.head.sha }}    # the change as it was reviewed, not its merge with the base
+- run: python3 .harness/bin/route.py verify --base origin/${{ github.base_ref }}
+```
+
+`verify` computes the digest of the pull request's content and fails when there is no receipt for it, or when the receipt does not record a pass. One edit after the review, committed or not, is a different digest. It prints the conditions the review left, so they are in the CI log.
+
+What a receipt proves is that the router reached a pass for exactly this content. It does not prove who ran the gates: where no hook protects the file, it can be written by hand like any other, and a person reading the pull request sees it in the diff. Each merged change leaves one small file; delete old ones whenever you like.
+
 ## What goes into git
 
-Commit the installation: `.harness/`, `.agents/skills/`, the runtime folders and `AGENTS.md`, so everyone on the project works with the same harness. `.harness/runtime/` is the exception and the installation ignores it by itself: it holds the routing plan, the gate reports and the approvals of the change in progress, which are local to a working copy. What a reviewer needs from them goes in the pull request, where `harness-ship` puts the conditions.
+Commit the installation: `.harness/`, `.agents/skills/`, the runtime folders and `AGENTS.md`, so everyone on the project works with the same harness, and `.harness/receipts/` when you keep review receipts. `.harness/runtime/` is the exception and the installation ignores it by itself: it holds the routing plan, the gate reports and the approvals of the change in progress, which are local to a working copy. What a reviewer needs from them goes in the pull request, where `harness-ship` puts the conditions.
 
 ## Project scope
 
@@ -231,6 +253,8 @@ RELEASE
   a pull request is opened only after every required gate passed
     every runtime: `route.py ready` exits non-zero
     with hooks: `gh pr create` is denied (not in the lean profile)
+  what is merged is the version that was reviewed, when the project keeps review receipts
+    every runtime: `route.py ready` writes a receipt named after the change's digest, committed with the change; `route.py verify`, run in CI, fails when the pull request's content has none
   a change that moves data, schema or infrastructure ships with a written rollout: order, verification, undo
     every runtime: `release.py check` blocks without a `## Rollout` section in the specification
     with hooks: `gh pr merge` is denied while it blocks (not in the lean profile)
