@@ -211,6 +211,9 @@ GUARDRAILS = (
     ("build", "code that needs a performance reviewer gets one",
      "a query or request inside a loop, or a list read without a limit, in the added lines adds the PERFORMANCE trigger "
      "to the routing plan, which routes the Performance gate; `route.py plan --dismiss` drops it with a written reason", ""),
+    ("build", "the tests of a change would notice if its lines were wrong, when the project turned mutation testing on",
+     "`mutate.py` changes each added line and runs the project's tests; the final gate carries a condition for every change "
+     "the tests did not notice, and for a version that was not mutated; it blocks while a mutant is left in the code", ""),
     ("review", "a reviewer reports and does not fix; a report is what the reviewer wrote",
      "the final gate rejects a report changed after its result was recorded",
      "a reviewer can write only its own report, and nobody else can write it"),
@@ -245,7 +248,7 @@ PILLARS = (
     ("performance", ("performance",), ("PERFORMANCE",)),
     ("scalability", ("performance", "infrastructure"), ("PERFORMANCE", "INFRASTRUCTURE")),
 )
-GENERATED_STATE = ("routing-plan.yaml", "gates.json")
+GENERATED_STATE = ("routing-plan.yaml", "gates.json", "mutation.json", "mutation-backup.json")
 QUALITY_CONFIG_NAMES = (
     ".eslintignore", ".prettierignore", "biome.json", "biome.jsonc", "ruff.toml", ".ruff.toml", ".flake8",
     "mypy.ini", ".pylintrc", "tox.ini", "pytest.ini", ".pre-commit-config.yaml", ".gitlab-ci.yml", "Jenkinsfile",
@@ -434,7 +437,7 @@ def git(root: Path, *arguments: str) -> str | None:
 
 
 def is_harness_path(path: str) -> bool:
-    return path.startswith((".harness/runtime/", RECEIPTS_DIR))
+    return path.startswith((".harness/runtime/", RECEIPTS_DIR)) or (path.startswith(".harness/") and "/__pycache__/" in path)
 
 
 def base_commit(root: Path) -> str | None:
@@ -1067,6 +1070,10 @@ def readiness(root: Path, runtime: str) -> tuple[str, list[str], list[str]]:
         conditions.append(f"marked `{scan.ALLOW}`, a person must confirm it is not a real secret: " + scan.summary(scanned["allowed"]))
     if scanned["suspect"]:
         conditions.append("possible credential, a person must look: " + scan.summary(scanned["suspect"]))
+    left, mutation_conditions, _ = mutation(root, identity, paths)
+    if left:
+        blockers.append(left)
+    conditions += mutation_conditions
     for agent, trigger in unrouted_triggers(root, runtime):
         conditions.append(f"{agent} reported a {trigger['dimension']} risk that no routed gate judged: {trigger['evidence']}; "
                           "a person must judge it, or rerun `route.py plan` with that trigger")
@@ -1085,6 +1092,9 @@ def pillars(root: Path, runtime: str) -> list[str]:
         ran = [f"{agent} {gates[agent]['decision']}" for agent in required if agent in judges and agent in gates]
         scanned = {"security": "added lines scanned for secrets and risky patterns; ",
                    "performance": "added lines scanned for queries in loops and unbounded reads; "}.get(name, "")
+        if name == "quality":
+            summary = mutation(root, *change_identity(root))[2]
+            ran += [summary] if summary else []
         if ran:
             lines.append(f"{name}: {scanned}{', '.join(ran)}")
         else:
@@ -1177,6 +1187,32 @@ def cmd_verify(args: argparse.Namespace) -> int:
     for condition in receipt.get("conditions") or []:
         print(f"  condition: {condition}")
     return 0
+
+
+def mutation(root: Path, identity: dict, paths: list[str]) -> tuple[str | None, list[str], str]:
+    """(blocker, conditions, summary) from mutation testing of this version of the change. Empty when it is off."""
+    import mutate  # here, not at the top: mutate.py imports this module
+    if (root / mutate.BACKUP_FILE).is_file():
+        return ("a mutation run was stopped and left a deliberate change in the code; "
+                "run `python3 .harness/bin/mutate.py restore`"), [], ""
+    if not mutate.enabled(root):
+        return None, [], ""
+    result = mutate.load_result(root)
+    if not result or result.get("change") != identity["value"]:
+        if not mutate.candidates(root, paths, base_commit(root)):
+            return None, [], "mutation: nothing to mutate"
+        return None, ["mutation testing is on and was not run for this version of the change; run `python3 .harness/bin/mutate.py`"], \
+            "mutation: not run"
+    if result.get("error"):
+        return None, [f"mutation testing could not run: {result['error']}"], "mutation: not run"
+    if not result["mutants"] and not result["not_run"]:
+        return None, [], "mutation: nothing to mutate"
+    conditions = [f"the tests pass with {mutate.describe(m)}; add the test that fails on it, or a person confirms it makes no difference"
+                  for m in result["survived"][:8]]
+    if len(result["survived"]) > 8:
+        conditions.append(f"and {len(result['survived']) - 8} more surviving mutants; see `python3 .harness/bin/mutate.py`")
+    unrun = f", {result['not_run']} not run" if result["not_run"] else ""
+    return None, conditions, f"mutation: {result['killed']} of {result['mutants']} changes to the added lines were caught by the tests{unrun}"
 
 
 def cmd_ready(args: argparse.Namespace) -> int:

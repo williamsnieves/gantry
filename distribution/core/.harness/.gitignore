@@ -1,3 +1,5 @@
 # Review state of the change in progress: routing plan, gate reports, approvals.
 # Local to a working copy; every branch writes the same files.
 runtime/
+# Bytecode Python writes beside the harness scripts when they run.
+__pycache__/
