@@ -223,7 +223,7 @@ def main() -> int:
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     live = not args.dry_run and not args.solution
-    out = (args.out or ROOT / "evals/results" / f"{stamp}-{args.runtime}-build") if live else None
+    out = (args.out or ROOT / "evals/results" / f"{stamp}-{args.runtime}-build").resolve() if live else None
     parent = Path(tempfile.mkdtemp(prefix="gantry-build-"))
     args.dependencies = run.install_dependencies()
     if out:
