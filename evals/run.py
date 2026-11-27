@@ -132,7 +132,7 @@ def install_dependencies() -> Path:
 
 
 def build_sandbox(case_dir: Path, runtime: str, parent: Path, dependencies: Path | None = None,
-                  models: dict[str, str] | None = None) -> Path:
+                  models: dict[str, str] | None = None, prepare=None) -> Path:
     """Fixture + installed harness committed as the base, case files as uncommitted work.
 
     With `dependencies`, the sandbox links to that node_modules so the project's checks can be executed.
@@ -149,6 +149,8 @@ def build_sandbox(case_dir: Path, runtime: str, parent: Path, dependencies: Path
     if models:  # the project's own choice of model per tier, part of the base and not of the change
         lines = "".join(f'  {name}: "{model}"\n' for name, model in models.items())
         (sandbox / ".harness/models.yaml").write_text(f"{runtime}:\n{lines}", encoding="utf-8")
+    if prepare:  # a variant of the installed harness, part of the base and not of the change
+        prepare(sandbox)
     git(sandbox, "init", "-q", "-b", "main")
     git(sandbox, "add", "-A")
     git(sandbox, "commit", "-q", "-m", "Base application with harness installed")

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -64,6 +65,40 @@ CHECK_TOOLS = ("Bash(npm test:*)", "Bash(npm run test:*)", "Bash(npm run typeche
                "Bash(python3 .harness/bin/check.py:*)", "Bash(python3 .harness/bin/mutate.py:*)")
 
 
+ABLATIONS = ("contracts", "skills")
+# What is left of a gate's contract when it is ablated: the decisions the router accepts, and nothing about how to judge.
+STUB = """# {agent}
+
+Judge the change within the role your description states.
+
+Decide `PASS`, `PASS_WITH_CONDITIONS`, `CHANGES_REQUIRED` or `BLOCKED`. Give each finding its file, its evidence and the smallest remediation.
+"""
+KEPT_SKILLS = ("harness-run",)   # the lead cannot run a review without it
+SKILL_LIST = re.compile(r"\n## Portable skills\n.*?(?=\n## |\Z)", re.S)
+
+
+def ablate(sandbox: Path, what: list[str]) -> dict:
+    """Remove part of the installed harness before the base commit. Returns the words removed, by kind."""
+    removed = {}
+    words = lambda file: len(file.read_text(encoding="utf-8", errors="replace").split())
+    if "contracts" in what:
+        removed["contracts"] = 0
+        for contract in sorted((sandbox / ".harness/agents").glob("*/AGENT.md")):
+            stub = STUB.format(agent=contract.parent.name)
+            removed["contracts"] += words(contract) - len(stub.split())
+            contract.write_text(stub, encoding="utf-8")
+    if "skills" in what:
+        removed["skills"] = 0
+        for skill in sorted((sandbox / ".agents/skills").iterdir()):
+            if skill.is_dir() and skill.name not in KEPT_SKILLS:
+                removed["skills"] += sum(words(file) for file in skill.rglob("*.md"))
+                shutil.rmtree(skill)
+        # A gate's definition lists the skills of its role; a list of files that are not there would only cost it failed reads.
+        for definition in (sandbox / ".claude/agents").glob("*.md"):
+            definition.write_text(SKILL_LIST.sub("", definition.read_text(encoding="utf-8")), encoding="utf-8")
+    return removed
+
+
 def collect(sandbox: Path, runtime: str) -> tuple[list[str], dict, dict[str, str], str, list[str]]:
     """Read the routing plan, gate ledger and reports the run left behind."""
     status, blockers, _ = route.readiness(sandbox, runtime)
@@ -94,11 +129,14 @@ def collect(sandbox: Path, runtime: str) -> tuple[list[str], dict, dict[str, str
 
 
 def run_trial(case_dir: Path, case: dict, args: argparse.Namespace, parent: Path, out: Path, trial: int) -> dict:
-    sandbox = run.build_sandbox(case_dir, args.runtime, parent, args.dependencies, args.tier_models)
+    removed = {}
+    sandbox = run.build_sandbox(case_dir, args.runtime, parent, args.dependencies, args.tier_models,
+                                prepare=(lambda path: removed.update(ablate(path, args.ablate))) if args.ablate else None)
     prompt = PROMPT.format(request=case["request"].strip() + "\n", runtime=args.runtime,
                            checks=EXECUTABLE if args.execute else NOT_EXECUTABLE)
     record: dict = {"case": case_dir.name, "trial": trial, "runtime": args.runtime, "has_defect": bool(case.get("defect")),
-                    "checks_executable": args.execute, "tier_models": args.tier_models}
+                    "checks_executable": args.execute, "tier_models": args.tier_models,
+                    "ablated": args.ablate, "words_removed": removed}
     if args.dry_run:
         record.update(dry_run=True, sandbox=str(sandbox), prompt=prompt)
         return record
@@ -161,6 +199,9 @@ def main() -> int:
                         help="repeatable: run the gates of a tier on this model, as .harness/models.yaml would (default: the session's model)")
     parser.add_argument("--execute", action="store_true",
                         help="install the fixture's dependencies (needs npm and network, once) so the gates can run its checks")
+    parser.add_argument("--ablate", action="append", choices=ABLATIONS, default=[],
+                        help="repeatable: `contracts` leaves each gate's contract as a five-line stub; `skills` removes every skill "
+                             "but harness-run. Measures what the review loses without them")
     parser.add_argument("--dry-run", action="store_true", help="build sandboxes and print prompts without calling the runtime")
     args = parser.parse_args()
 
