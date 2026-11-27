@@ -12,6 +12,8 @@ python3 evals/run.py --rescore evals/results/<run>                 # re-score sa
 
 Measurements are recorded in [BASELINE.md](BASELINE.md).
 
+[poc/](poc/README.md) is a protocol, not a script: three products on three stacks (Python, TypeScript, Go) for an agent to build with the harness, each with acceptance criteria the builder does not see.
+
 `python3 evals/context_cost.py --runtime claude` measures what the harness adds to every session before any work starts.
 
 Every live trial calls the agent runtime and costs tokens. `--max-budget-usd` caps each trial.
