@@ -1,0 +1,22 @@
+# Full-stack slice. Edges: the tenant condition survives the filter, a repeated
+# query parameter is rejected, and the new control has an accessible name.
+request: |
+  First slice of filtering incidents by severity.
+
+  The list endpoint accepts an optional `severity` query parameter, the web
+  client's `listIncidents` can send it, and there is a new `SeverityFilter`
+  control. Wiring the control into a list screen is a later change. An unknown
+  severity is rejected with 400 `{ "error": "invalid_severity" }` without
+  querying. Existing callers that send no filter keep getting the full list of
+  their tenant.
+
+  Interface:
+  - `IncidentRepository.listByTenant(tenantId, filter?)` with
+    `filter: { severity?: Severity }`; the controller always calls it with the
+    actor's tenant and `{ severity }` (undefined when none was sent);
+  - web: `listIncidents(filter?, signal?)` with the same filter shape, sending
+    `?severity=SEV1`;
+  - web: `SeverityFilter` exported from
+    `apps/web/src/incidents/SeverityFilter.tsx`, a select with props
+    `value: Severity | undefined` and `onChange(value: Severity | undefined)`,
+    whose first option, "All", means no filter.

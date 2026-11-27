@@ -132,7 +132,7 @@ def install_dependencies() -> Path:
 
 
 def build_sandbox(case_dir: Path, runtime: str, parent: Path, dependencies: Path | None = None,
-                  models: dict[str, str] | None = None, prepare=None) -> Path:
+                  models: dict[str, str] | None = None, prepare=None, install: bool = True) -> Path:
     """Fixture + installed harness committed as the base, case files as uncommitted work.
 
     With `dependencies`, the sandbox links to that node_modules so the project's checks can be executed.
@@ -142,10 +142,11 @@ def build_sandbox(case_dir: Path, runtime: str, parent: Path, dependencies: Path
     if dependencies:
         (sandbox / "node_modules").symlink_to(dependencies, target_is_directory=True)
     env = {**os.environ, "PYTHONPATH": str(ROOT)}
-    subprocess.run(
-        [sys.executable, "-m", "gantry", "install", "--runtime", runtime, "--scope", "fullstack", "--project", str(sandbox)],
-        check=True, capture_output=True, env=env,
-    )
+    if install:
+        subprocess.run(
+            [sys.executable, "-m", "gantry", "install", "--runtime", runtime, "--scope", "fullstack", "--project", str(sandbox)],
+            check=True, capture_output=True, env=env,
+        )
     if models:  # the project's own choice of model per tier, part of the base and not of the change
         lines = "".join(f'  {name}: "{model}"\n' for name, model in models.items())
         (sandbox / ".harness/models.yaml").write_text(f"{runtime}:\n{lines}", encoding="utf-8")
