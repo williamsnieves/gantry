@@ -467,3 +467,37 @@ The tenant-leak case again, same configuration (lead on `claude-fable-5-2`, gate
 The defect is now found by the gates the routing intends, and the lead recorded the Validator's result with `--trigger`. It costs more than the run that stopped at the Validator: $1.41 is the figure to compare with the $3.05 of every gate on the lead's model. The $0.83 was the price of a gate deciding outside its contract.
 
 What this does not show: the router's refusal was not exercised, because the Validator followed the contract; it is covered by `tests/test_check.py` only. One trial, one fixture.
+
+## Ablation: the review without contracts and without skills (2026-11-27)
+
+Question: what does the review lose when each gate's contract is cut to a five-line stub (role and decisions) and every skill but `harness-run` is removed? `evals/review.py --ablate contracts --ablate skills` removes 24,216 words of contracts and 362,140 words of skills from the installed harness. The gate definitions of the runtime (`.claude/agents/*.md`: a description of the role and the rules for the report), the router and `harness-run` stay.
+
+Claude Code, lead on `claude-fable-5-2`, gates on Sonnet, `--execute`. Eleven runs, $10.83. Two cases are new and meant to be harder: an order of checks that discloses the existence of another tenant's incidents (`resolve-incident-existence-disclosure`), and a hook that lost its guard against a superseded response (`search-loading-stale-response`). Both pass tests, types and lint.
+
+| Case | Full harness | Without contracts and skills |
+|---|---|---|
+| Existence disclosure | found 2 of 2; $1.16, $0.92 | found 2 of 2; $1.09, $1.03 |
+| Stale response | found 2 of 2; $0.83, $0.74 | found 2 of 2; $0.83, $0.77 |
+| Tenant leak | found ($1.41, the run above) | found; $1.16 |
+| Unlabelled control (missing accessible name) | found ($1.24, 2026-11-25) | found; $1.03 |
+| Clean control | no false alarm ($1.32, 2026-11-26) | no false alarm; $1.26 |
+
+Every defect was found in both arms, by the same gates (Backend Code Review, QA and Security; Frontend Code Review and QA), and the clean change passed in both. Cost and time are the same within the variation between runs. Reports were 253 words on average with the full harness and 317 without.
+
+What differs is the Validator:
+
+| | Full harness | Without contracts |
+|---|---|---|
+| Validator's own decision on a change with a defect and passing checks | `PASS` in 5 of 5, defect listed under `Seen outside the checks` | `CHANGES_REQUIRED` in 5 of 5 |
+| What was recorded | `PASS` with `--trigger` | `PASS` with `--trigger`: the lead recorded it that way four times, and once tried `CHANGES_REQUIRED` and the router refused it |
+
+So the Validator's contract is what keeps it to the checks, and the router's refusal, exercised live here for the first time, is what holds when the contract is not there. In the stub arm the Validator's report says `CHANGES_REQUIRED` while the ledger says `PASS`.
+
+What this shows about the full arm: with the gates on Sonnet, no specialist read its contract in the four new full-harness runs (0 words; only the Validator read its own), and no gate read a skill except one read by the Validator. The two arms differ less than the installed files do: the specialists already work from the description in their gate definition and from what the lead tells them.
+
+What this does not show:
+
+- That the contracts and skills can be deleted. All five cases hit the ceiling: every arm found everything. A difference can only appear on a case the full harness sometimes misses, and there is none yet.
+- Anything about other runtimes, where a gate has no definition with its role and reads the contract or nothing; about a weaker model; or about the lead on a cheaper model.
+- Anything about building. Most skills are for writing code, and no eval measures that.
+- One or two trials per cell, one fixture.
