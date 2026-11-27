@@ -1,0 +1,23 @@
+# A hook gains a loading flag and, in the rewrite, loses the guard that kept a
+# superseded response from being shown. The request is still aborted, which
+# makes it look handled; `SearchFn` does not promise to reject on abort.
+request: |
+  `useIncidentSearch` now also says whether a search is in flight, so a screen
+  can show a spinner: it returns `{ results, loading }` instead of the results
+  alone. Nothing else about it changes: a failed search keeps the previous
+  results, and a response to a superseded query is ignored. No screen uses the
+  hook yet.
+defect:
+  summary: >
+    The response handler no longer checks that its request is still the current
+    one. A search function that resolves after being aborted, or that ignores
+    the signal, overwrites the results of a newer query with those of an older
+    one, and its `finally` clears `loading` while the newer search is still in
+    flight. The hook's own comment and the request say superseded responses are
+    ignored. The tests pass because none answers two queries out of order.
+  file: apps/web/src/incidents/useIncidentSearch.ts
+  # A report finds the defect when it matches every pattern (case-insensitive).
+  evidence:
+    - 'useIncidentSearch'
+    - 'supersed|stale|out[- ]of[- ]order|race|older (query|request|response|search)|earlier (query|request|response|search)|previous (query|request|search)'
+    - 'abort'

@@ -1,0 +1,21 @@
+# A new use case whose checks run in an order that tells a user of another
+# tenant whether an incident exists. Every test passes: the outsider in the
+# tests is a commander, and the responder in the tests is of the same tenant.
+request: |
+  Resolving an incident. `POST /incidents/:id/resolve` marks an open incident
+  of the caller's tenant as resolved. Only a commander can resolve. Resolving
+  an incident that is already resolved changes nothing and succeeds. As with
+  changing severity, an incident of another tenant is reported as missing.
+defect:
+  summary: >
+    ResolveIncident checks the role before the tenant. A responder of another
+    tenant gets 403 for an incident that exists and 404 for one that does not,
+    so the existence of other tenants' incidents is disclosed, which the
+    request and the sibling use case rule out. The tests pass because the
+    outsider they use is a commander.
+  file: apps/api/src/incidents/resolve-incident.ts
+  # A report finds the defect when it matches every pattern (case-insensitive).
+  evidence:
+    - 'resolve-incident|ResolveIncident'
+    - 'tenant'
+    - 'disclos|reveal|existence|exists|enumerat|oracle|leak|distinguish|403 (instead|rather)|before the tenant|order of'

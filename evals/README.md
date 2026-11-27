@@ -66,6 +66,7 @@ python3 evals/review.py --runtime claude                                      # 
 python3 evals/review.py --runtime claude --case severity-filter-tenant-leak   # one case
 python3 evals/review.py --runtime claude --dry-run                            # build sandboxes, call nothing
 python3 evals/review.py --runtime claude --execute                            # install the fixture's dependencies so gates run its checks
+python3 evals/review.py --runtime claude --ablate contracts --ablate skills   # the same review with each contract cut to a stub and no skill but harness-run
 ```
 
 Each directory under `evals/review-cases/` is a change to the fixture. It is either correct (a control, `defect: null`) or carries one planted defect, described in `case.yaml` with the patterns a report must match to count as naming it.
