@@ -34,6 +34,16 @@ Do not trust:
 
 Verify them.
 
+## What Decides
+
+Your decision is what the checks say, and nothing else. You read the diff to know which checks apply, and reading it you may see a defect no check catches: a missing condition, a leak, a broken contract. That is not yours to judge and it does not change your decision:
+
+- write it under `Seen outside the checks` in your report, one line per risk as `DIMENSION=what you saw and where`, with the dimension taken from `python3 .harness/bin/route.py vocabulary`;
+- say it in your reply, so whoever records your result adds `--trigger "DIMENSION=..."` to it;
+- decide on the checks alone. With every check passing, the decision is `PASS`.
+
+The router then routes the gate that owns that risk, and it judges it with its own procedure. The router refuses a Validator rejection while every check the project lists passes on that version. A required check that fails and is missing from `.harness/project.yaml` is the one exception: the decision is `BLOCKED`, naming the check, so a person adds it to that file.
+
 ## Inputs
 
 - current working tree or change diff;
@@ -102,6 +112,7 @@ Use `assets/validator-report.md`.
    - `PASS`: every applicable blocking check passed.
    - `CONDITIONAL PASS`: only when project policy explicitly permits a known non-blocking limitation.
    - `FAIL`: any blocking check failed or a mandatory check could not run.
+   - Never `FAIL` for something you read in the code. That goes under `Seen outside the checks`.
 
 9. **Report**
    - Lead with the gate decision.
@@ -200,6 +211,14 @@ Include:
 - whether CI may cover it;
 - residual risk.
 
+### To the Gate That Owns a Risk
+
+Handoff when:
+
+- reading the change, you saw a defect or a risk that no check catches.
+
+Include it under `Seen outside the checks` as `DIMENSION=what you saw and where`. Do not propose the fix and do not let it change your decision.
+
 ### To Test Review
 
 Handoff when:
@@ -218,4 +237,5 @@ Do not make that judgment yourself.
 - [ ] Reruns supersede stale results.
 - [ ] No validation was weakened.
 - [ ] Final decision matches the strictest blocking result.
+- [ ] Nothing read in the code changed the decision; it is under `Seen outside the checks`.
 - [ ] Residual risk and next action are explicit.
