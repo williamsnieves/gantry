@@ -1,0 +1,18 @@
+# Backend use case with one edge the request implies and does not spell out:
+# a responder of another tenant must get "missing", not "forbidden".
+request: |
+  Add resolving an incident to the API.
+
+  `POST /incidents/:id/resolve` marks an open incident of the caller's tenant
+  as resolved and answers 204. Only a commander can resolve (403
+  `{ "error": "forbidden" }` otherwise). Resolving an incident that is already
+  resolved changes nothing and succeeds. As with changing severity, an incident
+  of another tenant is reported as missing (404 `{ "error": "not_found" }`).
+
+  Interface, so the existing wiring keeps working:
+  - a class `ResolveIncident` exported from
+    `apps/api/src/incidents/resolve-incident.ts`, built with the incident
+    repository, with `execute(actor, incidentId): Promise<void>`; it throws the
+    existing `NotFoundError` and `ForbiddenError`;
+  - `registerIncidentRoutes(router, incidents, updateSeverity, resolve)` takes
+    it as a fourth argument and registers the route with `router.post`.

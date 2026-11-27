@@ -90,6 +90,29 @@ The sandbox has no dependencies installed, so the agents cannot run tests. The t
 
 A trial launches one agent per routed gate and costs several times a routing trial.
 
+## Build quality
+
+`review.py` measures the review of a change that already exists. `build.py` measures the change itself: the agent gets a request and the repository, and what it leaves is scored with tests it never saw.
+
+```bash
+python3 evals/build.py --runtime claude --arm bare --arm harness   # the same request without and with the harness
+python3 evals/build.py --runtime claude --case resolve-incident --trials 2
+python3 evals/build.py --solution reference                        # score the cases' own solutions; calls no runtime
+python3 evals/build.py --solution naive
+```
+
+Each directory under `evals/build-cases/` holds the request (`case.yaml`, with the interface the change must keep), the hidden tests (`hidden/`), a solution that passes all of them (`reference/`) and the files of one that gets the edges wrong (`naive/`). A hidden test whose name starts with `[edge]` covers something the request implies and does not spell out; the others cover what it says.
+
+| Measure | Meaning |
+|---|---|
+| Said | Hidden tests of what the request says, passed out of those the case has. A test file that does not load counts as all of its tests failed. |
+| Edges | The same for the `[edge]` tests. This is where a careful build and a quick one differ. |
+| Checks | The project's own tests, type check and lint on what the agent left, before the hidden tests are added. |
+| Own tests | Test cases in the test files the agent wrote or changed. |
+| Spec | Whether a specification was written under `docs/specs/`. |
+
+In the `harness` arm the request is built with `harness-start` and stops before the review; in the `bare` arm the repository has no harness. Each trial saves its trace and the change it produced next to `results.json`. `--solution` is how the cases check themselves: the reference must pass everything, the naive solution what is said and not every edge. It needs the fixture's dependencies (`npm ci` once, into `evals/.cache/`), so it is not part of CI.
+
 ## Tests
 
 ```bash

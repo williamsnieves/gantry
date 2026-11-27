@@ -1,0 +1,16 @@
+# Frontend hook. The request repeats what the hook already promises (a
+# superseded response is ignored); the edge is keeping that promise, and the
+# loading flag, when responses arrive out of order.
+request: |
+  `useIncidentSearch` should also say whether a search is in flight, so a
+  screen can show a spinner.
+
+  It returns `{ results, loading }` instead of the results alone. `loading` is
+  true from the moment a query is searched until the search for the current
+  query answers or fails. Nothing else changes: a failed search keeps the
+  previous results, and a response to a superseded query is ignored. No screen
+  uses the hook yet.
+
+  Interface: `useIncidentSearch(query, search)` in
+  `apps/web/src/incidents/useIncidentSearch.ts` keeps its arguments and the
+  `SearchFn` type.

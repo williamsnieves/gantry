@@ -501,3 +501,38 @@ What this does not show:
 - Anything about other runtimes, where a gate has no definition with its role and reads the contract or nothing; about a weaker model; or about the lead on a cheaper model.
 - Anything about building. Most skills are for writing code, and no eval measures that.
 - One or two trials per cell, one fixture.
+
+## Building with and without the harness (2026-11-27)
+
+First measurement of the build phase, with `evals/build.py`: the agent gets a request and the fixture, and what it leaves is scored with hidden tests. Three requests (a backend use case, a frontend hook, a full-stack slice), 30 hidden tests: 20 for what the request says and 10 for edges it implies. Two arms: no harness, and the harness installed with the request built through `harness-start`, stopping before the review. Claude Code, one trial per cell, twelve runs, $6.85. Two runs were cut off by a usage limit before their first request and were run again; they are not counted.
+
+| Case | Model | No harness | Harness |
+|---|---|---|---|
+| Resolve incident | Fable | 10/10; $0.48, 147 s | 10/10; $1.13, 216 s |
+| Search loading | Fable | 6/6; $0.44, 59 s | 6/6; $0.83, 142 s |
+| Severity filter | Fable | 14/14; $0.99, 133 s | 14/14; $1.28, 170 s |
+| Resolve incident | Sonnet | 10/10; $0.23, 161 s | 10/10; $0.34, 207 s |
+| Search loading | Sonnet | 6/6; $0.15, 63 s | 6/6; $0.31, 157 s |
+| Severity filter | Sonnet | 14/14; $0.28, 116 s | 14/14; $0.39, 148 s |
+
+| | No harness | Harness |
+|---|---|---|
+| Hidden tests passed, both models | 60 of 60 | 60 of 60 |
+| The project's own checks green | 6 of 6 | 6 of 6 |
+| Cost, Fable / Sonnet | $1.92 / $0.66 | $3.24 / $1.04 |
+| Test cases the agent wrote, Fable / Sonnet | 25 / 16 | 33 / 19 |
+| Specification written | 0 of 6 | 6 of 6 |
+| `route.py lane` and `check.py` run | not there | 6 of 6 |
+| Skills read | none | none |
+
+What this shows:
+
+- The hidden tests did not tell the arms apart: every run passed every one, edges included, on both models. The naive solutions kept in the cases fail 6 of the 10 edges, so the tests can fail; these models did not make those mistakes on requests this size.
+- Building through `harness-start` cost 1.3 to 2.4 times as much and took 1.3 to 2.5 times as long. What it bought here is a written specification, the lane, the checks run through `check.py`, and somewhat more tests; none of that changed a hidden-test result.
+- No skill was read in any run. `harness-start` names none of the design and implementation skills, so the build path does not reach them.
+
+What this does not show:
+
+- That the harness adds nothing to a build. The requests are small, precise and come with their interface; a specification earns its cost where the request is vague or large, and no case here is.
+- Anything about the skills: they were not read, so they were not tested.
+- One trial per cell, one fixture, one runtime.
