@@ -232,6 +232,9 @@ GUARDRAILS = (
      "`route.py plan` records a tier per gate and `next:` names the model to launch", "the gate is launched on that model whatever was asked"),
     ("review", "the review stops at the first stage that does not pass",
      "`route.py next`; the final gate stays blocked", "launching a later gate is denied (not in the lean profile)"),
+    ("review", "the Validator rejects a change for a check that fails, not for what it thinks of the code",
+     "`route.py gate` refuses its rejection while every check the project lists passes on that version; "
+     "what it saw by reading is recorded as a trigger, and the gate that owns that risk judges it", ""),
     ("review", "a risk a gate sees outside its own scope is not lost under its pass",
      "`route.py gate --trigger` records it; the router asks for the plan to be rerun with it, "
      "and the final gate carries a condition while no routed gate has judged it", ""),
@@ -1036,6 +1039,14 @@ def cmd_gate(args: argparse.Namespace) -> int:
     report = (root / args.report) if not Path(args.report).is_absolute() else Path(args.report)
     if not report.is_file() or not report.read_text(encoding="utf-8", errors="replace").strip():
         raise RouteError(f"report {args.report} does not exist or is empty")
+    if args.agent == "validator" and args.decision == "CHANGES_REQUIRED" and every_check_passes(root, identity):
+        raise RouteError(
+            "validator: CHANGES_REQUIRED was not recorded. Every check the project lists passes on this version of the change, "
+            "and the Validator's decision is what the checks say.\n"
+            "  a defect it saw by reading the change belongs to the gate that owns that risk: record "
+            '`--decision PASS --trigger "<DIMENSION>=<what it saw>"` and the router routes that gate\n'
+            "  a required check that fails or could not be run, and is not listed under `checks:` in .harness/project.yaml: "
+            "record `--decision BLOCKED` and name it; a person adds it there, and `check.py` then blocks on it by itself")
     conditions = [c.strip() for c in args.condition or [] if c.strip()]
     if args.decision == "PASS_WITH_CONDITIONS" and not conditions:
         raise RouteError("PASS_WITH_CONDITIONS needs at least one --condition")
@@ -1251,6 +1262,13 @@ def checks(root: Path, identity: dict) -> tuple[list[str], str]:
     blockers = [f"the project's `{name}` check fails on this version of the change (`{result['checks'][name]['command']}`); "
                 "fix the code and run `python3 .harness/bin/check.py`" for name in failed]
     return blockers, (f"checks run by check.py: {', '.join(passed)} passed" if passed and not failed else "")
+
+
+def every_check_passes(root: Path, identity: dict) -> bool:
+    """check.py ran every command the project lists on this version of the change, and all of them passed."""
+    import check
+    result, configured = check.current(root, identity), check.commands(root)
+    return bool(result and configured) and all(result["checks"].get(name, {}).get("status") == "pass" for name in configured)
 
 
 def refactoring(root: Path, identity: dict) -> tuple[list[str], str]:

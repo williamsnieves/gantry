@@ -115,6 +115,27 @@ with tempfile.TemporaryDirectory() as tmp:
     assert run("check.py", "status", cwd=project) == out
     out = review("PRE_PR_PASS")
     assert "pillar: quality: validator PASS, backend-code-review PASS, detail-analyst PASS, reviewer PASS, checks run by check.py: lint, test, build passed" in out, out
+    saved = json.loads((project / ".harness/runtime/checks.json").read_text())
+
+    # The Validator's rejection is what a check says. With every listed check passing on this version it is refused,
+    # and the defect it saw by reading goes on as a trigger for the gate that owns that risk.
+    def validator(decision, *extra, expect=0):
+        proc = subprocess.run([py, str(BIN / "route.py"), "gate", "--runtime", "claude", "--agent", "validator", "--decision", decision,
+                               "--report", ".harness/runtime/claude/artifacts/validator-report.md", *extra], cwd=project, capture_output=True, text=True)
+        assert proc.returncode == expect, (decision, proc.returncode, proc.stdout, proc.stderr)
+        return proc.stdout + proc.stderr
+
+    out = validator("CHANGES_REQUIRED", expect=2)
+    assert "CHANGES_REQUIRED was not recorded" in out and '--decision PASS --trigger "<DIMENSION>=<what it saw>"' in out, out
+    out = validator("PASS", "--trigger", "SECURITY=the filter drops the tenant condition")
+    assert "next: validator reported a risk the plan does not cover" in out, out
+    validator("BLOCKED")  # a check that could not be run is still the Validator's to say
+    run("route.py", "gate", "--runtime", "claude", "--agent", "backend-code-review", "--decision", "CHANGES_REQUIRED",
+        "--report", ".harness/runtime/claude/artifacts/backend-code-review-report.md", cwd=project)  # only the Validator is held to the checks
+    # One check not run on this version, or one failing, and the rejection is the Validator's again.
+    (project / ".harness/runtime/checks.json").write_text(json.dumps({**saved, "checks": {k: v for k, v in saved["checks"].items() if k != "build"}}))
+    validator("CHANGES_REQUIRED")
+    (project / ".harness/runtime/checks.json").write_text(json.dumps(saved))
 
     # A result is for the commands the project has now: change a command and its result no longer counts.
     text = (project / ".harness/project.yaml").read_text()

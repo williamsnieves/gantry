@@ -41,6 +41,12 @@
 |---|---|---|---|---|
 | | | | | |
 
+## Seen outside the checks
+
+One line per defect or risk seen while reading the change that no check catches, as `DIMENSION=what and where`, or `None`. It does not change the decision above: the gate that owns the risk judges it.
+
+- [`SECURITY=...` or `None`.]
+
 ## Modifications Made by Validator
 
 - [Modification and authorization, or `None`.]

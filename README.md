@@ -178,7 +178,7 @@ claude:
   deep: ""        # empty: the session's own model
 ```
 
-Measured on Claude Code with the lead on the most capable model and every gate on Sonnet: two planted defects were found and a clean change passed, at between a third and a half of the cost of running every gate on the lead's model (one trial per case, one fixture; `evals/BASELINE.md`). That is a reasonable starting point, not a guarantee.
+Measured on Claude Code with the lead on the most capable model and every gate on Sonnet: two planted defects were found and a clean change passed, at about half the cost of running every gate on the lead's model (one trial per case, one fixture; `evals/BASELINE.md`). That is a reasonable starting point, not a guarantee.
 
 The installer writes the file with every tier empty, which runs every gate on the session's model as before, and never overwrites it. With a tier filled in, `route.py plan` shows the model beside each gate and the `next:` line is followed by `models: launch validator=haiku`. On Claude Code the hook launches the gate on that model whatever the launch asked for; on other runtimes the lead follows the `models:` line where the runtime lets it choose.
 
@@ -427,6 +427,8 @@ REVIEW
   the review stops at the first stage that does not pass
     every runtime: `route.py next`; the final gate stays blocked
     with hooks: launching a later gate is denied (not in the lean profile)
+  the Validator rejects a change for a check that fails, not for what it thinks of the code
+    every runtime: `route.py gate` refuses its rejection while every check the project lists passes on that version; what it saw by reading is recorded as a trigger, and the gate that owns that risk judges it
   a risk a gate sees outside its own scope is not lost under its pass
     every runtime: `route.py gate --trigger` records it; the router asks for the plan to be rerun with it, and the final gate carries a condition while no routed gate has judged it
   a result counts only for the version of the change it judged

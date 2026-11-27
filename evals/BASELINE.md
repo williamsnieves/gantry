@@ -449,3 +449,21 @@ Question: does a small model that reads the diff add risk triggers that the dete
 The classifier named SECURITY on the one change that has a security defect and on neither of the two that do not. The rules cannot see that defect: no path or pattern marks it.
 
 What this does not show: in the live runs the lead declared the same triggers itself, SECURITY included, so on Claude Code with a strong lead the classifier added nothing the plan did not already have. Its possible place is where the classification is weak or absent: a cheaper lead, a tool where the lead does not follow the skill, or a check in CI. Three cases on one fixture, one call each.
+
+## The Validator decides on the checks alone (2026-11-27)
+
+After the run above, the Validator's contract says that a defect it sees by reading the change does not change its decision: it lists it under `Seen outside the checks` as a trigger, and the gate that owns the risk judges it. `route.py gate` refuses a Validator `CHANGES_REQUIRED` while every check the project lists passes on that version.
+
+The tenant-leak case again, same configuration (lead on `claude-fable-5-2`, gates on Sonnet, `--execute`), one trial:
+
+| | Before (2026-11-26) | With the contract change |
+|---|---|---|
+| Validator | `CHANGES_REQUIRED` for the leak, with the checks passing | `PASS` from `check.py status`; lists `SECURITY` (the dropped tenant condition) and `COMPATIBILITY` |
+| Gates run | 1 of 7 | 5 of 7 |
+| Found by | Validator | Backend Code Review, QA, Security |
+| Final gate | `PRE_PR_BLOCKED` | `PRE_PR_BLOCKED` |
+| Cost, time | $0.83, 84 s | $1.41, 118 s |
+
+The defect is now found by the gates the routing intends, and the lead recorded the Validator's result with `--trigger`. It costs more than the run that stopped at the Validator: $1.41 is the figure to compare with the $3.05 of every gate on the lead's model. The $0.83 was the price of a gate deciding outside its contract.
+
+What this does not show: the router's refusal was not exercised, because the Validator followed the contract; it is covered by `tests/test_check.py` only. One trial, one fixture.
