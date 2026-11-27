@@ -60,7 +60,8 @@ EXECUTABLE = (
 )
 # What a review may execute when the fixture's dependencies are installed.
 CHECK_TOOLS = ("Bash(npm test:*)", "Bash(npm run test:*)", "Bash(npm run typecheck:*)", "Bash(npm run lint:*)",
-               "Bash(npx vitest:*)", "Bash(npx tsc:*)", "Bash(npx eslint:*)")
+               "Bash(npx vitest:*)", "Bash(npx tsc:*)", "Bash(npx eslint:*)",
+               "Bash(python3 .harness/bin/check.py:*)", "Bash(python3 .harness/bin/mutate.py:*)")
 
 
 def collect(sandbox: Path, runtime: str) -> tuple[list[str], dict, dict[str, str], str, list[str]]:
